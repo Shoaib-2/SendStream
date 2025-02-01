@@ -9,10 +9,11 @@ export default {
   theme: {
     extend: {
       colors: {
-        background: "var(--background)",
-        foreground: "var(--foreground)",
+        gray: {
+          750: '#2d374d',
+        },
       },
-    },
   },
+},
   plugins: [],
 } satisfies Config;

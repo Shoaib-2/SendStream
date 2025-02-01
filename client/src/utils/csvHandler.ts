@@ -1,0 +1,55 @@
+export const exportSubscribers = (subscribers: any[]) => {
+  const csvContent = [
+  ['Email', 'Name', 'Subscribed', 'Status', 'ID'],
+    ...subscribers.map(subscriber => [
+      subscriber.email,
+      subscriber.name,
+      new Date(subscriber.subscribed).toLocaleDateString(),
+      subscriber.status,
+      subscriber.id
+    ])
+  ]
+    .map(e => e.join(','))
+    .join('\n');
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.setAttribute('download', 'subscribers.csv');
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
+// Function to import subscribers from a CSV file
+export const importSubscribers = (file: File, addSubscriber: (subscriber: any) => void) => {
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    const csv = event.target?.result as string;
+    const lines = csv.split('\n');
+    const headers = lines[0].split(',');
+
+    lines.slice(1).forEach(line => {
+      const values = line.split(',');
+      const subscriber = headers.reduce((obj, header, index) => {
+        obj[header.trim()] = values[index].trim();
+        return obj;
+      }, {} as any);
+
+      addSubscriber({
+        id: crypto.randomUUID(),
+        email: subscriber.Email,
+        name: subscriber.Name,
+        subscribed: new Date().toISOString(),
+        status: subscriber.Status || 'active'
+      });
+    });
+  };
+  reader.readAsText(file);
+};
+
+// Function to remove a subscriber by ID
+export const removeSubscriber = (id: string, subscribers: any[], setSubscribers: (subscribers: any[]) => void) => {
+  const updatedSubscribers = subscribers.filter(subscriber => subscriber.id !== id);
+  setSubscribers(updatedSubscribers);
+};
