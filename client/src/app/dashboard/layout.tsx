@@ -1,7 +1,7 @@
 // src/app/dashboard/layout.tsx
 "use client";
 import React, { useEffect, useState } from 'react';
-import { LayoutDashboard, Mail, Users, Settings, LogOut } from 'lucide-react';
+import { LayoutDashboard, Mail, Users, Settings, LogOut, BarChart } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/context/authContext';
 
@@ -27,6 +27,7 @@ export default function DashboardLayout({
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Newsletters', href: '/dashboard/newsletters', icon: Mail },
     { name: 'Subscribers', href: '/dashboard/subscribers', icon: Users },
+    { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart },
     { name: 'Settings', href: '/dashboard/settings', icon: Settings },
   ];
 

@@ -22,7 +22,7 @@ const Header: React.FC = () => {
       <nav className="fixed w-full bg-gray-900/95 backdrop-blur-sm z-40">
         <div className="max-w-6xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <div className="text-xl font-bold">NewsletterApp</div>
+            <div className="text-xl font-bold">SendStream</div>
             <div className="space-x-4">
               <Button 
                 variant="secondary"

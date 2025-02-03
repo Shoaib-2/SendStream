@@ -43,7 +43,7 @@ interface IUser extends Document {
         return jwt.sign(
           { id: this._id, role: this.role },
           process.env.JWT_SECRET!,
-          { expiresIn: process.env.JWT_EXPIRES_IN }
+          { expiresIn: process.env.JWT_EXPIRES_IN ? parseInt(process.env.JWT_EXPIRES_IN) : undefined }
         );
       }
     }

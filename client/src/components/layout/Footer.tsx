@@ -73,7 +73,7 @@ const Footer: React.FC = () => {
 
         {/* Copyright section */}
         <div className="pt-8 mt-8 border-t border-gray-700 text-gray-400 text-center">
-          <p>&copy; {currentYear} NewsletterApp. All rights reserved.</p>
+          <p>&copy; {currentYear} SendStream. All rights reserved.</p>
         </div>
       </div>
     </footer>
