@@ -1,12 +1,12 @@
 # Newsletter Automation
 
 ## Description
-SendStream is a powerful application designed to streamline the process of sending newsletters to subscribers. It integrates with popular email services like Mailchimp and Substack, allowing users to manage their own email campaigns effectively.
+SendStream is a powerful application designed to streamline the process of sending newsletters to subscribers. It integrates with popular email services like Mailchimp, allowing users to manage their own email campaigns effectively.
 
 ## Features
 - **Mailchimp Integration**: Seamlessly connect to Mailchimp to manage subscribers and send newsletters.
 - **Gmail Service**: Send newsletters directly using Gmail for smaller-scale campaigns.
-- **User Management**: Allow users to manage their own Mailchimp and Substack accounts for personalized email campaigns.
+- **User Management**: Allow users to manage their own Mailchimp accounts for personalized email campaigns.
 
 ## Technologies Used
 - **Backend**: Node.js, Express, TypeScript
