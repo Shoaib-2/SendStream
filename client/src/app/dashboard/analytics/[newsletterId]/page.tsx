@@ -50,6 +50,8 @@ export default function NewsletterAnalytics() {
   if (loading) {
     return <div className="p-6">Loading...</div>;
   }
+  console.log('Loading:', loading);
+
 
   // 4. Prepare render content regardless of loading state
   const renderContent = () => (

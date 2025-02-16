@@ -1,69 +1,86 @@
+// server.ts
 import express from 'express';
 import cors from 'cors';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
-import { Request, Response } from "express";
+import authRoutes from './routes/auth.routes';
+import { Request, Response, NextFunction } from "express";
+import { errorHandler } from './middleware/error.middleware';
+import newsletterRoutes from './routes/news.routes';
+import subscriberRoutes from './routes/subscribers';
+import { WebSocketServer } from 'ws';
+import { createServer } from 'http';
+import analyticsRoutes from './routes/analytics.routes';
+import settingsRoutes from './routes/settings.routes';
 
 dotenv.config();
 
 const app = express();
+const server = createServer(app);
+const wss = new WebSocketServer({ server });
+
+wss.on('connection', (ws) => {
+ console.log('Client connected to WebSocket');
+});
 
 app.use(cors({
-  origin: 'http://localhost:3000',
-  credentials: true
+ origin: process.env.CLIENT_URL || 'http://localhost:3000',
+ credentials: true,
+ methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+ allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
 
 app.use(express.json());
 
-app.get('/api/analytics/summary', (req: Request, res: Response) => {
-  res.json({
-    subscribers: { total: 1234, change: 12.5 },
-    newsletters: { total: 45, change: -2.4 },
-    openRate: { value: 68, change: 8.2 }
-  });
+app.use((req, _res, next) => {
+ console.log(`${req.method} ${req.path}`);
+ next();
 });
 
-app.get('/api/analytics/growth', (req: Request, res: Response) => {
-  res.json([
-    { date: '2024-01', subscribers: 1000 },
-    { date: '2024-02', subscribers: 1200 }
-  ]);
+app.use('/api/auth', authRoutes);
+app.use('/api/newsletters', newsletterRoutes);
+app.use('/api/subscribers', subscriberRoutes);
+app.use('/api/analytics', analyticsRoutes);
+app.use('/api/settings', settingsRoutes);
+
+
+
+app.use((req: Request, res: Response) => {
+ console.log(`404 - Not Found: ${req.method} ${req.originalUrl}`);
+ res.status(404).json({
+   status: 'error',
+   message: `Route ${req.originalUrl} not found`
+ });
 });
 
-app.get('/api/analytics/engagement', (req: Request, res: Response) => {
-  res.json({
-    openRate: 68,
-    clickRate: 23
-  });
+app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+ errorHandler(err, req, res, next);
 });
 
 const PORT = process.env.PORT || 5000;
-
-const mongoUri = process.env.MONGODB_URI;
-
-
-if (!mongoUri) {
-  console.error('MongoDB connection error: MONGODB_URI is not defined');
-  process.exit(1);
-}
+const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/newsletter';
 
 mongoose
-  .connect(mongoUri)
-  .then(() => {
-    console.log('MongoDB connected successfully');
-    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-  })
-  .catch((err: unknown) => {
-    console.error('MongoDB connection error:', err);
-    process.exit(1);
-  });
+ .connect(mongoUri)
+ .then(() => {
+   console.log('MongoDB connected successfully');
+   server.listen(PORT, () => {
+     console.log(`Server running on port ${PORT}`);
+     console.log('WebSocket server initialized on port', PORT);
+     console.log('Available routes:');
+     console.log(' - /api/auth');
+     console.log(' - /api/subscribers');
+     console.log(' - /api/newsletters');
+   });
+ });
 
 mongoose.connection.on('error', (err) => {
-  console.error('MongoDB connection error:', err);
+ console.error('MongoDB connection error:', err);
 });
 
 mongoose.connection.on('disconnected', () => {
-  console.warn('MongoDB disconnected');
+ console.warn('MongoDB disconnected');
 });
 
-module.exports = app;
+export { wss };

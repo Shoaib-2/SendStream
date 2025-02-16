@@ -1,16 +1,16 @@
 export const exportSubscribers = (subscribers: any[]) => {
   const csvContent = [
-  ['Email', 'Name', 'Subscribed', 'Status', 'ID'],
+    ['ID', 'Email', 'Name', 'Status', 'Subscribed Date'], // Reordered columns, clear headers
     ...subscribers.map(subscriber => [
-      subscriber.email,
-      subscriber.name,
-      new Date(subscriber.subscribed).toLocaleDateString(),
+      subscriber.id,
+      `"${subscriber.email}"`, // Wrap in quotes to handle potential commas
+      `"${subscriber.name}"`,
       subscriber.status,
-      subscriber.id
+      new Date(subscriber.subscribed).toLocaleDateString('en-US') // Consistent date format
     ])
   ]
     .map(e => e.join(','))
-    .join('\n');
+    .join('\r\n'); // Use \r\n for better cross-platform compatibility
 
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');

@@ -1,9 +1,9 @@
 import request from 'supertest';
 import mongoose from 'mongoose';
-import { app } from '../src/app';
 import User from '../src/models/User';
 import { describe, beforeAll, afterAll, beforeEach, it, expect } from '@jest/globals';
 import dotenv from 'dotenv';
+
 
 dotenv.config({ path: '.env.test' });
 

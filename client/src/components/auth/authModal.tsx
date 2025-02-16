@@ -56,6 +56,10 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
     setIsLoading(true);
   
     try {
+      // Add debug logging
+      console.log('Attempting authentication...');
+      console.log('API URL:', process.env.NEXT_PUBLIC_API_URL);
+      
       if (mode === 'login') {
         await login(email, password);
       } else {
@@ -66,12 +70,20 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
       setEmail('');
       setPassword('');
       setErrors({});
-      window.localStorage.setItem('isAuthenticated', 'true');
-      document.cookie = 'auth_token=true; path=/';
+      
+      // Set auth state
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem('isAuthenticated', 'true');
+        document.cookie = 'auth_token=true; path=/';
+      }
+      
       onClose();
       router.push('/dashboard');
     } catch (error) {
-      setErrors({ general: 'Authentication failed' });
+      console.error('Authentication error:', error);
+      setErrors({ 
+        general: error instanceof Error ? error.message : 'Authentication failed' 
+      });
     } finally {
       setIsLoading(false);
     }

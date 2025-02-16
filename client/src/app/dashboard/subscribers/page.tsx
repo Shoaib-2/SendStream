@@ -1,29 +1,33 @@
 "use client";
 import { useState, useEffect } from 'react';
 import { Trash2, Upload, Download, Search } from 'lucide-react';
-import { exportSubscribers, importSubscribers } from '../../../utils/csvHandler'; // Adjust the import path as needed
-import { useData } from '../../../context/dataContext'; // Adjust the import path as needed
+import { exportSubscribers, importSubscribers } from '../../../utils/csvHandler';
+import { useData } from '../../../context/dataContext';
+import { subscriberAPI } from '../../../services/api';
+import { Subscriber } from '../../../types';
 
 export default function SubscribersPage() {
-  const { subscribers, addSubscriber, removeSubscriber } = useData();
+  const { subscribers, addSubscriber, removeSubscriber, isLoading} = useData();
   const [selectedSubscribers, setSelectedSubscribers] = useState<string[]>([]);
   const [showSubscribeModal, setShowSubscribeModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filteredSubscribers, setFilteredSubscribers] = useState(subscribers);
+  const [filteredSubscribers, setFilteredSubscribers] = useState<Subscriber[]>(subscribers);
   const [currentPage, setCurrentPage] = useState(1);
   const [subscribersPerPage] = useState(10);
   const [showNotification, setShowNotification] = useState(false);
   const [notificationMessage, setNotificationMessage] = useState('');
   const [notificationType, setNotificationType] = useState('success');
-  const [role, setRole] = useState('admin'); // Example role, adjust as needed
+  const [role, setRole] = useState('admin');
 
+  // Update filtered subscribers when search query or subscribers change
   useEffect(() => {
-    setFilteredSubscribers(
-      subscribers.filter(subscriber =>
-        subscriber.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        subscriber.name.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    );
+    const filtered = searchQuery
+      ? subscribers.filter(subscriber =>
+          subscriber.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          subscriber.name.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+      : subscribers;
+    setFilteredSubscribers(filtered);
   }, [searchQuery, subscribers]);
 
   const handleExport = () => {
@@ -31,18 +35,28 @@ export default function SubscribersPage() {
     showNotificationMessage('Export successful', 'success');
   };
 
-  const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      importSubscribers(file, addSubscriber);
-      showNotificationMessage('Import successful', 'success');
+      try {
+        await subscriberAPI.import(file);
+        showNotificationMessage('Import successful', 'success');
+      } catch (error) {
+        showNotificationMessage('Import failed', 'error');
+      }
     }
   };
 
-  const handleBulkDelete = () => {
-    selectedSubscribers.forEach(id => removeSubscriber(id));
-    setSelectedSubscribers([]);
-    showNotificationMessage('Bulk delete successful', 'success');
+  const handleBulkDelete = async () => {
+    try {
+      await subscriberAPI.bulkDelete(selectedSubscribers);
+      // Update the filtered subscribers directly
+      setFilteredSubscribers(prev => prev.filter(sub => !selectedSubscribers.includes(sub.id)));
+      setSelectedSubscribers([]);
+      showNotificationMessage('Bulk delete successful', 'success');
+    } catch (error) {
+      showNotificationMessage('Bulk delete failed', 'error');
+    }
   };
 
   const showNotificationMessage = (message: string, type: string) => {
@@ -80,13 +94,15 @@ export default function SubscribersPage() {
         setErrors(validationErrors);
         return;
       }
-      addSubscriber({
-        id: crypto.randomUUID(),
+
+      const newSubscriber: Omit<Subscriber, 'id'> = {
         email,
         name,
-        subscribed: new Date().toISOString(),
-        status: 'active'
-      });
+        status: 'active',
+        subscribed: new Date().toISOString()
+      };
+
+      addSubscriber(newSubscriber);
       setShowSubscribeModal(false);
       showNotificationMessage('Subscriber added successfully', 'success');
     };
@@ -139,9 +155,14 @@ export default function SubscribersPage() {
     );
   };
 
-  // Add button in header
   return (
-    <div className="p-6">
+  <div className="p-6">
+    {isLoading ? (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+      </div>
+    ) : (
+      <>
       {showNotification && (
         <div className={`fixed top-4 right-4 p-4 rounded-lg ${notificationType === 'success' ? 'bg-green-500' : 'bg-red-500'}`}>
           {notificationMessage}
@@ -150,7 +171,7 @@ export default function SubscribersPage() {
       <div className="flex justify-between items-center mb-8">
         <div className="flex items-center gap-2">
           <h1 className="text-2xl font-bold">Subscribers</h1>
-          <span className="text-gray-400">({subscribers.length})</span>
+          <span className="text-gray-400">({filteredSubscribers.length})</span>
         </div>
         <div className="flex gap-4">
           <button
@@ -159,7 +180,6 @@ export default function SubscribersPage() {
           >
             Add Subscriber
           </button>
-          {/* Keep existing import/export buttons */}
           <label className="cursor-pointer bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg flex items-center gap-2">
             <Upload className="w-4 h-4" />
             Import CSV
@@ -196,7 +216,6 @@ export default function SubscribersPage() {
 
       {showSubscribeModal && <SubscribeModal />}
 
-      {/* Keep existing table JSX but update delete button */}
       <div className="bg-gray-800 rounded-xl overflow-hidden">
         <table className="min-w-full divide-y divide-gray-700">
           <thead>
@@ -206,12 +225,15 @@ export default function SubscribersPage() {
                   type="checkbox"
                   onChange={(e) => {
                     if (e.target.checked) {
-                      setSelectedSubscribers(filteredSubscribers.map(subscriber => subscriber.id));
+                      const validIds = filteredSubscribers
+                        .filter(sub => sub.id && typeof sub.id === 'string')
+                        .map(sub => sub.id);
+                      setSelectedSubscribers(validIds);
                     } else {
                       setSelectedSubscribers([]);
                     }
                   }}
-                  checked={selectedSubscribers.length === filteredSubscribers.length}
+                  checked={selectedSubscribers.length === filteredSubscribers.length && filteredSubscribers.length > 0}
                 />
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Email</th>
@@ -222,8 +244,8 @@ export default function SubscribersPage() {
             </tr>
           </thead>
           <tbody className="bg-gray-800 divide-y divide-gray-700">
-            {currentSubscribers.map((subscriber) => (
-              <tr key={subscriber.id}>
+            {currentSubscribers.map((subscriber, index) => (
+              <tr key={subscriber.id || `subscriber-${index}`}>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
                   <input
                     type="checkbox"
@@ -239,13 +261,12 @@ export default function SubscribersPage() {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">{subscriber.email}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">{subscriber.name}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">{new Date(subscriber.subscribed).toLocaleDateString()}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
+                  {new Date(subscriber.subscribed).toLocaleDateString()}
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">{subscriber.status}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
-                  <button 
-                    onClick={() => removeSubscriber(subscriber.id)}
-                    className="text-red-500 hover:text-red-400"
-                  >
+                  <button onClick={() => removeSubscriber(subscriber.id)}>
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </td>
@@ -256,16 +277,22 @@ export default function SubscribersPage() {
       </div>
 
       <div className="flex justify-center mt-4">
-        {Array.from({ length: Math.ceil(filteredSubscribers.length / subscribersPerPage) }, (_, index) => (
-          <button
-            key={index}
-            onClick={() => handlePageChange(index + 1)}
-            className={`px-4 py-2 mx-1 rounded-lg ${currentPage === index + 1 ? 'bg-blue-600' : 'bg-gray-700'}`}
-          >
-            {index + 1}
-          </button>
-        ))}
+        {Array.from({ length: Math.ceil(filteredSubscribers.length / subscribersPerPage) }).map((_, index) => {
+          const pageNumber = index + 1;
+          return (
+            <button
+              key={`page-${pageNumber}`}
+              onClick={() => handlePageChange(pageNumber)}
+              className={`px-4 py-2 mx-1 rounded-lg ${currentPage === pageNumber ? 'bg-blue-600' : 'bg-gray-700'}`}
+            >
+              {pageNumber}
+            </button>
+          );
+        })}
       </div>
+      </>
+      )}
     </div>
   );
 }
+    

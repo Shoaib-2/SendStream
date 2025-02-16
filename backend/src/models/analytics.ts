@@ -3,6 +3,7 @@ import mongoose, { Document } from 'mongoose';
 
 interface IAnalytics extends Document {
  newsletterId: mongoose.Types.ObjectId;
+ createdBy: mongoose.Types.ObjectId;
  opens: {
    count: number;
    details: Array<{
@@ -40,6 +41,11 @@ const analyticsSchema = new mongoose.Schema({
  newsletterId: {
    type: mongoose.Schema.Types.ObjectId,
    ref: 'Newsletter',
+   required: true
+ },
+ createdBy: {
+   type: mongoose.Schema.Types.ObjectId,
+   ref: 'User',
    required: true
  },
  opens: {

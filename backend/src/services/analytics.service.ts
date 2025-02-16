@@ -10,8 +10,27 @@ export class AnalyticsService {
    */
   async trackOpen(newsletterId: string, subscriberId: string) {
     try {
-      const analytics = await this.getOrCreateAnalytics(newsletterId);
+      logger.info('Tracking open for newsletter', { newsletterId, subscriberId });
+
+      // Get the newsletter to get the createdBy field
+      const newsletter = await Newsletter.findById(newsletterId);
+      if (!newsletter) {
+        throw new Error('Newsletter not found');
+      }
+
+      let analytics = await Analytics.findOne({ newsletterId });
       
+      if (!analytics) {
+        analytics = await Analytics.create({
+          newsletterId,
+          createdBy: newsletter.createdBy,  // Set the createdBy field
+          opens: { count: 0, details: [] },
+          clicks: { count: 0, details: [] },
+          bounces: { count: 0, details: [] }
+        });
+      }
+
+      // Update opens count and add details
       await Analytics.findByIdAndUpdate(analytics._id, {
         $inc: { 'opens.count': 1 },
         $push: {
@@ -22,7 +41,8 @@ export class AnalyticsService {
         }
       });
 
-      await this.updateNewsletterMetrics(newsletterId);
+      logger.info('Successfully recorded open event', { newsletterId, subscriberId });
+      return true;
     } catch (error) {
       logger.error('Error tracking open:', error);
       throw new APIError(500, 'Failed to track email open');
@@ -30,82 +50,51 @@ export class AnalyticsService {
   }
 
   /**
-   * Track link click
-   */
-  async trackClick(newsletterId: string, subscriberId: string, url: string) {
-    try {
-      const analytics = await this.getOrCreateAnalytics(newsletterId);
-      
-      await Analytics.findByIdAndUpdate(analytics._id, {
-        $inc: { 'clicks.count': 1 },
-        $push: {
-          'clicks.details': {
-            subscriberId,
-            url,
-            timestamp: new Date()
-          }
-        }
-      });
-
-      await this.updateNewsletterMetrics(newsletterId);
-    } catch (error) {
-      logger.error('Error tracking click:', error);
-      throw new APIError(500, 'Failed to track link click');
-    }
-  }
-
-  /**
-   * Track bounce
-   */
-  async trackBounce(newsletterId: string, subscriberId: string, reason: string) {
-    try {
-      const analytics = await this.getOrCreateAnalytics(newsletterId);
-      
-      await Analytics.findByIdAndUpdate(analytics._id, {
-        $inc: { 'bounces.count': 1 },
-        $push: {
-          'bounces.details': {
-            subscriberId,
-            reason,
-            timestamp: new Date()
-          }
-        }
-      });
-    } catch (error) {
-      logger.error('Error tracking bounce:', error);
-      throw new APIError(500, 'Failed to track bounce');
-    }
-  }
-
-  /**
    * Get analytics for a newsletter
    */
-  private async getOrCreateAnalytics(newsletterId: string) {
-    let analytics = await Analytics.findOne({ newsletterId });
-    
-    if (!analytics) {
-      analytics = await Analytics.create({ newsletterId });
+  async getNewsletterAnalytics(newsletterId: string) {
+    try {
+      const analytics = await Analytics.findOne({ newsletterId });
+      return analytics;
+    } catch (error) {
+      logger.error('Error getting analytics:', error);
+      throw new APIError(500, 'Failed to get newsletter analytics');
     }
-    
-    return analytics;
   }
 
-  /**
-   * Update newsletter metrics
-   */
-  private async updateNewsletterMetrics(newsletterId: string) {
-    const analytics = await Analytics.findOne({ newsletterId });
-    const newsletter = await Newsletter.findById(newsletterId);
+  async trackUnsubscribe(newsletterId: string, subscriberId: string) {
+    try {
+      const newsletter = await Newsletter.findById(newsletterId);
+      if (!newsletter) {
+        throw new Error('Newsletter not found');
+      }
 
-    if (analytics && newsletter) {
-      const totalSent = newsletter.sentTo || 0;
-      const openRate = totalSent ? (analytics.opens.count / totalSent) * 100 : 0;
-      const clickRate = analytics.opens.count ? (analytics.clicks.count / analytics.opens.count) * 100 : 0;
+      let analytics = await Analytics.findOne({ newsletterId });
+      if (!analytics) {
+        analytics = await Analytics.create({
+          newsletterId,
+          createdBy: newsletter.createdBy,
+          opens: { count: 0, details: [] },
+          clicks: { count: 0, details: [] },
+          bounces: { count: 0, details: [] },
+          unsubscribes: { count: 0, details: [] }
+        });
+      }
 
-      await Newsletter.findByIdAndUpdate(newsletterId, {
-        openRate,
-        clickRate
+      await Analytics.findByIdAndUpdate(analytics._id, {
+        $inc: { 'unsubscribes.count': 1 },
+        $push: {
+          'unsubscribes.details': {
+            subscriberId,
+            timestamp: new Date()
+          }
+        }
       });
+
+      logger.info('Tracked unsubscribe event', { newsletterId, subscriberId });
+    } catch (error) {
+      logger.error('Error tracking unsubscribe:', error);
+      throw new APIError(500, 'Failed to track unsubscribe');
     }
   }
 }
