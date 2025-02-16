@@ -5,7 +5,6 @@ SendStream is a powerful application designed to streamline the process of sendi
 
 ## Features
 - **Mailchimp Integration**: Seamlessly connect to Mailchimp to manage subscribers and send newsletters.
-- **Substack Integration**: Utilize Substack for newsletter distribution and subscriber management.
 - **Gmail Service**: Send newsletters directly using Gmail for smaller-scale campaigns.
 - **User Management**: Allow users to manage their own Mailchimp and Substack accounts for personalized email campaigns.
 
@@ -65,8 +64,6 @@ Visit `http://localhost:3000` to access the application.
 ### Mailchimp
 To integrate with Mailchimp, ensure you have your API key and server prefix set in the `.env` file. The application will handle subscriber management and newsletter sending through the Mailchimp API.
 
-### Substack
-Similar to Mailchimp, you can integrate with Substack by providing the necessary API credentials in the `.env` file.
 
 ## Contributing
 Contributions are welcome! Please follow these steps to contribute:
