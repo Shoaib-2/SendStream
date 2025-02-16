@@ -1,4 +1,4 @@
-# Newsletter Automation
+# SendStream Automation
 
 ## Description
 SendStream is a powerful application designed to streamline the process of sending newsletters to subscribers. It integrates with popular email services like Mailchimp, allowing users to manage their own email campaigns effectively.
