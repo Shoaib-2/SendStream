@@ -1,6 +1,6 @@
 "use client";
 import React from 'react';
-import { BarChart, Mail, Send, LucideIcon } from 'lucide-react';
+import { BarChart, Mail, Send, LucideIcon, Plus, Pencil, Trash2, Clock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { newsletterAPI } from '../../../services/api';
 
@@ -42,23 +42,17 @@ const NewsletterDashboard = () => {
 
   React.useEffect(() => {
     fetchNewsletterStats();
-    // Fetch stats once per day at midnight
-    const now = new Date();
-    const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-    const timeUntilMidnight = tomorrow.getTime() - now.getTime();
-
-    const timer = setTimeout(() => {
-      fetchNewsletterStats();
-      // After first execution, run every 24 hours
-      setInterval(fetchNewsletterStats, 24 * 60 * 60 * 1000);
-    }, timeUntilMidnight);
-
-    return () => clearTimeout(timer);
+    
+    const ws = new WebSocket('ws://localhost:5000/ws');
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.type === 'newsletter_update') {
+        fetchNewsletterStats();
+      }
+    };
+  
+    return () => ws.close();
   }, [fetchNewsletterStats]);
-
-  const handleCreateClick = () => {
-    router.push('/dashboard/newsletters/create');
-  };
 
   const metrics = [
     { id: 'total-newsletters', label: 'Total Newsletters', value: newsletters.length, icon: Mail },
@@ -73,66 +67,125 @@ const NewsletterDashboard = () => {
     }
   ];
 
-  if (loading) return <div className="flex justify-center items-center h-64">
-    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-  </div>;
+  const handleCreateClick = () => {
+    router.push('/dashboard/newsletters/create');
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-[80vh]">
+        <div className="w-16 h-16 relative">
+          <div className="w-16 h-16 rounded-full border-4 border-blue-500/20 border-t-blue-500 animate-spin" />
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-2xl font-bold">Newsletter Dashboard</h1>
-        <button
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow-lg transition-all duration-200 transform hover:scale-105"
-          onClick={handleCreateClick}
-        >
-          Create Newsletter
-        </button>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        {metrics.map((metric) => (
-          <div key={metric.id} className="bg-gray-800 p-6 rounded-xl">
-            <div className="flex items-center gap-2 mb-4">
-              <metric.icon className="w-5 h-5 text-blue-500" />
-              <span className="text-gray-400">{metric.label}</span>
-            </div>
-            <p className="text-2xl font-bold">{metric.value}</p>
-          </div>
-        ))}
-      </div>
-
-      <div className="bg-gray-800 rounded-xl overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-700">
-          <h2 className="font-semibold">Recent Newsletters</h2>
+    <div className="p-6 min-h-screen bg-gradient-to-b from-gray-900 via-gray-900 to-gray-900/50">
+      <div className="max-w-6xl mx-auto">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl md:text-4xl font-bold font-inter bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
+            Newsletter Dashboard
+          </h1>
+          <button
+            className="bg-blue-500 text-white px-6 py-3 rounded-lg font-medium
+              transform transition-all duration-300 hover:scale-105 hover:bg-blue-600 
+              inline-flex items-center gap-2"
+            onClick={handleCreateClick}
+          >
+            <Plus className="w-4 h-4" />
+            Create Newsletter
+          </button>
         </div>
-        <div className="divide-y divide-gray-700">
-          {newsletters.map((newsletter) => (
-            <div
-              key={newsletter.id || newsletter._id}
-              className="p-6 hover:bg-gray-750 transition-colors cursor-pointer"
-              onClick={() => newsletter.status === 'draft' && router.push(`/dashboard/newsletters/create?id=${newsletter.id || newsletter._id}`)}
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          {metrics.map((metric) => (
+            <div 
+              key={metric.id} 
+              className="bg-gray-800/50 backdrop-blur-sm p-6 rounded-2xl
+                border border-gray-800 hover:border-blue-500/50
+                transition-all duration-300 group"
             >
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="font-medium">{newsletter.title}</h3>
-                <span className={`px-3 py-1 rounded-full text-sm ${newsletter.status === 'sent' ? 'bg-green-500/10 text-green-500' :
-                    newsletter.status === 'scheduled' ? 'bg-blue-500/10 text-blue-500' :
-                      'bg-gray-500/10 text-gray-500'
-                  }`}>
-                  {newsletter.status === 'scheduled' ? 'Scheduled' : newsletter.status.charAt(0).toUpperCase() + newsletter.status.slice(1)}
-                </span>
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center
+                  group-hover:scale-110 transition-all duration-300">
+                  <metric.icon className="w-6 h-6 text-blue-500" />
+                </div>
               </div>
-              <div className="flex gap-4 text-sm text-gray-400">
-                <span>Open Rate: {newsletter.openRate ? `${newsletter.openRate.toFixed(2)}%` : 'N/A'}</span>
-                <span>Click Rate: {newsletter.clickRate}%</span>
-                {newsletter.scheduledDate && (
-                  <span>Scheduled for: {new Date(newsletter.scheduledDate).toLocaleString()}</span>
-                )}
-                {newsletter.sentDate && (
-                  <span>Sent: {new Date(newsletter.sentDate).toLocaleString()}</span>
-                )}
-              </div>
+              <p className="text-gray-400 text-sm font-inter">{metric.label}</p>
+              <p className="text-2xl font-bold mt-1 font-inter">{metric.value}</p>
             </div>
           ))}
+        </div>
+
+        <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl overflow-hidden
+          border border-gray-800 hover:border-blue-500/50 transition-all duration-300">
+          <div className="px-6 py-4 border-b border-gray-700/50">
+            <h2 className="text-xl font-semibold font-inter">Recent Newsletters</h2>
+          </div>
+          <div className="divide-y divide-gray-700/50">
+            {newsletters.map((newsletter) => (
+              <div
+                key={newsletter.id || newsletter._id}
+                className="p-6 hover:bg-blue-500/5 transition-all duration-300 cursor-pointer"
+                onClick={() => newsletter.status === 'draft' && 
+                  router.push(`/dashboard/newsletters/create?id=${newsletter.id || newsletter._id}`)}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-medium font-inter">{newsletter.title}</h3>
+                  <div className="flex items-center gap-4">
+                    {(newsletter.status === 'draft' || newsletter.status === 'scheduled') && (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            router.push(`/dashboard/newsletters/create?id=${newsletter.id || newsletter._id}`);
+                          }}
+                          className="p-2 text-gray-400 hover:text-blue-400 transition-colors rounded-lg
+                            hover:bg-blue-500/10"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                      newsletter.status === 'sent' 
+                        ? 'bg-green-500/10 text-green-400 border border-green-500/50' 
+                        : newsletter.status === 'scheduled' 
+                          ? 'bg-blue-500/10 text-blue-400 border border-blue-500/50' 
+                          : 'bg-gray-500/10 text-gray-400 border border-gray-500/50'
+                    }`}>
+                      {newsletter.status === 'scheduled' ? 'Scheduled' : 
+                        newsletter.status.charAt(0).toUpperCase() + newsletter.status.slice(1)}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex gap-4 text-sm text-gray-400 font-inter">
+                  <span className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-blue-500" />
+                    Open Rate: {newsletter.openRate ? `${newsletter.openRate.toFixed(2)}%` : 'N/A'}
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-green-500" />
+                    Click Rate: {newsletter.clickRate}%
+                  </span>
+                  {newsletter.scheduledDate && (
+                    <span className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-blue-400" />
+                      Scheduled: {new Date(newsletter.scheduledDate).toLocaleString()}
+                    </span>
+                  )}
+                  {newsletter.sentDate && (
+                    <span className="flex items-center gap-2">
+                      <Send className="w-4 h-4 text-green-400" />
+                      Sent: {new Date(newsletter.sentDate).toLocaleString()}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>

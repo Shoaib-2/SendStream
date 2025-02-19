@@ -1,6 +1,6 @@
 import { EmailService } from '../src/services/email.service';
 import nodemailer from 'nodemailer';
-import { beforeEach, describe, it, expect, jest } from '@jest/globals';
+import { beforeEach, afterEach, describe, it, expect, jest } from '@jest/globals';
 
 // Mock logger to prevent console output during tests
 jest.mock('../src/utils/logger', () => ({
@@ -13,16 +13,26 @@ jest.mock('../src/utils/logger', () => ({
 describe('Email Service', () => {
   let emailService: EmailService;
   let mockSendMail: jest.Mock<() => Promise<{ messageId: string }>>;
+  let mockTransporter: any;
 
   beforeEach(() => {
     mockSendMail = jest.fn<() => Promise<{ messageId: string }>>().mockResolvedValue({ messageId: 'test-id' });
-    const mockTransporter = {
+    mockTransporter = {
       verify: jest.fn<() => Promise<boolean>>().mockResolvedValue(true),
-      sendMail: mockSendMail
+      sendMail: mockSendMail,
+      close: jest.fn()
     };
 
-    jest.spyOn(nodemailer, 'createTransport').mockReturnValue(mockTransporter as any);
+    jest.spyOn(nodemailer, 'createTransport').mockReturnValue(mockTransporter);
     emailService = new EmailService();
+  });
+
+  afterEach(() => {
+    // Close the transporter after each test
+    if (mockTransporter && typeof mockTransporter.close === 'function') {
+      mockTransporter.close();
+    }
+    jest.clearAllMocks();
   });
 
   it('sends newsletter to subscribers', async () => {

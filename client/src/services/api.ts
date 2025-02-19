@@ -1,4 +1,4 @@
-import { ApiAnalyticsSummary } from '@/types';
+
 import axios, { AxiosError } from 'axios';
 
 interface ResponseData<T> {
@@ -218,13 +218,15 @@ export const newsletterAPI = {
    }
  },
  schedule: async (id: string, scheduledDate: string) => {
-   try {
-     const response = await api.post<ResponseData<Newsletter>>(`/newsletters/${id}/schedule`, { scheduledDate: new Date(scheduledDate).getTime() });
-     return response.data.data;
-   } catch (error) {
-     handleError(error as AxiosError);
-   }
- },
+  try {
+    const timestamp = new Date(scheduledDate).getTime();
+    console.log('Scheduling with timestamp:', timestamp);
+    const response = await api.post<ResponseData<Newsletter>>(`/newsletters/${id}/schedule`, { scheduledDate: timestamp });
+    return response.data.data;
+  } catch (error) {
+    handleError(error as AxiosError);
+  }
+},
  send: async (id: string) => {
    try { 
      const response = await api.post<ResponseData<Newsletter>>(`/newsletters/${id}/send`);
@@ -300,14 +302,12 @@ export const subscriberAPI = {
 export const analyticsAPI = {
   getSummary: async () => {
     try {
-      const response = await api.get('/analytics/summary');
-      return {
-        status: 'success',
-        data: response.data
-      };
+      const response = await api.get<ResponseData<any>>('/analytics/summary');
+      console.log('Analytics response:', response.data); // Debug log
+      return response.data;
     } catch (error) {
       console.error('Detailed API Error:', error);
-      return { status: 'error', data: null };
+      throw new APIError(500, 'Failed to fetch analytics summary');
     }
   },
 

@@ -20,6 +20,81 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
   const [newsletters, setNewsletters] = useState<Newsletter[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [ws, setWs] = useState<WebSocket | null>(null);
+
+  // Initialize WebSocket connection
+  useEffect(() => {
+    let token = localStorage.getItem('token');
+
+    const connectWebSocket = () => {
+      if (!token) {
+        console.log('No authentication token found for WebSocket connection');
+        return;
+      }
+
+      const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:5000/ws';
+      const socket = new WebSocket(`${wsUrl}?token=${token}`);
+
+      socket.onopen = () => {
+        console.log('WebSocket connected');
+      };
+
+      socket.onmessage = (event: WebSocketEventMap['message']) => {
+        try {
+          const data = JSON.parse(event.data.toString());
+          if (data.type === 'newsletter_update') {
+            setNewsletters((prev: Newsletter[]) => prev.map((n: Newsletter) => 
+              n.id === data.newsletter._id ? { ...n, ...data.newsletter } : n
+            ));
+          }
+        } catch (error) {
+          console.error('Error processing WebSocket message:', error);
+        }
+      };
+
+      socket.onclose = (event: CloseEvent) => {
+        console.log('WebSocket disconnected:', event.code, event.reason);
+        // Only attempt to reconnect if it wasn't closed due to auth failure
+        if (event.code !== 1008) {
+          console.log('Attempting to reconnect...');
+          setTimeout(connectWebSocket, 3000);
+        }
+      };
+
+      socket.onerror = (event: Event) => {
+        console.error('WebSocket error:', event);
+      };
+
+      setWs(socket);
+    };
+
+    // Connect WebSocket when component mounts or token changes
+    connectWebSocket();
+
+    // Cleanup WebSocket connection on unmount or token change
+    return () => {
+      if (ws) {
+        ws.close();
+        setWs(null);
+      }
+    };
+  }, []); // We'll handle token changes in a separate effect
+
+  // Handle token changes
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'token') {
+        if (ws) {
+          ws.close();
+          setWs(null);
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [ws]);
+
 
 
   useEffect(() => {

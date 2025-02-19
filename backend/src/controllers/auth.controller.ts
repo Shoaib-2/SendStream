@@ -1,41 +1,49 @@
-// auth.controller.ts
 import { Request, Response, NextFunction } from 'express';
 import User from '../models/User';
 import { APIError } from '../utils/errors';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 
 export const login = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { email, password } = req.body;
-    console.log('Login attempt for email:', email);
 
     if (!email || !password) {
-      console.log('Missing credentials');
-      throw new APIError(400, 'Please provide email and password');
+      return res.status(400).json({
+        status: 'error',
+        message: 'Email and password are required'
+      });
     }
 
-    // Explicitly include password in the query
+    // Explicitly select the password field
     const user = await User.findOne({ email }).select('+password');
-    console.log('User found:', user ? 'Yes' : 'No');
 
     if (!user) {
-      console.log('No user found with email:', email);
-      throw new APIError(401, 'Invalid email or password');
+      return res.status(401).json({
+        status: 'error',
+        message: 'Invalid email or password'
+      });
     }
 
-    // Debug password comparison
-    console.log('Attempting password comparison');
     const isPasswordValid = await user.comparePassword(password);
-    console.log('Password comparison result:', isPasswordValid);
 
     if (!isPasswordValid) {
-      console.log('Invalid password for user:', email);
-      throw new APIError(401, 'Invalid email or password');
+      return res.status(401).json({
+        status: 'error',
+        message: 'Invalid email or password'
+      });
     }
 
-    const token = user.generateToken();
-    console.log('Login successful, token generated');
+    const token = jwt.sign(
+      { 
+        id: user._id,
+        role: user.role 
+      }, 
+      process.env.JWT_SECRET || 'your-default-secret', 
+      { expiresIn: '30d' }
+    );
 
-    res.json({
+    res.status(200).json({
       status: 'success',
       data: {
         user: {
@@ -43,7 +51,7 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
           email: user.email,
           role: user.role
         },
-        token
+        token: token
       }
     });
   } catch (error) {
@@ -66,23 +74,34 @@ export const logout = async (req: Request, res: Response, next: NextFunction) =>
 export const register = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { email, password } = req.body;
-    console.log('Registration attempt for email:', email);
+
+    if (!email || !password) {
+      throw new APIError(400, 'Email and password are required');
+    }
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      console.log('User already exists:', email);
-      throw new APIError(400, 'Email already in use');
+      throw new APIError(400, 'Email already exists');
     }
 
-    const user = await User.create({
-      email,
-      password, // Password will be hashed by the pre-save middleware
-      role: 'user'
-    });
+    if (password.length < 8) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Password must be at least 8 characters long'
+      });
+    }
 
-    console.log('User created successfully:', email);
+    const user = new User({ email, password });
+    await user.save();
 
-    const token = user.generateToken();
+    const token = jwt.sign(
+      { 
+        id: user._id,
+        role: user.role 
+      }, 
+      process.env.JWT_SECRET || 'your-default-secret', 
+      { expiresIn: '30d' }
+    );
 
     res.status(201).json({
       status: 'success',
@@ -92,7 +111,7 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
           email: user.email,
           role: user.role
         },
-        token
+        token: token
       }
     });
   } catch (error) {

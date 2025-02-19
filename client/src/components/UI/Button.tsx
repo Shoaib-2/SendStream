@@ -1,32 +1,31 @@
-// src/components/ui/Button.tsx
 import React from 'react';
-import { ChevronRight } from 'lucide-react';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  children: React.ReactNode;
-  variant?: 'primary' | 'secondary';
   className?: string;
-  withIcon?: boolean;
-  onClick?: () => void;
+  variant?: 'primary' | 'outline';
 }
 
-
-const Button: React.FC<ButtonProps> = ({ variant = 'primary', children, withIcon, ...props }) => {
-  const baseStyles = "px-4 py-2 rounded-lg transition-colors";
+const Button: React.FC<ButtonProps> = ({ 
+  children, 
+  className = '', 
+  variant = 'primary',
+  ...props 
+}) => {
+  const baseStyles = "px-6 py-3 rounded-lg font-medium inline-flex items-center justify-center transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50";
+  
   const variants = {
-    primary: "bg-blue-600 hover:bg-blue-700 text-white",
-    secondary: "bg-gray-700 hover:bg-gray-600 text-white"
+    primary: "bg-blue-500 text-white hover:bg-blue-600 hover:scale-105 hover:shadow-lg active:scale-95",
+    outline: "border-2 border-gray-700 text-gray-300 hover:border-blue-500 hover:text-blue-500 hover:scale-105 active:scale-95"
   };
 
   return (
     <button 
-    className={`${baseStyles} ${variants[variant]} ${withIcon ? 'flex items-center gap-2' : ''}`}
+      className={`${baseStyles} ${variants[variant]} ${className}`}
       {...props}
     >
       {children}
     </button>
   );
 };
-
 
 export default Button;

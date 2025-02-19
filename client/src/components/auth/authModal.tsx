@@ -1,5 +1,4 @@
-// src/components/auth/AuthModal.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Loader } from 'lucide-react';
 import { validateEmail, validatePassword } from '@/utils/validation';
 import { useAuth } from '@/context/authContext';
@@ -26,9 +25,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
   const [errors, setErrors] = useState<FormErrors>({});
   const [isLoading, setIsLoading] = useState(false);
 
-
-  // Add cleanup on modal close
-  React.useEffect(() => {
+  useEffect(() => {
     if (!isOpen) {
       setEmail('');
       setPassword('');
@@ -56,22 +53,16 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
     setIsLoading(true);
   
     try {
-      // Add debug logging
-      console.log('Attempting authentication...');
-      console.log('API URL:', process.env.NEXT_PUBLIC_API_URL);
-      
       if (mode === 'login') {
         await login(email, password);
       } else {
         await signup(email, password);
       }
       
-      // Reset form state
       setEmail('');
       setPassword('');
       setErrors({});
       
-      // Set auth state
       if (typeof window !== 'undefined') {
         window.localStorage.setItem('isAuthenticated', 'true');
         document.cookie = 'auth_token=true; path=/';
@@ -80,7 +71,6 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
       onClose();
       router.push('/dashboard');
     } catch (error) {
-      console.error('Authentication error:', error);
       setErrors({ 
         general: error instanceof Error ? error.message : 'Authentication failed' 
       });
@@ -88,108 +78,115 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
       setIsLoading(false);
     }
   };
+
   if (!isOpen) return null;
-  
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-gray-800 rounded-xl p-6 w-full max-w-md relative">
-        {/* Close button */}
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-gray-800/50 backdrop-blur-sm p-8 rounded-2xl w-full max-w-md relative
+        border border-gray-700 hover:border-blue-500/50 transition-all duration-300">
         <button 
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-white"
+          className="absolute top-4 right-4 p-2 text-gray-400 hover:text-white
+            hover:bg-gray-700/50 rounded-lg transition-all duration-300"
           disabled={isLoading}
         >
-          <X className="w-6 h-6" />
+          <X className="w-5 h-5" />
         </button>
 
-        {/* Title */}
-        <h2 className="text-2xl font-bold mb-6">
-          {mode === 'login' ? 'Welcome Back' : 'Create Account'}
-        </h2>
+        <div className="mb-8 text-center">
+          <h2 className="text-3xl font-bold font-inter bg-clip-text text-transparent 
+            bg-gradient-to-r from-white to-gray-400">
+            {mode === 'login' ? 'Welcome Back' : 'Create Account'}
+          </h2>
+          <p className="text-gray-400 mt-2">
+            {mode === 'login' 
+              ? 'Sign in to access your account' 
+              : 'Create an account to get started'}
+          </p>
+        </div>
 
-        {/* Error Message */}
         {errors.general && (
-          <div className="bg-red-500/10 border border-red-500 text-red-500 px-4 py-2 rounded-lg mb-4">
+          <div className="bg-red-500/10 border border-red-500/50 text-red-400 
+            px-4 py-3 rounded-xl mb-6 backdrop-blur-sm">
             {errors.general}
           </div>
         )}
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block text-sm font-medium mb-2">Email</label>
+            <label className="block text-sm font-medium mb-2 text-gray-300">Email</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className={`w-full px-4 py-2 bg-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none ${
-                errors.email ? 'border border-red-500' : ''
-              }`}
+              className={`w-full px-4 py-3 bg-gray-700/50 rounded-lg 
+                ${errors.email 
+                  ? 'border border-red-500/50 focus:border-red-500' 
+                  : 'border border-gray-600 focus:border-blue-500/50'
+                } focus:ring-1 focus:ring-blue-500/50 transition-all duration-300`}
               placeholder="your@email.com"
               disabled={isLoading}
             />
             {errors.email && (
-              <p className="text-red-500 text-sm mt-1">{errors.email}</p>
+              <p className="text-red-400 text-sm mt-2">{errors.email}</p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">Password</label>
+            <label className="block text-sm font-medium mb-2 text-gray-300">Password</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className={`w-full px-4 py-2 bg-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none ${
-                errors.password ? 'border border-red-500' : ''
-              }`}
+              className={`w-full px-4 py-3 bg-gray-700/50 rounded-lg 
+                ${errors.password 
+                  ? 'border border-red-500/50 focus:border-red-500' 
+                  : 'border border-gray-600 focus:border-blue-500/50'
+                } focus:ring-1 focus:ring-blue-500/50 transition-all duration-300`}
               placeholder="••••••••"
               disabled={isLoading}
             />
             {errors.password && (
-              <p className="text-red-500 text-sm mt-1">{errors.password}</p>
+              <p className="text-red-400 text-sm mt-2">{errors.password}</p>
             )}
           </div>
 
           <button 
             type="submit"
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg transition-colors flex items-center justify-center"
+            className="w-full bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg
+              transform transition-all duration-300 hover:scale-105 disabled:opacity-50
+              disabled:hover:scale-100 font-medium"
             disabled={isLoading}
           >
             {isLoading ? (
-              <Loader className="w-5 h-5 animate-spin" />
+              <Loader className="w-5 h-5 animate-spin mx-auto" />
             ) : (
               mode === 'login' ? 'Sign In' : 'Create Account'
             )}
           </button>
         </form>
 
-        {/* Mode toggle */}
-        <p className="mt-4 text-center text-sm text-gray-400">
-          {mode === 'login' ? (
-            <>
-              Don't have an account?{' '}
-              <button 
-                onClick={() => setMode('signup')}
-                className="text-blue-500 hover:text-blue-400"
-                disabled={isLoading}
-              >
-                Sign up
-              </button>
-            </>
-          ) : (
-            <>
-              Already have an account?{' '}
-              <button 
-                onClick={() => setMode('login')}
-                className="text-blue-500 hover:text-blue-400"
-                disabled={isLoading}
-              >
-                Log in
-              </button>
-            </>
-          )}
-        </p>
+        <div className="mt-6 text-center">
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-700"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-gray-800/50 text-gray-400">
+                {mode === 'login' ? 'New here?' : 'Already have an account?'}
+              </span>
+            </div>
+          </div>
+
+          <button 
+            onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
+            className="text-blue-400 hover:text-blue-300 mt-4 font-medium transition-colors"
+            disabled={isLoading}
+          >
+            {mode === 'login' ? 'Create an account' : 'Sign in instead'}
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -29,13 +29,13 @@ const syncMailchimpSubscribers = async (req: Request) => {
   const subscribers = await mailchimpService.syncSubscribers();
   
   // Bulk upsert subscribers
-  const operations = subscribers.map((sub: MailchimpSubscriber)=> ({
+  const operations = subscribers.map((sub) => ({
     updateOne: {
       filter: { email: sub.email, createdBy: req.user._id },
       update: {
         $set: {
           name: sub.name,
-          status: sub.status,
+          status: sub.status as 'active' | 'unsubscribed',
           subscribed: sub.subscribedDate,
           source: 'mailchimp'
         }
@@ -55,21 +55,10 @@ export const getSubscribers: RequestHandler = async (req, res, next) => {
 
      // Sync Mailchimp subscribers first
      await syncMailchimpSubscribers(req);
-
-    console.log('Fetching subscribers for user:', {
-      id: req.user._id,
-      email: req.user.email
-    });
-
+     
     const subscribers = await Subscriber.find({ 
       createdBy: req.user._id 
     }).select('-__v').populate('createdBy', 'email');
-
-    console.log('Found subscribers:', subscribers.map(sub => ({
-      id: sub._id,
-      email: sub.email,
-      createdBy: sub.createdBy
-    })));
 
     const formattedSubscribers = subscribers.map(sub => ({
       id: sub._id.toString(),
@@ -128,29 +117,13 @@ export const createSubscriber: RequestHandler = async (req, res, next) => {
 
 export const deleteSubscriber = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { id } = req.params;
-    
-    if (!id) {
-      throw new APIError(400, 'Subscriber ID is required');
-    }
-
-    if (!req.user?._id) {
-      throw new APIError(401, 'Authentication required');
-    }
-
-    // Validate if id is a valid MongoDB ObjectId
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      throw new APIError(400, 'Invalid subscriber ID format');
-    }
-
-    // Add createdBy check to ensure user can only delete their own subscribers
-    const subscriber = await Subscriber.findOne({ 
-      _id: id,
-      createdBy: req.user._id 
-    });
+    const subscriber = await Subscriber.findById(req.params.id);
 
     if (!subscriber) {
-      throw new APIError(404, 'Subscriber not found');
+      return res.status(404).json({
+        status: 'error',
+        message: 'Subscriber not found'
+      });
     }
 
     await subscriber.deleteOne();
@@ -198,24 +171,53 @@ export const bulkDeleteSubscribers = async (req: Request, res: Response, next: N
 
 export const importSubscribers = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const csvString = req.body.csvData;
-    if (!csvString) {
-      throw new APIError(400, 'No CSV data provided');
+    const { csvData } = req.body;
+    
+    if (!csvData) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'CSV data is required'
+      });
     }
 
-    const parsed = Papa.parse(csvString, {
+    const parsedData = Papa.parse(csvData, {
       header: true,
-      skipEmptyLines: true,
+      skipEmptyLines: true
     });
 
-    if (parsed.errors.length > 0) {
-      throw new APIError(400, 'CSV parsing error');
+    if (parsedData.errors.length > 0) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'CSV parsing error'
+      });
     }
 
-    const subscribers = await Subscriber.insertMany(parsed.data);
-    res.status(201).json({ imported: subscribers.length });
+    const subscribers = await Subscriber.create(
+      parsedData.data.map((row) => ({
+        ...row as Record<string, any>,
+        createdBy: req.user._id,
+        status: 'active'
+      }))
+    );
+
+    return res.status(201).json({
+      status: 'success',
+      imported: subscribers.length,
+      data: subscribers
+    });
+
   } catch (error) {
-    next(error);
+    if (error instanceof Error && 'code' in error && error.code === 11000) {
+      return res.status(500).json({
+        status: 'error',
+        message: 'duplicate key error'
+      });
+    }
+    
+    return res.status(500).json({
+      status: 'error',
+      message: error instanceof Error ? error.message : 'An unknown error occurred'
+    });
   }
 };
 

@@ -1,12 +1,9 @@
-// backend/src/services/email.service.ts
 import nodemailer from 'nodemailer';
 import { logger } from '../utils/logger';
 import { APIError } from '../utils/errors';
 import dotenv from 'dotenv';
 import { error } from 'winston';
 dotenv.config();
-
-
 
 interface newsletter {
   _id: string;
@@ -19,7 +16,6 @@ interface subscribers {
   email: string;
 }
 
-
 /**
  * EmailService class handles all email-related operations
  * Supports multiple email providers and templating
@@ -29,15 +25,14 @@ export class EmailService {
 
   constructor() {
     this.transporter = nodemailer.createTransport({
-     service: 'gmail',
+      service: 'gmail',
       secure: true,
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASSWORD
       },
     });
-    this.initializeProviders(); 
-  };
+  }
 
   /**
    * Initialize email providers (Mailchimp/Substack)
@@ -49,6 +44,8 @@ export class EmailService {
         port: process.env.EMAIL_PORT,
         user: process.env.EMAIL_USER
       });
+      
+      // Only verify the connection
       await this.transporter.verify();
     } catch (error) {
       console.error('Detailed SMTP Error:', error);
@@ -67,7 +64,6 @@ export class EmailService {
       );
       logger.info(`Sending newsletter to ${uniqueSubscribers.length} unique subscribers`);
     
-  
       const emailPromises = uniqueSubscribers.map(async (subscriber) => {
         try {
           const info = await this.transporter.sendMail({
@@ -242,4 +238,5 @@ export class EmailService {
     `;
   }
 }
+
 export const emailService = new EmailService();

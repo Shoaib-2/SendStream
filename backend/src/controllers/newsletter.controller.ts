@@ -1,22 +1,7 @@
 // backend/src/controllers/newsletter.controller.ts
-import WebSocket, { WebSocketServer } from 'ws';
-import { Server } from 'http';
-import { cronService } from '../services/cron.service';
-import cron from 'node-cron';
-
-let wss: WebSocketServer;
-
-export function initializeWebSocket(server: Server) {
-  wss = new WebSocketServer({ 
-    server,
-    path: '/ws'
-  });
-  
-  wss.on('connection', (ws: WebSocket) => {
-    console.log('Client connected to WebSocket');
-  });
-}
-
+import WebSocket from "ws";
+import { cronService } from "../services/cron.service";
+import { wss } from "../server";
 
 import { Request, Response, NextFunction } from "express";
 import Newsletter from "../models/Newsletter";
@@ -24,49 +9,55 @@ import { APIError } from "../utils/errors";
 import { logger } from "../utils/logger";
 import { emailService } from "../services/email.service";
 import Subscriber from "../models/Subscriber";
-import mongoose from "mongoose";
+import Analytics from "../models/analytics";
+
 import { calculateNewsletterStats } from "../utils/analytics.utils";
+import subscribers from "../routes/subscribers";
 
 export class NewsletterController {
   /**
    * Create a new newsletter
    */
-async create(req: Request, res: Response, next: NextFunction) {
-  try {
-    if (!req.user) {
-      throw new APIError(401, "Authentication required");
-    }
-    
-    const newsletterData = {
-      title: req.body.title,
-      subject: req.body.subject,
-      content: req.body.content,
-      status: 'draft',
-      createdBy: req.user._id
-    };
+  async create(req: Request, res: Response, next: NextFunction) {
+    try {
+      if (!req.user) {
+        throw new APIError(401, "Authentication required");
+      }
 
-    const newsletter = await Newsletter.create(newsletterData);
-    res.status(201).json({
-      status: "success",
-      data: newsletter,
-    });
-  } catch (error) {
-    console.error("Create newsletter error:", error);
-    next(error);
+      const newsletterData = {
+        title: req.body.title,
+        subject: req.body.subject,
+        content: req.body.content,
+        status: "draft",
+        createdBy: req.user._id,
+      };
+
+      const newsletter = await Newsletter.create(newsletterData);
+      res.status(201).json({
+        status: "success",
+        data: newsletter,
+      });
+    } catch (error) {
+      console.error("Create newsletter error:", error);
+      next(error);
+    }
   }
-}
 
   /**
    * Get all newsletters stats
    */
   async getNewsletterStats(req: Request, res: Response, next: NextFunction) {
     try {
-      const newsletters = await Newsletter.find({ createdBy: req.user._id })
-        .sort({ createdAt: -1 });
-  
+      const newsletters = await Newsletter.find({
+        createdBy: req.user._id,
+      }).sort({ createdAt: -1 });
+
       const newslettersWithStats = await Promise.all(
         newsletters.map(async (newsletter) => {
-          const stats = await calculateNewsletterStats(newsletter, req.user._id);
+          const stats = await calculateNewsletterStats(
+            newsletter,
+            req.user._id
+          );
           return {
             _id: newsletter._id,
             title: newsletter.title,
@@ -74,11 +65,11 @@ async create(req: Request, res: Response, next: NextFunction) {
             sentDate: newsletter.sentDate,
             scheduledDate: newsletter.scheduledDate,
             openRate: stats.openRate,
-            clickRate: newsletter.clickRate
+            clickRate: newsletter.clickRate,
           };
         })
       );
-  
+
       res.json({
         status: "success",
         data: newslettersWithStats,
@@ -93,15 +84,18 @@ async create(req: Request, res: Response, next: NextFunction) {
    */
   async getAll(req: Request, res: Response, next: NextFunction) {
     try {
-      const newsletters = await Newsletter.find({ 
+      const newsletters = await Newsletter.find({
         createdBy: req.user._id,
         $or: [
-          { status: 'draft' },
-          { status: 'scheduled' },
-          { status: 'sent', sentDate: { $gt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } }
-        ]
-      }).sort('-createdAt');
-  
+          { status: "draft" },
+          { status: "scheduled" },
+          {
+            status: "sent",
+            sentDate: { $gt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
+          },
+        ],
+      }).sort("-createdAt");
+
       const newslettersWithStats = await Promise.all(
         newsletters.map(async (newsletter) => {
           const stats = await calculateNewsletterStats(newsletter);
@@ -109,14 +103,14 @@ async create(req: Request, res: Response, next: NextFunction) {
             ...newsletter.toObject(),
             openRate: stats.openRate,
             opens: stats.opens,
-            sent: stats.sent
+            sent: stats.sent,
           };
         })
       );
-  
+
       res.json({
-        status: 'success',
-        data: newslettersWithStats
+        status: "success",
+        data: newslettersWithStats,
       });
     } catch (error) {
       next(error);
@@ -130,13 +124,13 @@ async create(req: Request, res: Response, next: NextFunction) {
     try {
       const newsletter = await Newsletter.findOne({
         _id: req.params.id,
-        createdBy: req.user._id
+        createdBy: req.user._id,
       });
-  
+
       if (!newsletter) {
         throw new APIError(404, "Newsletter not found");
       }
-  
+
       res.json({
         status: "success",
         data: newsletter,
@@ -144,7 +138,7 @@ async create(req: Request, res: Response, next: NextFunction) {
     } catch (error) {
       next(error);
     }
-  };
+  }
 
   /**
    * Updates newsletter
@@ -183,58 +177,61 @@ async create(req: Request, res: Response, next: NextFunction) {
   async schedule(req: Request, res: Response, next: NextFunction) {
     try {
       const { scheduledDate } = req.body;
-      const scheduleTime = new Date(scheduledDate);
-      
-      // Save newsletter as scheduled
-      const newsletter = await Newsletter.findByIdAndUpdate(
-        req.params.id,
-        { 
-          status: 'scheduled',
-          scheduledDate: scheduleTime
-        },
-        { new: true }
-      );
+      const scheduleTime = new Date(parseInt(scheduledDate));
+      const now = new Date();
   
-      if (!newsletter) throw new APIError(404, "Newsletter not found");
+      // Validate schedule time
+      if (scheduleTime.getTime() <= now.getTime() + 30000) {
+        return res.status(400).json({
+          status: 'error',
+          message: 'Scheduled date must be at least 30 seconds in the future'
+        });
+      }
   
-      // Create cron schedule
-      const cronExpression = `${scheduleTime.getUTCMinutes()} ${scheduleTime.getUTCHours()} ${scheduleTime.getUTCDate()} ${scheduleTime.getUTCMonth() + 1} *`; // Every day at the specified time
-      
-      console.log(`Scheduling newsletter ${newsletter._id} for ${scheduleTime} with cron: ${cronExpression}`);
-      console.log(`Scheduling newsletter for local time: ${scheduleTime.toLocaleString()}`);
-      console.log(`Cron expression: ${cronExpression}`);
-
+      // Find newsletter and validate existence
+      const newsletter = await Newsletter.findById(req.params.id);
+      if (!newsletter) {
+        return res.status(404).json({
+          status: 'error',
+          message: 'Newsletter not found'
+        });
+      }
   
-      const job = cron.schedule(cronExpression, async () => {
-        try {
-          const subscribers = await Subscriber.find({ 
-            status: 'active',
-            createdBy: newsletter.createdBy 
-          });
+      // Validate ownership
+      if (newsletter.createdBy.toString() !== req.user._id.toString()) {
+        return res.status(403).json({
+          status: 'error',
+          message: 'Not authorized to modify this newsletter'
+        });
+      }
   
-          console.log(`Sending scheduled newsletter to ${subscribers.length} subscribers`);
-          await emailService.sendNewsletter(newsletter, subscribers);
-  
-          await Newsletter.findByIdAndUpdate(newsletter._id, {
-            status: 'sent',
-            sentDate: new Date()
-          });
-  
-          console.log(`Newsletter ${newsletter._id} sent successfully`);
-          job.stop();
-        } catch (error) {
-          console.error('Failed to send scheduled newsletter:', error);
-        }
+      const subscribers = await Subscriber.find({
+        status: "active",
+        createdBy: req.user._id,
       });
   
-      res.json({ 
-        status: 'success',
-        data: newsletter
+      // Update newsletter
+      const updatedNewsletter = await Newsletter.findByIdAndUpdate(
+        req.params.id,
+        {
+          status: 'scheduled',
+          scheduledDate: scheduleTime,
+          sentTo: subscribers.length
+        },
+        { new: true, runValidators: true }
+      );
+
+      // Schedule the newsletter using cronService
+      await cronService.scheduleNewsletter(req.params.id, scheduleTime);
+  
+      return res.json({
+        status: "success",
+        data: updatedNewsletter
       });
     } catch (error) {
       next(error);
     }
-  };
+  }
 
   /**
    * Delete newsletter
@@ -267,29 +264,39 @@ async create(req: Request, res: Response, next: NextFunction) {
     try {
       const newsletter = await Newsletter.findOneAndUpdate(
         { _id: req.params.id, createdBy: req.user._id },
-        { status: 'sent', sentDate: new Date() },
+        { status: "sent", sentDate: new Date() },
         { new: true }
       );
 
-      if (!newsletter) throw new APIError(404, 'Newsletter not found')
+      if (!newsletter) throw new APIError(404, "Newsletter not found");
 
       // Find and delete any draft version first
       await Newsletter.deleteOne({
         title: newsletter.title,
-        status: 'draft',
-        createdBy: req.user._id
+        status: "draft",
+        createdBy: req.user._id,
       });
-    
-      const subscribers = await Subscriber.find({ 
-        status: 'active',
-        createdBy: req.user._id
+
+      // Create an analytics record for the sent newsletter
+      await Analytics.create({
+        newsletterId: newsletter._id,
+        createdBy: req.user._id,
+        opens: { count: 0, details: [] },
+        clicks: { count: 0, details: [] },
+        bounces: { count: 0, details: [] },
+        unsubscribes: { count: 0, details: [] }
       });
-    
+
+      const subscribers = await Subscriber.find({
+        status: "active",
+        createdBy: req.user._id,
+      });
+
       await emailService.sendNewsletter(newsletter, subscribers);
       newsletter.sentTo = subscribers.length;
       await newsletter.save();
-    
-      res.json({ status: 'success', data: newsletter });
+
+      res.json({ status: "success", data: newsletter });
     } catch (error) {
       console.error("Send newsletter error:", error);
       next(error);
@@ -298,8 +305,8 @@ async create(req: Request, res: Response, next: NextFunction) {
 
   /**
    * Track newsletter open
-   */ 
-  async trackOpen(req: Request, res: Response) {
+   */
+  async trackOpen(req: Request, res: Response, next: NextFunction) {
     try {
       const { newsletterId, subscriberId } = req.params;
       const today = new Date().toISOString().split('T')[0];
@@ -341,22 +348,56 @@ async create(req: Request, res: Response, next: NextFunction) {
     }
   };
 
-  private async sendScheduledNewsletter(newsletterId: string) {
-    const newsletter = await Newsletter.findById(newsletterId);
-    if (!newsletter) return;
-  
-    const subscribers = await Subscriber.find({ 
-      status: 'active',
-      createdBy: newsletter.createdBy 
-    });
-  
-    await emailService.sendNewsletter(newsletter, subscribers);
-    await Newsletter.updateOne(
-      { _id: newsletterId },
-      { $set: { status: 'sent', sentDate: new Date() }}
-    );
-  };
-  
+  public async sendScheduledNewsletter(newsletterId: string) {
+    try {
+      const newsletter = await Newsletter.findById(newsletterId);
+      if (!newsletter) return;
+
+      const subscribers = await Subscriber.find({
+        status: "active",
+        createdBy: newsletter.createdBy,
+      });
+
+      await emailService.sendNewsletter(newsletter, subscribers);
+      const updatedNewsletter = await Newsletter.findByIdAndUpdate(
+        newsletterId,
+        { status: "sent", sentDate: new Date() },
+        { new: true }
+      );
+
+      // Broadcast update via WebSocket
+      if (updatedNewsletter) {
+        wss.clients.forEach((client) => {
+          if (client.readyState === WebSocket.OPEN) {
+            // If client is authenticated and owns the newsletter, send full details
+            if ((client as any).user && (client as any).user._id === newsletter.createdBy.toString()) {
+              client.send(
+                JSON.stringify({
+                  type: "newsletter_update",
+                  newsletter: updatedNewsletter,
+                })
+              );
+            } else {
+              // For unauthenticated clients or other users, send limited info
+              const limitedInfo = {
+                _id: updatedNewsletter._id,
+                status: updatedNewsletter.status,
+                lastUpdated: new Date().toISOString()
+              };
+              client.send(
+                JSON.stringify({
+                  type: "newsletter_update",
+                  newsletter: limitedInfo,
+                })
+              );
+            }
+          }
+        });
+      }
+    } catch (error) {
+      logger.error("Failed to send scheduled newsletter:", error);
+    }
+  }
 }
 
 export const newsletterController = new NewsletterController();

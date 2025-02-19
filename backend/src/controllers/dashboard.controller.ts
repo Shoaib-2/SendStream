@@ -66,22 +66,25 @@ export const getDashboardSummary = async (
     const responseData = {
       status: "success",
       data: {
-        subscribers: {
-          total: subscriberCount,
-          change: subscriberCount ? (recentSubscribers / subscriberCount) * 100 : 0,
-        },
-        newsletters: {
-          total: newsletterCount,
-          change: newsletterCount ? (recentNewsletters / newsletterCount) * 100 : 0,
-        },
-        openRate: {
-          value: openRate,
-          change: openRateChange,
-        },
-        growthData,
-        recentActivity,
-      },
+        data: {
+          subscribers: {
+            total: subscriberCount,
+            change: subscriberCount ? (recentSubscribers / subscriberCount) * 100 : 0,
+          },
+          newsletters: {
+            total: newsletterCount,
+            change: newsletterCount ? (recentNewsletters / newsletterCount) * 100 : 0,
+          },
+          openRate: {
+            value: openRate,
+            change: openRateChange,
+          },
+          growthData,
+          recentActivity,
+        }
+      }
     };
+    req.app.locals.lastSummaryData = responseData;
     res.json(responseData);
   } catch (error) {
     next(error);
@@ -164,19 +167,19 @@ async function getCurrentOpens(userId: string, thirtyDaysAgo: Date) {
 
       if (analytics && analytics.opens) {
         recentOpens += analytics.opens.count || 0;
-        logger.info('Found opens for newsletter', {
-          newsletterId: newsletter._id,
-          opens: analytics.opens.count,
-          totalSoFar: recentOpens
-        });
+        // logger.info('Found opens for newsletter', {
+        //   newsletterId: newsletter._id,
+        //   opens: analytics.opens.count,
+        //   totalSoFar: recentOpens
+        // });
       }
     }
 
-    logger.info('Current opens calculation:', {
-      recentOpens,
-      newsletterCount: recentNewsletters.length,
-      timeframe: thirtyDaysAgo
-    });
+    // logger.info('Current opens calculation:', {
+    //   recentOpens,
+    //   newsletterCount: recentNewsletters.length,
+    //   timeframe: thirtyDaysAgo
+    // });
 
     return recentOpens;
 
@@ -207,7 +210,7 @@ async function getCurrentSent(userId: string, thirtyDaysAgo: Date) {
       ? recentSent 
       : 0;
 
-    console.log('Current Sent:', currentSent);
+    // console.log('Current Sent:', currentSent);
 
     return currentSent;
 

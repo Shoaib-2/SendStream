@@ -6,12 +6,14 @@ import dotenv from 'dotenv';
 import authRoutes from './routes/auth.routes';
 import { Request, Response, NextFunction } from "express";
 import { errorHandler } from './middleware/error.middleware';
-import newsletterRoutes from './routes/news.routes';
+import newsletterRoutes from './routes/newsletter.routes';
 import subscriberRoutes from './routes/subscribers';
 import { WebSocketServer } from 'ws';
 import { createServer } from 'http';
 import analyticsRoutes from './routes/analytics.routes';
 import settingsRoutes from './routes/settings.routes';
+import jwt from 'jsonwebtoken';
+import { protect } from './middleware/auth/auth.middleware';
 
 dotenv.config();
 
@@ -19,16 +21,30 @@ const app = express();
 const server = createServer(app);
 const wss = new WebSocketServer({ server });
 
-wss.on('connection', (ws) => {
- console.log('Client connected to WebSocket');
+wss.on('connection', ws => {
+  try {
+    // Send a connection confirmation
+    ws.send(JSON.stringify({ type: 'connection_established' }));
+  } catch (error) {
+    console.error('WebSocket connection error:', error);
+    // Don't close the connection, just log the error
+  }
 });
 
-app.use(cors({
- origin: process.env.CLIENT_URL || 'http://localhost:3000',
- credentials: true,
- methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
- allowedHeaders: ['Content-Type', 'Authorization']
-}));
+// Configure CORS for both HTTP and WebSocket
+const corsOptions = {
+  origin: process.env.CLIENT_URL || 'http://localhost:3000',
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
+
+app.use(cors(corsOptions));
+
+// Apply CORS verification to WebSocket upgrade requests
+wss.on('headers', (headers) => {
+  headers.push('Access-Control-Allow-Origin: ' + (process.env.CLIENT_URL || 'http://localhost:3000'));
+});
 
 
 app.use(express.json());
