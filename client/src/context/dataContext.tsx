@@ -17,16 +17,7 @@ interface DataContextType {
 export const DataContext = createContext<DataContextType | null>(null);
 
 export function DataProvider({ children }: { children: React.ReactNode }) {
-  const [subscribers, setSubscribers] = useState<Subscriber[]>(() => {
-    // Try to get persisted state from localStorage
-    const savedSubscribers = localStorage.getItem('subscribers');
-    return savedSubscribers ? JSON.parse(savedSubscribers) : [];
-  });
-
-  // Persist subscribers to localStorage whenever they change
-  useEffect(() => {
-    localStorage.setItem('subscribers', JSON.stringify(subscribers));
-  }, [subscribers]);
+  const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
   const [newsletters, setNewsletters] = useState<Newsletter[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [ws, setWs] = useState<WebSocket | null>(null);
@@ -56,14 +47,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
               n.id === data.newsletter._id ? { ...n, ...data.newsletter } : n
             ));
           } else if (data.type === 'subscriber_update') {
-            const updatedSubscribers = (prev: Subscriber[]) => prev.map(sub => 
+            // Update subscribers from WebSocket event
+            setSubscribers(prev => prev.map(sub => 
               sub.id === data.data.id ? { ...sub, status: data.data.status } : sub
-            );
-            setSubscribers(updatedSubscribers);
-            
-            // Update local storage
-            const newSubscribers = updatedSubscribers([]);
-            localStorage.setItem('subscribers', JSON.stringify(newSubscribers));
+            ));
           }
         } catch (error) {
           console.error('Error processing WebSocket message:', error);
@@ -98,8 +85,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     };
   }, []); // We'll handle token changes in a separate effect
 
-  // Handle token changes
-  useEffect(() => {
+   // Handle token changes
+   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'token') {
         if (ws) {
@@ -114,53 +101,51 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   }, [ws]);
 
 
-
   useEffect(() => {
     let isSubscribed = true;
     let redirecting = false;
 
-  const fetchData = async () => {
-    try {
-      setIsLoading(true);
-      const [subscribersData, newslettersData] = await Promise.all([
-        subscriberAPI.getAll(),
-        newsletterAPI.getAll()
-      ]);
-  
-      if (subscribersData && isSubscribed) {
-        // Get stored unsubscribed IDs
-        const unsubscribedIds = JSON.parse(localStorage.getItem('unsubscribedIds') || '[]');
-        
-        const formattedSubscribers: Subscriber[] = subscribersData.map(sub => ({
-          id: sub.id || sub._id || '',
-          email: sub.email,
-          name: sub.name,
-          status: unsubscribedIds.includes(sub.id || sub._id) ? 'unsubscribed' : sub.status,
-          subscribed: sub.subscribedDate || sub.subscribed
-        }));
-        
-        setSubscribers(formattedSubscribers);
-      }
-  
-      if (newslettersData && isSubscribed) {
-        setNewsletters(newslettersData);
-      }
-    } catch (error) {
-      if (error instanceof APIError && error.status === 401 && !redirecting) {
-        redirecting = true;
-        localStorage.removeItem('token');
-        setSubscribers([]);
-        setNewsletters([]);
-        if (typeof window !== 'undefined') {
-          window.location.href = '/login';
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        const [subscribersData, newslettersData] = await Promise.all([
+          subscriberAPI.getAll(),
+          newsletterAPI.getAll()
+        ]);
+    
+        if (subscribersData && isSubscribed) {
+          // Directly use the subscriber status from the database
+          // No longer using localStorage for subscriber status
+          const formattedSubscribers: Subscriber[] = subscribersData.map(sub => ({
+            id: sub.id || sub._id || '',
+            email: sub.email,
+            name: sub.name,
+            status: sub.status, // Use status directly from database
+            subscribed: sub.subscribedDate || sub.subscribed
+          }));
+          
+          setSubscribers(formattedSubscribers);
+        }
+    
+        if (newslettersData && isSubscribed) {
+          setNewsletters(newslettersData);
+        }
+      } catch (error) {
+        if (error instanceof APIError && error.status === 401 && !redirecting) {
+          redirecting = true;
+          localStorage.removeItem('token');
+          setSubscribers([]);
+          setNewsletters([]);
+          if (typeof window !== 'undefined') {
+            window.location.href = '/login';
+          }
+        }
+      } finally {
+        if (isSubscribed) {
+          setIsLoading(false);
         }
       }
-    } finally {
-      if (isSubscribed) {
-        setIsLoading(false);
-      }
-    }
-  };
+    };
 
     if (!localStorage.getItem('token')) {
       setSubscribers([]);
@@ -172,7 +157,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     return () => { isSubscribed = false; };
   }, []);
 
-  
   const addSubscriber = async (subscriberData: Omit<Subscriber, 'id'>) => {
     try {
       const response = await subscriberAPI.create(subscriberData);
@@ -201,15 +185,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       }
   
       const cleanId = String(id).trim();
+      // Database call will now handle setting the subscriber status to 'unsubscribed'
       await subscriberAPI.delete(cleanId);
       
-      // Save unsubscribed status separately 
-      const unsubscribedIds = JSON.parse(localStorage.getItem('unsubscribedIds') || '[]');
-      if (!unsubscribedIds.includes(cleanId)) {
-        unsubscribedIds.push(cleanId);
-        localStorage.setItem('unsubscribedIds', JSON.stringify(unsubscribedIds));
-      }
-  
+      // Update local state to reflect the change
       setSubscribers(prev => prev.map(sub => 
         sub.id === cleanId ? { ...sub, status: 'unsubscribed' } : sub
       ));

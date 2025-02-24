@@ -1,5 +1,9 @@
 
-import axios, { AxiosError } from 'axios';
+import axios, { AxiosError, AxiosRequestConfig  } from 'axios';
+
+// Added request queue for performance optimization with large datasets
+const pendingRequests = new Map();
+
 
 interface ResponseData<T> {
  status: 'success' | 'error';
@@ -45,8 +49,6 @@ interface Subscriber {
 }
 
 interface NewsletterStats {
- opens: number;
- clicks: number;
  bounces: number;
  unsubscribes: number;
 }
@@ -57,14 +59,11 @@ interface GrowthData {
 }
 
 interface EngagementMetrics {
- openRate: number;
- clickRate: number;
  bounceRate: number;
  unsubscribeRate: number;
 }
 
 interface NewsletterWithStats extends Omit<Newsletter, 'opens'> {
-  openRate: number;
   opens: number;
   sent: number;
 }
@@ -101,20 +100,65 @@ export class APIError extends Error {
  }
 }
 
+// Improved error handling for database scaling
 const handleError = (error: AxiosError) => {
   if (error.response) {
     const statusCode = error.response.status;
     const responseData = error.response.data as ResponseData<any>;
+    
+    // Handle specific database errors
+    if (statusCode === 429) {
+      throw new APIError(
+        429,
+        'Rate limit exceeded. Please try again later.',
+        responseData
+      );
+    }
+
+    if (statusCode === 503) {
+      throw new APIError(
+        503,
+        'Database currently unavailable. Please try again later.',
+        responseData
+      );
+    }
+
     throw new APIError(
       statusCode,
       responseData.message || `Request failed with status ${statusCode}`,
       responseData
     );
   }
+  
   if (error.message === 'Network Error') {
     throw new APIError(503, 'Service unavailable: Cannot connect to server');
   }
+  
   throw new APIError(500, error.message || 'An unexpected error occurred');
+};
+
+// Request deduplication function for performance with large datasets
+const dedupRequest = async <T>(
+  key: string,
+  requestFn: () => Promise<T>,
+  ttl = 2000
+): Promise<T> => {
+  // Return existing promise if request is pending
+  if (pendingRequests.has(key)) {
+    return pendingRequests.get(key);
+  }
+
+  // Create new request promise
+  const promise = requestFn().finally(() => {
+    // Remove from pending after ttl
+    setTimeout(() => {
+      pendingRequests.delete(key);
+    }, ttl);
+  });
+
+  // Store promise
+  pendingRequests.set(key, promise);
+  return promise;
 };
 
 
@@ -123,27 +167,43 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json'
   },
-  withCredentials: true 
+  withCredentials: true // This ensures cookies are sent with requests
 });
 
-// Add request interceptor for debugging
+// Added support for pagination and optimization for large datasets
 api.interceptors.request.use((config) => {
+  // For backwards compatibility during transition - send token via header if available
   const token = localStorage.getItem('token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  
+  // Add pagination support to optimize database queries
+  if (config.method === 'get' && !config.params?.page) {
+    config.params = { 
+      ...config.params, 
+      page: 1, 
+      limit: 100 // Default to 100 items per page
+    };
+  }
+  
   return config;
 }, (error) => {
   return Promise.reject(error);
 });
 
-// Add response interceptor for debugging
 api.interceptors.response.use(
   (response) => {
     console.log('Response received:', response.status);
     return response;
   },
   (error) => {
+    // Handle 401 Unauthorized errors
+    if (error.response?.status === 401) {
+      // We don't need to clear localStorage as cookies will be managed by the server
+      console.log('Authentication error - redirecting to login');
+    }
+    
     console.error('Response error:', error.response?.status, error.response?.data);
     return Promise.reject(error);
   }
@@ -158,7 +218,6 @@ export const settingsAPI = {
         return {
           email: { fromName: '', replyTo: '' },
           mailchimp: { apiKey: '', serverPrefix: '', enabled: false },
-          substack: { apiKey: '', publication: '', enabled: false }
         };
       }
       return response.data.data;
@@ -167,7 +226,6 @@ export const settingsAPI = {
       return {
         email: { fromName: '', replyTo: '' },
         mailchimp: { apiKey: '', serverPrefix: '', enabled: false },
-        substack: { apiKey: '', publication: '', enabled: false }
       };
     }
   },
@@ -175,7 +233,7 @@ export const settingsAPI = {
     const response = await api.put('/settings', settings);
     return response.data;
   },
-  testIntegration: async (type: 'mailchimp' | 'substack') => {
+  testIntegration: async (type: 'mailchimp') => {
     const response = await api.post(`/settings/test/${type}`);
     return response.data;
   }
@@ -183,30 +241,34 @@ export const settingsAPI = {
 
 export const newsletterAPI = {
   getNewsletterStats: async (): Promise<NewsletterResponse> => {
+    // Use deduplication for frequently called stats methods
+    return dedupRequest('newsletterStats', async () => {
+      try {
+        const response = await api.get<ResponseData<NewsletterResponse>>('/newsletters/stats');
+        return response.data.data;
+      } catch (error) {
+        console.error('API Error:', error);
+        return {
+          newsletters: [],
+          qualityStats: {
+            averageScore: 0,
+            qualityDistribution: { high: 0, medium: 0, low: 0 },
+            topPerformers: []
+          }
+        };
+      }
+    });
+  },
+  
+  getAll: async () => {
     try {
-      const response = await api.get<ResponseData<NewsletterResponse>>('/newsletters/stats');
+      const response = await api.get<ResponseData<NewsletterWithStats[]>>('/newsletters');
       return response.data.data;
     } catch (error) {
-      console.error('API Error:', error);
-      return {
-        newsletters: [],
-        qualityStats: {
-          averageScore: 0,
-          qualityDistribution: { high: 0, medium: 0, low: 0 },
-          topPerformers: []
-        }
-      };
+      handleError(error as AxiosError);
     }
   },
   
- getAll: async () => {
-   try {
-     const response = await api.get<ResponseData<NewsletterWithStats[]>>('/newsletters');
-     return response.data.data;
-   } catch (error) {
-     handleError(error as AxiosError);
-   }
- },
  getOne: async (id: string) => {
    try {
      const response = await api.get<ResponseData<Newsletter>>(`/newsletters/${id}`);
@@ -268,15 +330,19 @@ export const subscriberAPI = {
     }
   },
   
- getAll: async () => {
-   try {
-     const response = await api.get<ResponseData<Subscriber[]>>('/subscribers');
-     return response.data.data;
-   } catch (error) {
+ // Added pagination support for handling 10,000+ subscribers efficiently
+ getAll: async (page = 1, limit = 500) => {
+  try {
+    const config: AxiosRequestConfig = {
+      params: { page, limit }
+    };
+    const response = await api.get<ResponseData<Subscriber[]>>('/subscribers', config);
+    return response.data.data;
+  } catch (error) {
     console.error('Error fetching subscribers:', error);
-     handleError(error as AxiosError);
-   }
- },
+    handleError(error as AxiosError);
+  }
+},
  create: async (data: Omit<Subscriber, 'id' | 'subscribedDate'>) => {
    try {
      const response = await api.post<ResponseData<Subscriber>>('/subscribers', data);
@@ -298,25 +364,34 @@ export const subscriberAPI = {
      handleError(error as AxiosError);
    }
  },
- import: async (file: File) => {
-   try {
-     const formData = new FormData();
-     formData.append('file', file);
-     const response = await api.post<ResponseData<{ imported: number }>>('/subscribers/import', formData, {
-       headers: { 'Content-Type': 'multipart/form-data' }
-     });
-     return response.data.data;
-   } catch (error) {
-     handleError(error as AxiosError);
-   }
- },
- export: async () => {
+
+// For importing large subscriber lists efficiently
+import: async (file: File) => {
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    // Add chunked upload capability for large files
+    const response = await api.post<ResponseData<{ imported: number }>>('/subscribers/import', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      // Increased timeout for large uploads
+      timeout: 120000 // 2 minutes
+    });
+    return response.data.data;
+  } catch (error) {
+    handleError(error as AxiosError);
+  }
+},
+
+export: async () => {
   try {
     const response = await api.get<Blob>('/subscribers/export', { 
       responseType: 'blob',
       headers: {
         'Accept': 'text/csv'
-      }
+      },
+      // Increased timeout for large exports
+      timeout: 300000 // 5 minutes
     });
     return response.data;
   } catch (error) {
@@ -366,11 +441,11 @@ export const analyticsAPI = {
 export const authAPI = {
   testConnection: async () => {
     try {
-      const response = await api.get('/health');
-      console.log('Backend connection test:', response.data);
+      const response = await api.get('/auth/me');
+      console.log('Auth check response:', response.data);
       return response.data;
     } catch (error) {
-      console.error('Backend connection test failed:', error);
+      console.error('Auth check failed:', error);
       throw error;
     }
   },

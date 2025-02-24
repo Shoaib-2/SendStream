@@ -35,8 +35,6 @@ interface NewsletterResponse {
   };
 }
 
-
-
 const NewsletterDashboard = () => {
   const router = useRouter();
   const [newsletters, setNewsletters] = React.useState<Newsletter[]>([]);

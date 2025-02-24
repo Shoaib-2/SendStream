@@ -79,7 +79,6 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
         window.localStorage.setItem('isAuthenticated', 'true');
         document.cookie = 'auth_token=true; path=/';
       }
-      
       onClose();
       router.push('/dashboard');
     } catch (error) {

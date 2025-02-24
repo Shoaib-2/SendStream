@@ -4,7 +4,7 @@ export const exportSubscribers = (subscribers: any[]) => {
     ...subscribers.map(subscriber => [
       subscriber.id,
       `"${subscriber.email}"`, // Wrap in quotes to handle potential commas
-      `"${subscriber.name}"`,
+      `"${subscriber.name}"`, // Wrap in quotes to handle potential commas
       subscriber.status,
       new Date(subscriber.subscribed).toLocaleDateString('en-US') // Consistent date format
     ])

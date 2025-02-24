@@ -636,3 +636,11 @@
 2025-02-23T23:13:22.926Z [[32minfo[39m]: Sending newsletter to 2 unique subscribers
 2025-02-23T23:29:45.612Z [[32minfo[39m]: Sending newsletter to 2 unique subscribers
 2025-02-23T23:31:55.291Z [[32minfo[39m]: Sending newsletter to 2 unique subscribers
+2025-02-24T16:55:00.344Z [[32minfo[39m]: Sending newsletter to 2 unique subscribers
+2025-02-24T17:18:22.273Z [[32minfo[39m]: Sending newsletter to 2 unique subscribers
+2025-02-24T19:18:40.972Z [[32minfo[39m]: 🔍 Testing Mailchimp connection...
+2025-02-24T19:18:41.945Z [[32minfo[39m]: Successfully validated test connection response
+2025-02-24T19:18:41.946Z [[32minfo[39m]: ✅ Connection successful
+2025-02-24T19:18:41.947Z [[32minfo[39m]: 📊 Lists found:
+2025-02-24T19:18:41.947Z [[32minfo[39m]: 📝 First list details:
+2025-02-24T19:19:39.034Z [[31merror[39m]: Error updating settings: Email name and reply-to address are required

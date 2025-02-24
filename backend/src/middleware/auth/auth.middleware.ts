@@ -19,15 +19,21 @@ declare global {
 
 export const protect = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    // Get token from header
-    const token = req.headers.authorization?.replace('Bearer ', '');
+    // Get token from HTTP-only cookie instead of header
+    const token = req.cookies.jwt;
     
-    if (!token) {
+    // Fallback to header for backwards compatibility during transition
+    const headerToken = req.headers.authorization?.replace('Bearer ', '');
+    
+    // Use cookie token or fallback to header token
+    const authToken = token || headerToken;
+    
+    if (!authToken) {
       throw new APIError(401, 'Please log in to access this resource');
     }
 
     // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload;
+    const decoded = jwt.verify(authToken, process.env.JWT_SECRET!) as JwtPayload;
 
     // Check if user still exists
     const user = await User.findById(decoded.id);

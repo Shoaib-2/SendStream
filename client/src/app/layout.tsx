@@ -10,7 +10,7 @@ import { DataProvider } from '@/context/dataContext';
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Newsletter Automation',
+  title: 'SendStream',
   description: 'Simplify your newsletter workflow',
 }
 

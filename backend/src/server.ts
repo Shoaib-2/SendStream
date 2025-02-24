@@ -4,6 +4,7 @@ import cors from 'cors';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import authRoutes from './routes/auth.routes';
+import cookieParser from 'cookie-parser'; // Add cookie-parser
 import { Request, Response, NextFunction } from "express";
 import { errorHandler } from './middleware/error.middleware';
 import newsletterRoutes from './routes/newsletter.routes';
@@ -64,7 +65,7 @@ const broadcastSubscriberUpdate = (subscriberId: string, status: string) => {
 // Configure CORS for both HTTP and WebSocket
 const corsOptions = {
   origin: process.env.CLIENT_URL || 'http://localhost:3000',
-  credentials: true,
+  credentials: true,  // Important for cookies
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 };
@@ -74,10 +75,12 @@ app.use(cors(corsOptions));
 // Apply CORS verification to WebSocket upgrade requests
 wss.on('headers', (headers) => {
   headers.push('Access-Control-Allow-Origin: ' + (process.env.CLIENT_URL || 'http://localhost:3000'));
+  headers.push('Access-Control-Allow-Credentials: true'); // Add for cookies
 });
 
 
 app.use(express.json());
+app.use(cookieParser()); // Add cookie-parser middleware
 
 app.use((req, _res, next) => {
  console.log(`${req.method} ${req.path}`);
