@@ -35,28 +35,6 @@ export class EmailController {
     }
   }
 
-  /**
-   * Send test email
-   */
-  async sendTest(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { email } = req.body;
-      
-      if (!email) {
-        throw new APIError(400, 'Email address is required');
-      }
-
-      await emailService.sendTestEmail(email);
-
-      res.status(200).json({
-        status: 'success',
-        message: 'Test email sent successfully'
-      });
-    } catch (error) {
-      logger.error('Error in sendTest:', error);
-      next(error);
-    }
-  }
 }
 
 export const emailController = new EmailController();

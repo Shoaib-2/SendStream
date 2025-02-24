@@ -35,7 +35,7 @@ export class EmailService {
   }
 
   /**
-   * Initialize email providers (Mailchimp/Substack)
+   * Initialize email providers (Mailchimp)
    */
   async initializeProviders() {
     try {
@@ -94,6 +94,7 @@ export class EmailService {
   private generateNewsletterHTML(newsletter: any, subscriber: any): string {
     const unsubscribeToken = Buffer.from(subscriber._id.toString()).toString('base64');
     const unsubscribeUrl = `${process.env.SERVER_URL}/api/subscribers/unsubscribe/${unsubscribeToken}`;
+    console.log('ngrox url', unsubscribeUrl);
     
     const uniqueToken = Buffer.from(`${newsletter._id}-${subscriber._id}-${Date.now()}`).toString('base64');
     const trackingPixelUrl = `${process.env.SERVER_URL}/api/analytics/track-open/${newsletter._id.toString()}/${subscriber._id.toString()}?token=${uniqueToken}&v=${Math.random()}`;

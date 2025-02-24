@@ -1,8 +1,5 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { asyncHandler } from '../middleware/error.middleware';
-
-
-
 import { getSubscribers, createSubscriber, deleteSubscriber, importSubscribers, exportSubscribers, bulkDeleteSubscribers } from '../controllers/subs.controller';
 import { protect } from '../middleware/auth/auth.middleware';
 import Subscriber from '../models/Subscriber';
@@ -10,6 +7,7 @@ import Newsletter from '../models/Newsletter';
 import { analyticsService } from '../services/analytics.service';
 import { APIError } from '../utils/errors';
 import { Document } from 'mongoose';
+import { broadcastSubscriberUpdate } from '../server';
 
 interface INewsletter extends Document {
   _id: string;
@@ -67,6 +65,9 @@ router.get('/unsubscribe/:token', asyncHandler(async (req: Request, res: Respons
       subscriberId
     );
   }
+
+  // Broadcast the update to all connected clients
+  broadcastSubscriberUpdate(subscriberId, 'unsubscribed');
 
   // Return a themed success page
   res.send(`

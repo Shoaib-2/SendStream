@@ -16,16 +16,22 @@ interface ResponseData<T> {
 interface Newsletter {
   id: string;
   _id?: string;
- createdBy: string;
- openRate: number;
- clickRate: number;
- title: string;
- subject: string;
- content: string;
- status: 'draft' | 'scheduled' | 'sent';
- scheduledDate?: string;
- sentDate?: string;
- opens?: Array<{ subscriberId: string; timestamp: Date }>;
+  createdBy: string;
+  title: string;
+  subject: string;
+  content: string;
+  status: 'draft' | 'scheduled' | 'sent';
+  scheduledDate?: string;
+  sentDate?: string;
+  contentQuality?: {
+    isOriginalContent: boolean;
+    hasResearchBacked: boolean;
+    hasActionableInsights: boolean;
+    contentLength: number;
+    sources: string[];
+    keyTakeaways: string[];
+    qualityScore: number;
+  };
 }
 
 interface Subscriber {
@@ -36,12 +42,6 @@ interface Subscriber {
  status: 'active' | 'unsubscribed';
  subscribedDate: string;
  subscribed: string;
-}
-
-interface AnalyticsSummary {
- subscribers: { total: number; change: number };
- newsletters: { total: number; change: number };
- openRate: { value: number; change: number };
 }
 
 interface NewsletterStats {
@@ -72,6 +72,19 @@ interface NewsletterWithStats extends Omit<Newsletter, 'opens'> {
 interface IntegrationResponse {
   message: string;
   success: boolean;
+}
+
+interface NewsletterResponse {
+  newsletters: Newsletter[];
+  qualityStats: {
+    averageScore: number;
+    qualityDistribution: {
+      high: number;
+      medium: number;
+      low: number;
+    };
+    topPerformers: Newsletter[];
+  };
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
@@ -169,12 +182,20 @@ export const settingsAPI = {
 };
 
 export const newsletterAPI = {
-  getNewsletterStats: async () => {
+  getNewsletterStats: async (): Promise<NewsletterResponse> => {
     try {
-      const response = await api.get<ResponseData<Newsletter[]>>('/newsletters/stats');
+      const response = await api.get<ResponseData<NewsletterResponse>>('/newsletters/stats');
       return response.data.data;
     } catch (error) {
-      handleError(error as AxiosError);
+      console.error('API Error:', error);
+      return {
+        newsletters: [],
+        qualityStats: {
+          averageScore: 0,
+          qualityDistribution: { high: 0, medium: 0, low: 0 },
+          topPerformers: []
+        }
+      };
     }
   },
   
@@ -194,7 +215,7 @@ export const newsletterAPI = {
      handleError(error as AxiosError);
    }
  },
- create: async (data: Omit<Newsletter, 'id' | 'sentTo' | 'openRate' | 'clickRate' | 'createdBy'>) => {
+ create: async (data: Omit<Newsletter, 'id' | 'sentTo' | 'createdBy'>) => {
   try {
     const response = await api.post<ResponseData<Newsletter>>('/newsletters', data);
     return response.data.data;
@@ -267,8 +288,13 @@ export const subscriberAPI = {
  delete: async (id: string) => {
    try {
      await api.delete(`/subscribers/${id}`);
+     return { success: true };
    } catch (error) {
-    console.error('Error removing subscriber:', error);
+     if ((error as AxiosError).response?.status === 404) {
+       console.log('Subscriber already deleted:', id);
+       return { success: true };
+     }
+     console.error('Error removing subscriber:', error);
      handleError(error as AxiosError);
    }
  },

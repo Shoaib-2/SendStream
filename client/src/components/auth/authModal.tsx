@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { X, Loader } from 'lucide-react';
-import { validateEmail, validatePassword } from '@/utils/validation';
-import { useAuth } from '@/context/authContext';
+import { validateEmail, validatePassword } from '../../utils/validation';
+import { useAuth } from '../../context/authContext';
 import { useRouter } from 'next/navigation';
 
 interface FormErrors {
   email?: string;
-  password?: string;
+  newPassword?: string; // Only new password error
+  confirmPassword?: string; // Only confirm password error
   general?: string;
 }
 
@@ -21,15 +22,19 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
   const { login, signup } = useAuth();
   const [mode, setMode] = useState<'login' | 'signup'>(initialMode);
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [newPassword, setNewPassword] = useState(''); // New state for new password
+  const [confirmPassword, setConfirmPassword] = useState(''); // New state for confirm password
   const [errors, setErrors] = useState<FormErrors>({});
   const [isLoading, setIsLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState(''); // State for success message
 
   useEffect(() => {
     if (!isOpen) {
       setEmail('');
-      setPassword('');
+      setNewPassword(''); // Reset new password
+      setConfirmPassword(''); // Reset confirm password
       setErrors({});
+      setSuccessMessage(''); // Reset success message
       setMode(initialMode);
     }
   }, [isOpen, initialMode]);
@@ -40,8 +45,13 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
     const emailError = validateEmail(email);
     if (emailError) newErrors.email = emailError;
 
-    const passwordError = validatePassword(password);
-    if (passwordError) newErrors.password = passwordError;
+    if (mode === 'signup') {
+        if (newPassword !== confirmPassword) {
+            newErrors.confirmPassword = "Passwords do not match";
+        }
+        const newPasswordError = validatePassword(newPassword);
+        if (newPasswordError) newErrors.newPassword = newPasswordError;
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -54,13 +64,15 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
   
     try {
       if (mode === 'login') {
-        await login(email, password);
+        await login(email, newPassword); // Use new password for login
       } else {
-        await signup(email, password);
+        await signup(email, newPassword); // Use new password for signup
+        setSuccessMessage('Account has been created successfully!'); // Set success message
       }
       
       setEmail('');
-      setPassword('');
+      setNewPassword(''); // Reset new password
+      setConfirmPassword(''); // Reset confirm password
       setErrors({});
       
       if (typeof window !== 'undefined') {
@@ -113,6 +125,13 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
           </div>
         )}
 
+        {successMessage && (
+          <div className="bg-green-500/10 border border-green-500/50 text-green-400 
+            px-4 py-3 rounded-xl mb-6 backdrop-blur-sm">
+            {successMessage}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label className="block text-sm font-medium mb-2 text-gray-300">Email</label>
@@ -133,24 +152,68 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
             )}
           </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-2 text-gray-300">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className={`w-full px-4 py-3 bg-gray-700/50 rounded-lg 
-                ${errors.password 
-                  ? 'border border-red-500/50 focus:border-red-500' 
-                  : 'border border-gray-600 focus:border-blue-500/50'
-                } focus:ring-1 focus:ring-blue-500/50 transition-all duration-300`}
-              placeholder="••••••••"
-              disabled={isLoading}
-            />
-            {errors.password && (
-              <p className="text-red-400 text-sm mt-2">{errors.password}</p>
-            )}
-          </div>
+          {mode === 'signup' && ( // Only show these fields in signup mode
+            <>
+              <div>
+                <label className="block text-sm font-medium mb-2 text-gray-300">New Password</label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className={`w-full px-4 py-3 bg-gray-700/50 rounded-lg 
+                    ${errors.newPassword 
+                      ? 'border border-red-500/50 focus:border-red-500' 
+                      : 'border border-gray-600 focus:border-blue-500/50'
+                    } focus:ring-1 focus:ring-blue-500/50 transition-all duration-300`}
+                  placeholder="••••••••"
+                  disabled={isLoading}
+                />
+                {errors.newPassword && (
+                  <p className="text-red-400 text-sm mt-2">{errors.newPassword}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2 text-gray-300">Confirm Password</label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className={`w-full px-4 py-3 bg-gray-700/50 rounded-lg 
+                    ${errors.confirmPassword 
+                      ? 'border border-red-500/50 focus:border-red-500' 
+                      : 'border border-gray-600 focus:border-blue-500/50'
+                    } focus:ring-1 focus:ring-blue-500/50 transition-all duration-300`}
+                  placeholder="••••••••"
+                  disabled={isLoading}
+                />
+                {errors.confirmPassword && (
+                  <p className="text-red-400 text-sm mt-2">{errors.confirmPassword}</p>
+                )}
+              </div>
+            </>
+          )}
+
+          {mode === 'login' && ( // Only show this field in login mode
+            <div>
+              <label className="block text-sm font-medium mb-2 text-gray-300">Password</label>
+              <input
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className={`w-full px-4 py-3 bg-gray-700/50 rounded-lg 
+                  ${errors.newPassword 
+                    ? 'border border-red-500/50 focus:border-red-500' 
+                    : 'border border-gray-600 focus:border-blue-500/50'
+                  } focus:ring-1 focus:ring-blue-500/50 transition-all duration-300`}
+                placeholder="••••••••"
+                disabled={isLoading}
+              />
+              {errors.newPassword && (
+                <p className="text-red-400 text-sm mt-2">{errors.newPassword}</p>
+              )}
+            </div>
+          )}
 
           <button 
             type="submit"

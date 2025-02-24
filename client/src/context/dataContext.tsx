@@ -17,7 +17,16 @@ interface DataContextType {
 export const DataContext = createContext<DataContextType | null>(null);
 
 export function DataProvider({ children }: { children: React.ReactNode }) {
-  const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
+  const [subscribers, setSubscribers] = useState<Subscriber[]>(() => {
+    // Try to get persisted state from localStorage
+    const savedSubscribers = localStorage.getItem('subscribers');
+    return savedSubscribers ? JSON.parse(savedSubscribers) : [];
+  });
+
+  // Persist subscribers to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('subscribers', JSON.stringify(subscribers));
+  }, [subscribers]);
   const [newsletters, setNewsletters] = useState<Newsletter[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [ws, setWs] = useState<WebSocket | null>(null);
@@ -46,6 +55,15 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             setNewsletters((prev: Newsletter[]) => prev.map((n: Newsletter) => 
               n.id === data.newsletter._id ? { ...n, ...data.newsletter } : n
             ));
+          } else if (data.type === 'subscriber_update') {
+            const updatedSubscribers = (prev: Subscriber[]) => prev.map(sub => 
+              sub.id === data.data.id ? { ...sub, status: data.data.status } : sub
+            );
+            setSubscribers(updatedSubscribers);
+            
+            // Update local storage
+            const newSubscribers = updatedSubscribers([]);
+            localStorage.setItem('subscribers', JSON.stringify(newSubscribers));
           }
         } catch (error) {
           console.error('Error processing WebSocket message:', error);
@@ -101,44 +119,48 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     let isSubscribed = true;
     let redirecting = false;
 
-    const fetchData = async () => {
-      try {
-        setIsLoading(true);
-        const [subscribersData, newslettersData] = await Promise.all([
-          subscriberAPI.getAll(),
-          newsletterAPI.getAll()
-        ]);
-
-        if (subscribersData && isSubscribed) {
-          const formattedSubscribers: Subscriber[] = subscribersData.map(sub => ({
-            id: sub.id || sub._id || '',
-            email: sub.email,
-            name: sub.name,
-            status: sub.status,
-            subscribed: sub.subscribedDate || sub.subscribed
-          }));
-          setSubscribers(formattedSubscribers);
-        }
-
-        if (newslettersData && isSubscribed) {
-          setNewsletters(newslettersData);
-        }
-      } catch (error) {
-        if (error instanceof APIError && error.status === 401 && !redirecting) {
-          redirecting = true;
-          localStorage.removeItem('token');
-          setSubscribers([]);
-          setNewsletters([]);
-          if (typeof window !== 'undefined') {
-            window.location.href = '/login';
-          }
-        }
-      } finally {
-        if (isSubscribed) {
-          setIsLoading(false);
+  const fetchData = async () => {
+    try {
+      setIsLoading(true);
+      const [subscribersData, newslettersData] = await Promise.all([
+        subscriberAPI.getAll(),
+        newsletterAPI.getAll()
+      ]);
+  
+      if (subscribersData && isSubscribed) {
+        // Get stored unsubscribed IDs
+        const unsubscribedIds = JSON.parse(localStorage.getItem('unsubscribedIds') || '[]');
+        
+        const formattedSubscribers: Subscriber[] = subscribersData.map(sub => ({
+          id: sub.id || sub._id || '',
+          email: sub.email,
+          name: sub.name,
+          status: unsubscribedIds.includes(sub.id || sub._id) ? 'unsubscribed' : sub.status,
+          subscribed: sub.subscribedDate || sub.subscribed
+        }));
+        
+        setSubscribers(formattedSubscribers);
+      }
+  
+      if (newslettersData && isSubscribed) {
+        setNewsletters(newslettersData);
+      }
+    } catch (error) {
+      if (error instanceof APIError && error.status === 401 && !redirecting) {
+        redirecting = true;
+        localStorage.removeItem('token');
+        setSubscribers([]);
+        setNewsletters([]);
+        if (typeof window !== 'undefined') {
+          window.location.href = '/login';
         }
       }
-    };
+    } finally {
+      if (isSubscribed) {
+        setIsLoading(false);
+      }
+    }
+  };
 
     if (!localStorage.getItem('token')) {
       setSubscribers([]);
@@ -177,22 +199,20 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       if (!id) {
         throw new Error('Subscriber ID is required');
       }
-
+  
       const cleanId = String(id).trim();
       await subscriberAPI.delete(cleanId);
       
-      // Fetch fresh data after deletion
-      const updatedData = await subscriberAPI.getAll();
-      if (updatedData) {
-        const updatedSubscribers: Subscriber[] = updatedData.map(sub => ({
-          id: sub.id,
-          email: sub.email,
-          name: sub.name,
-          status: sub.status,
-          subscribed: sub.subscribedDate || sub.subscribed
-        }));
-        setSubscribers(updatedSubscribers);
+      // Save unsubscribed status separately 
+      const unsubscribedIds = JSON.parse(localStorage.getItem('unsubscribedIds') || '[]');
+      if (!unsubscribedIds.includes(cleanId)) {
+        unsubscribedIds.push(cleanId);
+        localStorage.setItem('unsubscribedIds', JSON.stringify(unsubscribedIds));
       }
+  
+      setSubscribers(prev => prev.map(sub => 
+        sub.id === cleanId ? { ...sub, status: 'unsubscribed' } : sub
+      ));
     } catch (error) {
       console.error('Error in DataContext removeSubscriber:', error);
       throw error;

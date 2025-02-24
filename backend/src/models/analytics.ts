@@ -4,21 +4,6 @@ import mongoose, { Document } from 'mongoose';
 interface IAnalytics extends Document {
  newsletterId: mongoose.Types.ObjectId;
  createdBy: mongoose.Types.ObjectId;
- opens: {
-   count: number;
-   details: Array<{
-     subscriberId: mongoose.Types.ObjectId;
-     timestamp: Date;
-   }>;
- };
- clicks: {
-   count: number;
-   details: Array<{
-     subscriberId: mongoose.Types.ObjectId;
-     url: string;
-     timestamp: Date;
-   }>;
- };
  bounces: {
    count: number;
    details: Array<{

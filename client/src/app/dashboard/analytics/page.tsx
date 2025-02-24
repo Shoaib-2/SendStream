@@ -1,21 +1,13 @@
 "use client";
 import React from 'react';
-import { BarChart, Users, Mail } from 'lucide-react';
+import { Users, Mail } from 'lucide-react';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
-import { analyticsAPI } from '@/services/api';
-import type { ApiAnalyticsSummary, GrowthData } from '@/types';
-
-interface ApiResponse {
-  summary: ApiAnalyticsSummary;
-  growthData: GrowthData[];
-  recentActivity: Array<{
-    title: string;
-    recipients: number;
-    time: string;
-  }>;
-}
+import { analyticsAPI } from '../../../services/api';
+import { useData } from '../../../context/dataContext';
+import type { ApiAnalyticsSummary, GrowthData } from '../../../types';
 
 export default function AnalyticsDashboard() {
+  const { subscribers } = useData();
   const [loading, setLoading] = React.useState(true);
   const [summary, setSummary] = React.useState<ApiAnalyticsSummary | null>(null);
   const [growthData, setGrowthData] = React.useState<GrowthData[]>([]);
@@ -36,7 +28,6 @@ export default function AnalyticsDashboard() {
           setSummary({
             subscribers: data.subscribers,
             newsletters: data.newsletters,
-            openRate: data.openRate
           });
           
           setGrowthData(data.growthData || []);
@@ -61,27 +52,22 @@ export default function AnalyticsDashboard() {
       </div>
     );
   }
+
   const metrics = [
     {
       label: 'Total Subscribers',
-      value: summary?.subscribers?.total?.toLocaleString() || '0',
-      change: summary?.subscribers?.change || 0,
+      value: subscribers.filter(s => s.status === 'active').length.toLocaleString(),
+      change: summary.subscribers?.change || 0,
       icon: Users
     },
     {
       label: 'Newsletters Sent',
-      value: summary?.newsletters?.total?.toLocaleString() || '0',
-      change: summary?.newsletters?.change || 0,
+      value: summary.newsletters?.total?.toLocaleString() || '0',
+      change: summary.newsletters?.change || 0,
       icon: Mail
-    },
-    {
-      label: 'Average Open Rate',
-      value: `${summary?.openRate?.value?.toFixed(1) || '0'}%`,
-      change: summary?.openRate?.change || 0,
-      icon: BarChart
     }
   ];
-  console.log('Metrics data:', metrics);
+
   return (
     <div className="p-6 min-h-screen bg-gradient-to-b from-gray-900 via-gray-900 to-gray-900/50">
       <div className="max-w-6xl mx-auto">
@@ -89,7 +75,7 @@ export default function AnalyticsDashboard() {
           Analytics Overview
         </h1>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           {metrics.map((metric, idx) => (
             <div 
               key={idx}

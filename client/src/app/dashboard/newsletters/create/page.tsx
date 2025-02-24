@@ -1,26 +1,38 @@
 "use client";
 import React, { useState } from 'react';
-import { Save, Calendar, Send } from 'lucide-react';
+import { Save, Calendar, Send, BookOpen, Lightbulb, FileCheck, Link } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { APIError, newsletterAPI } from '../../../../services/api';
-import { Newsletter } from '../../../../types/index';
+import { Newsletter, ContentQuality } from '../../../../types/index';
 import { useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 
-type CreateNewsletterInput = Omit<Newsletter, 'id' | 'sentTo' | 'openRate' | 'clickRate' | 'createdBy'>;
+type CreateNewsletterInput = Omit<Newsletter, 'id' | 'sentTo' | 'createdBy'>;
 
 const CreateNewsletter: React.FC = () => {
-  const router = useRouter()
+  const router = useRouter();
   const [showScheduler, setShowScheduler] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
   const [notificationMessage, setNotificationMessage] = useState('');
   const [notificationType, setNotificationType] = useState<'success' | 'error'>('success');
-  const [loading, setLoading] = useState(false); // New loading state
+  const [loading, setLoading] = useState(false);
+  const [currentSource, setCurrentSource] = useState('');
+  const [currentTakeaway, setCurrentTakeaway] = useState('');
+
   const [newsletter, setNewsletter] = useState<CreateNewsletterInput>({
     title: '',
     subject: '',
     content: '',
-    status: 'draft'
+    status: 'draft',
+    contentQuality: {
+      isOriginalContent: false,
+      hasResearchBacked: false,
+      hasActionableInsights: false,
+      contentLength: 0,
+      sources: [],
+      keyTakeaways: [],
+      qualityScore: 0
+    }
   });
 
   const searchParams = useSearchParams();
@@ -36,7 +48,16 @@ const CreateNewsletter: React.FC = () => {
               title: draftResponse.title,
               subject: draftResponse.subject,
               content: draftResponse.content,
-              status: draftResponse.status
+              status: draftResponse.status,
+              contentQuality: draftResponse.contentQuality ?? {
+              isOriginalContent: false,
+              hasResearchBacked: false,
+              hasActionableInsights: false,
+              contentLength: 0,
+              sources: [],
+              keyTakeaways: [],
+              qualityScore: 0
+              }
             });
           }
         } catch (error) {
@@ -52,9 +73,7 @@ const CreateNewsletter: React.FC = () => {
     setNotificationMessage(message);
     setNotificationType(type);
     setShowNotification(true);
-    setTimeout(() => {
-      setShowNotification(false);
-    }, 2000);
+    setTimeout(() => setShowNotification(false), 2000);
   };
 
   const saveDraft = async () => {
@@ -92,9 +111,7 @@ const CreateNewsletter: React.FC = () => {
         return;
       }
 
-      console.log('Scheduling for UTC:', new Date(utcTimestamp).toISOString());
-      const response = await newsletterAPI.schedule(draftId, new Date(utcTimestamp).toISOString());
-      console.log('Schedule response:', response);
+      await newsletterAPI.schedule(draftId, new Date(utcTimestamp).toISOString());
       showNotificationMessage('Newsletter scheduled!', 'success');
       router.push('/dashboard/newsletters');
     } catch (error) {
@@ -107,45 +124,63 @@ const CreateNewsletter: React.FC = () => {
     }
   };
 
-  // Add a check for the response structure
   const sendNow = async () => {
-    setLoading(true); // Set loading state
+    setLoading(true);
     try {
       const response = await newsletterAPI.create({
         ...newsletter,
         status: 'sent'
       });
-      console.log('Send Now Response:', response); // Log the response
 
-      // Check if the response is defined
       if (response) {
-        // Check if the response has an id property
         if ('id' in response) {
-          // Call the send method with the correct id
           await newsletterAPI.send(response.id);
           showNotificationMessage('Newsletter sent successfully!', 'success');
-          router.push('/dashboard/newsletters'); // Redirect to the dashboard immediately
+          router.push('/dashboard/newsletters');
         } else {
-          // If the response does not have an id property, try to extract it from the response object
           const newsletterId = (response as any)._id || (response as any).id;
           if (newsletterId) {
             await newsletterAPI.send(newsletterId);
             showNotificationMessage('Newsletter sent successfully!', 'success');
-            router.push('/dashboard/newsletters'); // Redirect to the dashboard immediately
+            router.push('/dashboard/newsletters');
           } else {
-            console.error('Unexpected response structure:', response); // Log the unexpected response
             showNotificationMessage('Failed to send newsletter', 'error');
           }
         }
       } else {
-        console.error('No response received'); // Log the error
         showNotificationMessage('Failed to send newsletter', 'error');
       }
     } catch (error) {
       console.error('Error sending newsletter:', error);
       showNotificationMessage('Failed to send newsletter', 'error');
     } finally {
-      setLoading(false); // Reset loading state
+      setLoading(false);
+    }
+  };
+
+  const addSource = () => {
+    if (currentSource.trim() && newsletter.contentQuality) {
+      setNewsletter({
+        ...newsletter,
+        contentQuality: {
+          ...newsletter.contentQuality,
+          sources: [...newsletter.contentQuality.sources, currentSource.trim()]
+        }
+      });
+      setCurrentSource('');
+    }
+  };
+
+  const addTakeaway = () => {
+    if (currentTakeaway.trim() && newsletter.contentQuality) {
+      setNewsletter({
+        ...newsletter,
+        contentQuality: {
+          ...newsletter.contentQuality,
+          keyTakeaways: [...newsletter.contentQuality.keyTakeaways, currentTakeaway.trim()]
+        }
+      });
+      setCurrentTakeaway('');
     }
   };
 
@@ -262,6 +297,152 @@ const CreateNewsletter: React.FC = () => {
                     placeholder-gray-500 resize-none"
                   placeholder="Write your newsletter content here..."
                 />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-gray-800/50 backdrop-blur-sm p-8 rounded-2xl
+            border border-gray-700 hover:border-blue-500/50 transition-all duration-300">
+            <h2 className="text-xl font-semibold mb-6">Content Quality Metrics</h2>
+            
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={newsletter.contentQuality?.isOriginalContent}
+                    onChange={(e) => setNewsletter({
+                      ...newsletter,
+                      contentQuality: {
+                        ...newsletter.contentQuality!,
+                        isOriginalContent: e.target.checked
+                      }
+                    })}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer 
+                    peer-checked:after:translate-x-full peer-checked:after:border-white after:content-['']
+                    after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full
+                    after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+                </label>
+                <span className="flex items-center gap-2">
+                  <FileCheck className="w-5 h-5 text-blue-500" />
+                  Original Content
+                </span>
+              </div>
+
+              <div className="flex items-center gap-4">
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={newsletter.contentQuality?.hasResearchBacked}
+                    onChange={(e) => setNewsletter({
+                      ...newsletter,
+                      contentQuality: {
+                        ...newsletter.contentQuality!,
+                        hasResearchBacked: e.target.checked
+                      }
+                    })}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer 
+                    peer-checked:after:translate-x-full peer-checked:after:border-white after:content-['']
+                    after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full
+                    after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+                </label>
+                <span className="flex items-center gap-2">
+                  <BookOpen className="w-5 h-5 text-green-500" />
+                  Research Backed
+                </span>
+              </div>
+
+              <div className="flex items-center gap-4">
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={newsletter.contentQuality?.hasActionableInsights}
+                    onChange={(e) => setNewsletter({
+                      ...newsletter,
+                      contentQuality: {
+                        ...newsletter.contentQuality!,
+                        hasActionableInsights: e.target.checked
+                      }
+                    })}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer 
+                    peer-checked:after:translate-x-full peer-checked:after:border-white after:content-['']
+                    after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full
+                    after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+                </label>
+                <span className="flex items-center gap-2">
+                  <Lightbulb className="w-5 h-5 text-yellow-500" />
+                  Actionable Insights
+                </span>
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-300">Sources</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={currentSource}
+                    onChange={(e) => setCurrentSource(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && addSource()}
+                    className="flex-1 px-4 py-2 bg-gray-700/50 rounded-lg border border-gray-600
+                      focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50"
+                    placeholder="Add a source..."
+                  />
+                  <button
+                    onClick={addSource}
+                    className="px-4 py-2 bg-blue-500/20 text-blue-400 rounded-lg
+                      hover:bg-blue-500/30 transition-colors"
+                  >
+                    <Link className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {newsletter.contentQuality?.sources.map((source, index) => (
+                    <span
+                      key={index}
+                      className="px-3 py-1 bg-blue-500/20 text-blue-400 rounded-full text-sm"
+                    >
+                      {source}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-300">Key Takeaways</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={currentTakeaway}
+                    onChange={(e) => setCurrentTakeaway(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && addTakeaway()}
+                    className="flex-1 px-4 py-2 bg-gray-700/50 rounded-lg border border-gray-600
+                      focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50"
+                    placeholder="Add a key takeaway..."
+                  />
+                  <button
+                    onClick={addTakeaway}
+                    className="px-4 py-2 bg-green-500/20 text-green-400 rounded-lg
+                      hover:bg-green-500/30 transition-colors"
+                  >
+                    <Lightbulb className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {newsletter.contentQuality?.keyTakeaways.map((takeaway, index) => (
+                    <span
+                      key={index}
+                      className="px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-sm"
+                    >
+                      {takeaway}
+                    </span>
+                  ))}
+                </div>
               </div>
             </div>
           </div>

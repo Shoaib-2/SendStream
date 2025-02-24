@@ -1,6 +1,6 @@
 "use client";
 import React from 'react';
-import { BarChart, Mail, Send, LucideIcon, Plus, Pencil, Trash2, Clock } from 'lucide-react';
+import { Mail, Send, Plus, Pencil, Clock, LucideIcon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { newsletterAPI } from '../../../services/api';
 
@@ -9,32 +9,56 @@ interface Newsletter {
   _id?: string;
   title: string;
   status: 'draft' | 'scheduled' | 'sent';
-  openRate: number;
-  clickRate: number;
   sentDate?: string;
   scheduledDate?: string;
+  contentQuality?: {
+    isOriginalContent: boolean;
+    hasResearchBacked: boolean;
+    hasActionableInsights: boolean;
+    contentLength: number;
+    sources: string[];
+    keyTakeaways: string[];
+    qualityScore: number;
+  };
 }
 
-interface DashboardMetric {
-  id: string;
-  label: string;
-  value: string | number;
-  icon: LucideIcon;
+interface NewsletterResponse {
+  newsletters: Newsletter[];
+  qualityStats: {
+    averageScore: number;
+    qualityDistribution: {
+      high: number;
+      medium: number;
+      low: number;
+    };
+    topPerformers: Newsletter[];
+  };
 }
+
+
 
 const NewsletterDashboard = () => {
   const router = useRouter();
   const [newsletters, setNewsletters] = React.useState<Newsletter[]>([]);
   const [loading, setLoading] = React.useState(true);
+  const [qualityStats, setQualityStats] = React.useState<NewsletterResponse['qualityStats'] | null>(null);
 
   const fetchNewsletterStats = React.useCallback(async () => {
     try {
       const response = await newsletterAPI.getNewsletterStats();
-      if (response) {
-        setNewsletters(response);
+      
+      if (response && response.newsletters) {
+        setNewsletters(response.newsletters);
+        setQualityStats(response.qualityStats);
+      } else {
+        console.error('Invalid response format:', response);
+        setNewsletters([]);
+        setQualityStats(null);
       }
     } catch (error) {
       console.error('Error fetching newsletters:', error);
+      setNewsletters([]);
+      setQualityStats(null);
     } finally {
       setLoading(false);
     }
@@ -55,15 +79,17 @@ const NewsletterDashboard = () => {
   }, [fetchNewsletterStats]);
 
   const metrics = [
-    { id: 'total-newsletters', label: 'Total Newsletters', value: newsletters.length, icon: Mail },
-    { id: 'sent-newsletters', label: 'Sent', value: newsletters.filter(n => n.status === 'sent').length, icon: Send },
-    {
-      id: 'avg-open-rate',
-      label: 'Daily Open Rate',
-      value: newsletters.length > 0
-        ? `${(newsletters.reduce((sum, n) => sum + (n.openRate || 0), 0) / newsletters.length).toFixed(1)}%`
-        : '0%',
-      icon: BarChart
+    { 
+      id: 'total-newsletters', 
+      label: 'Total Newsletters', 
+      value: Array.isArray(newsletters) ? newsletters.length : 0, 
+      icon: Mail 
+    },
+    { 
+      id: 'sent-newsletters', 
+      label: 'Sent', 
+      value: Array.isArray(newsletters) ? newsletters.filter(n => n.status === 'sent').length : 0, 
+      icon: Send 
     }
   ];
 
@@ -99,7 +125,7 @@ const NewsletterDashboard = () => {
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           {metrics.map((metric) => (
             <div 
               key={metric.id} 
@@ -162,14 +188,6 @@ const NewsletterDashboard = () => {
                   </div>
                 </div>
                 <div className="flex gap-4 text-sm text-gray-400 font-inter">
-                  <span className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-blue-500" />
-                    Open Rate: {newsletter.openRate ? `${newsletter.openRate.toFixed(2)}%` : 'N/A'}
-                  </span>
-                  <span className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-green-500" />
-                    Click Rate: {newsletter.clickRate}%
-                  </span>
                   {newsletter.scheduledDate && (
                     <span className="flex items-center gap-2">
                       <Clock className="w-4 h-4 text-blue-400" />

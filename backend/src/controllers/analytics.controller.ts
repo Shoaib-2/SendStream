@@ -14,10 +14,14 @@ export class AnalyticsController {
     try {
       const { newsletterId } = req.params;
       const analytics = await Analytics.findOne({ newsletterId });
+      const newsletter = await Newsletter.findById(newsletterId);
 
       res.json({
         status: 'success',
-        data: analytics
+        data: {
+          ...analytics?.toObject(),
+          contentQuality: newsletter?.contentQuality
+        }
       });
     } catch (error) {
       logger.error('Error getting analytics:', error);
@@ -70,7 +74,8 @@ export class AnalyticsController {
         return {
           title: n.title,
           recipients: recipientsCount,
-          time: n.sentDate || new Date()
+          time: n.sentDate || new Date(),
+          contentQuality: n.contentQuality
         };
       }));
 

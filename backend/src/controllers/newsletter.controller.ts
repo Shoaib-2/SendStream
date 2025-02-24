@@ -1,8 +1,6 @@
-// backend/src/controllers/newsletter.controller.ts
 import WebSocket from "ws";
 import { cronService } from "../services/cron.service";
 import { wss } from "../server";
-
 import { Request, Response, NextFunction } from "express";
 import Newsletter from "../models/Newsletter";
 import { APIError } from "../utils/errors";
@@ -11,77 +9,85 @@ import { emailService } from "../services/email.service";
 import Subscriber from "../models/Subscriber";
 import Analytics from "../models/analytics";
 
-import { calculateNewsletterStats } from "../utils/analytics.utils";
-import subscribers from "../routes/subscribers";
-
 export class NewsletterController {
-  /**
-   * Create a new newsletter
-   */
   async create(req: Request, res: Response, next: NextFunction) {
     try {
-      if (!req.user) {
-        throw new APIError(401, "Authentication required");
-      }
-
-      const newsletterData = {
-        title: req.body.title,
-        subject: req.body.subject,
-        content: req.body.content,
-        status: "draft",
-        createdBy: req.user._id,
+      if (!req.user) throw new APIError(401, "Authentication required");
+  
+      const contentQuality = {
+        isOriginalContent: req.body.contentQuality?.isOriginalContent || false,
+        hasResearchBacked: req.body.contentQuality?.hasResearchBacked || false,
+        hasActionableInsights: req.body.contentQuality?.hasActionableInsights || false,
+        contentLength: req.body.content?.length || 0,
+        sources: req.body.contentQuality?.sources || [],
+        keyTakeaways: req.body.contentQuality?.keyTakeaways || [],
+        qualityScore: 0
       };
-
-      const newsletter = await Newsletter.create(newsletterData);
+  
+      const newsletter = await Newsletter.create({
+        ...req.body,
+        createdBy: req.user._id,
+        contentQuality
+      });
+  
       res.status(201).json({
         status: "success",
-        data: newsletter,
+        data: newsletter
       });
     } catch (error) {
-      console.error("Create newsletter error:", error);
       next(error);
     }
-  }
+  };
 
-  /**
-   * Get all newsletters stats
-   */
   async getNewsletterStats(req: Request, res: Response, next: NextFunction) {
     try {
       const newsletters = await Newsletter.find({
-        createdBy: req.user._id,
+        createdBy: req.user._id
       }).sort({ createdAt: -1 });
-
-      const newslettersWithStats = await Promise.all(
-        newsletters.map(async (newsletter) => {
-          const stats = await calculateNewsletterStats(
-            newsletter,
-            req.user._id
-          );
-          return {
-            _id: newsletter._id,
-            title: newsletter.title,
-            status: newsletter.status,
-            sentDate: newsletter.sentDate,
-            scheduledDate: newsletter.scheduledDate,
-            openRate: stats.openRate,
-            clickRate: newsletter.clickRate,
-          };
-        })
-      );
-
+  
+      const qualityStats: {
+        averageScore: number,
+        topPerformers: typeof newsletters,
+        qualityDistribution: {
+          high: number,
+          medium: number,
+          low: number
+        }
+      } = {
+        averageScore: 0,
+        topPerformers: [],
+        qualityDistribution: {
+          high: 0,    // 75-100
+          medium: 0,  // 50-74
+          low: 0      // 0-49
+        }
+      };
+  
+      if (newsletters.length > 0) {
+        const scores = newsletters.map(n => n.contentQuality.qualityScore);
+        qualityStats.averageScore = scores.reduce((a, b) => a + b) / scores.length;
+        
+        newsletters.forEach(n => {
+          const score = n.contentQuality.qualityScore;
+          if (score >= 75) qualityStats.qualityDistribution.high++;
+          else if (score >= 50) qualityStats.qualityDistribution.medium++;
+          else qualityStats.qualityDistribution.low++;
+        });
+  
+        qualityStats.topPerformers = newsletters
+          .sort((a, b) => b.contentQuality.qualityScore - a.contentQuality.qualityScore)
+          .slice(0, 5);
+      }
+  
       res.json({
         status: "success",
-        data: newslettersWithStats,
+        data: { newsletters, qualityStats }
       });
     } catch (error) {
       next(error);
     }
-  }
-
-  /**
-   * Get all newsletters with pagination
-   */
+  };
+  
   async getAll(req: Request, res: Response, next: NextFunction) {
     try {
       const newsletters = await Newsletter.find({
@@ -96,17 +102,11 @@ export class NewsletterController {
         ],
       }).sort("-createdAt");
 
-      const newslettersWithStats = await Promise.all(
-        newsletters.map(async (newsletter) => {
-          const stats = await calculateNewsletterStats(newsletter);
-          return {
-            ...newsletter.toObject(),
-            openRate: stats.openRate,
-            opens: stats.opens,
-            sent: stats.sent,
-          };
-        })
-      );
+      const newslettersWithStats = newsletters.map((newsletter) => ({
+        ...newsletter.toObject(),
+        sent: newsletter.sentTo || 0,
+        contentQuality: newsletter.contentQuality
+      }));
 
       res.json({
         status: "success",
@@ -117,9 +117,6 @@ export class NewsletterController {
     }
   }
 
-  /**
-   * Get one newsletter with editing
-   */
   async getOne(req: Request, res: Response, next: NextFunction) {
     try {
       const newsletter = await Newsletter.findOne({
@@ -140,47 +137,46 @@ export class NewsletterController {
     }
   }
 
-  /**
-   * Updates newsletter
-   */
   async update(req: Request, res: Response, next: NextFunction) {
     try {
       const newsletter = await Newsletter.findById(req.params.id);
-
-      if (!newsletter) {
-        throw new APIError(404, "Newsletter not found");
-      }
-
-      if (newsletter.status === "sent") {
-        throw new APIError(400, "Cannot update sent newsletter");
-      }
-
+      if (!newsletter) throw new APIError(404, "Newsletter not found");
+      if (newsletter.status === "sent") throw new APIError(400, "Cannot update sent newsletter");
+  
+      const contentQuality = {
+        isOriginalContent: req.body.contentQuality?.isOriginalContent ?? newsletter.contentQuality.isOriginalContent,
+        hasResearchBacked: req.body.contentQuality?.hasResearchBacked ?? newsletter.contentQuality.hasResearchBacked,
+        hasActionableInsights: req.body.contentQuality?.hasActionableInsights ?? newsletter.contentQuality.hasActionableInsights,
+        contentLength: req.body.content?.length || newsletter.contentQuality.contentLength,
+        sources: req.body.contentQuality?.sources ?? newsletter.contentQuality.sources,
+        keyTakeaways: req.body.contentQuality?.keyTakeaways ?? newsletter.contentQuality.keyTakeaways,
+        qualityScore: 0
+      };
+  
       const updatedNewsletter = await Newsletter.findByIdAndUpdate(
         req.params.id,
-        req.body,
+        { ...req.body, contentQuality },
         { new: true, runValidators: true }
       );
-
+  
+      updatedNewsletter?.calculateQualityScore();
+      await updatedNewsletter?.save();
+  
       res.json({
         status: "success",
-        data: updatedNewsletter,
+        data: updatedNewsletter
       });
     } catch (error) {
-      logger.error("Error updating newsletter:", error);
       next(error);
     }
-  }
+  };
 
-  /**
-   * Schedule newsletter
-   */
   async schedule(req: Request, res: Response, next: NextFunction) {
     try {
       const { scheduledDate } = req.body;
       const scheduleTime = new Date(parseInt(scheduledDate));
       const now = new Date();
   
-      // Validate schedule time
       if (scheduleTime.getTime() <= now.getTime() + 30000) {
         return res.status(400).json({
           status: 'error',
@@ -188,7 +184,6 @@ export class NewsletterController {
         });
       }
   
-      // Find newsletter and validate existence
       const newsletter = await Newsletter.findById(req.params.id);
       if (!newsletter) {
         return res.status(404).json({
@@ -197,7 +192,6 @@ export class NewsletterController {
         });
       }
   
-      // Validate ownership
       if (newsletter.createdBy.toString() !== req.user._id.toString()) {
         return res.status(403).json({
           status: 'error',
@@ -210,7 +204,6 @@ export class NewsletterController {
         createdBy: req.user._id,
       });
   
-      // Update newsletter
       const updatedNewsletter = await Newsletter.findByIdAndUpdate(
         req.params.id,
         {
@@ -221,7 +214,6 @@ export class NewsletterController {
         { new: true, runValidators: true }
       );
 
-      // Schedule the newsletter using cronService
       await cronService.scheduleNewsletter(req.params.id, scheduleTime);
   
       return res.json({
@@ -233,9 +225,6 @@ export class NewsletterController {
     }
   }
 
-  /**
-   * Delete newsletter
-   */
   async delete(req: Request, res: Response, next: NextFunction) {
     try {
       const newsletter = await Newsletter.findById(req.params.id);
@@ -257,9 +246,6 @@ export class NewsletterController {
     }
   }
 
-  /**
-   * Send newsletter
-   */
   async send(req: Request, res: Response, next: NextFunction) {
     try {
       const newsletter = await Newsletter.findOneAndUpdate(
@@ -270,19 +256,16 @@ export class NewsletterController {
 
       if (!newsletter) throw new APIError(404, "Newsletter not found");
 
-      // Find and delete any draft version first
       await Newsletter.deleteOne({
         title: newsletter.title,
         status: "draft",
         createdBy: req.user._id,
       });
 
-      // Create an analytics record for the sent newsletter
+      // Create analytics record with bounces and unsubscribes only
       await Analytics.create({
         newsletterId: newsletter._id,
         createdBy: req.user._id,
-        opens: { count: 0, details: [] },
-        clicks: { count: 0, details: [] },
         bounces: { count: 0, details: [] },
         unsubscribes: { count: 0, details: [] }
       });
@@ -298,55 +281,10 @@ export class NewsletterController {
 
       res.json({ status: "success", data: newsletter });
     } catch (error) {
-      console.error("Send newsletter error:", error);
+      logger.error("Send newsletter error:", error);
       next(error);
     }
   }
-
-  /**
-   * Track newsletter open
-   */
-  async trackOpen(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { newsletterId, subscriberId } = req.params;
-      const today = new Date().toISOString().split('T')[0];
-      
-      const result = await Newsletter.findById(newsletterId, subscriberId);
-      if (!result) {
-        throw new APIError(404, 'Newsletter not found');
-      }
-  
-      const totalSent = result.sentTo || 0;
-      const updatedResult = await Newsletter.findByIdAndUpdate(
-        newsletterId,
-        {
-          $push: {
-            'dailyStats': {
-              $each: [{
-                date: today,
-                opens: 1,
-                clicks: 0
-              }]
-            }
-          }
-        },
-        { new: true }
-      );
-  
-      if (updatedResult) {
-        const todayStats = updatedResult.dailyStats?.find(stat => stat.date === today);
-        const openRate = todayStats ? (todayStats.opens / totalSent) * 100 : 0;
-        
-        await Newsletter.findByIdAndUpdate(newsletterId, { openRate });
-      }
-      
-      res.setHeader('Content-Type', 'image/gif');
-      res.send(Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64'));
-    } catch (error) {
-      console.error('Tracking error:', error);
-      res.status(500).end();
-    }
-  };
 
   public async sendScheduledNewsletter(newsletterId: string) {
     try {
@@ -365,11 +303,9 @@ export class NewsletterController {
         { new: true }
       );
 
-      // Broadcast update via WebSocket
       if (updatedNewsletter) {
         wss.clients.forEach((client) => {
           if (client.readyState === WebSocket.OPEN) {
-            // If client is authenticated and owns the newsletter, send full details
             if ((client as any).user && (client as any).user._id === newsletter.createdBy.toString()) {
               client.send(
                 JSON.stringify({
@@ -378,7 +314,6 @@ export class NewsletterController {
                 })
               );
             } else {
-              // For unauthenticated clients or other users, send limited info
               const limitedInfo = {
                 _id: updatedNewsletter._id,
                 status: updatedNewsletter.status,

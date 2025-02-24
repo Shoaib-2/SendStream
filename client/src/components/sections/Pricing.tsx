@@ -4,7 +4,7 @@ import Button from '../UI/Button';
 
 const pricingTier = {
   name: "Pro",
-  price: "$29",
+  price: "$12",
   period: "/month",
   description: "Everything you need to create and grow your newsletter",
   features: [

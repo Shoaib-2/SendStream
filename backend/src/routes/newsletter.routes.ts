@@ -32,9 +32,6 @@ router.get('/newsletters/track-open/:newsletterId/:subscriberId', async (req, re
     const { newsletterId, subscriberId } = req.params;
     console.log('Tracking open:', { newsletterId, subscriberId });
     
-    await newsletterController.trackOpen(req, res, next);
-    
-    // Send a transparent 1x1 pixel
     res.setHeader('Content-Type', 'image/gif');
     res.send(Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64'));
   } catch (error) {

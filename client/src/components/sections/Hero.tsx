@@ -18,7 +18,7 @@ const Hero = () => {
           </h1>
 
           <p className="text-xl md:text-2xl text-gray-400 font-inter max-w-2xl mx-auto leading-relaxed">
-            Create, schedule, and send newsletters that convert. All from one powerful dashboard.
+            Create, schedule, and send newsletters that converts. All from one powerful dashboard.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">

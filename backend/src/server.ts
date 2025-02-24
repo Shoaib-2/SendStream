@@ -21,15 +21,45 @@ const app = express();
 const server = createServer(app);
 const wss = new WebSocketServer({ server });
 
-wss.on('connection', ws => {
+wss.on('connection', (ws, req) => {
   try {
-    // Send a connection confirmation
-    ws.send(JSON.stringify({ type: 'connection_established' }));
+    // Verify JWT token from query params
+    const token = req.url?.split('token=')[1];
+    if (!token) {
+      ws.close(1008, 'Authentication required');
+      return;
+    }
+
+    jwt.verify(token, process.env.JWT_SECRET!, (err) => {
+      if (err) {
+        ws.close(1008, 'Invalid token');
+        return;
+      }
+
+      // Send connection confirmation
+      ws.send(JSON.stringify({ type: 'connection_established' }));
+    });
   } catch (error) {
     console.error('WebSocket connection error:', error);
-    // Don't close the connection, just log the error
   }
 });
+
+// Broadcast function to notify all connected clients
+const broadcastSubscriberUpdate = (subscriberId: string, status: string) => {
+  const message = JSON.stringify({
+    type: 'subscriber_update',
+    data: {
+      id: subscriberId,
+      status
+    }
+  });
+
+  wss.clients.forEach(client => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(message);
+    }
+  });
+};
 
 // Configure CORS for both HTTP and WebSocket
 const corsOptions = {
@@ -99,4 +129,4 @@ mongoose.connection.on('disconnected', () => {
  console.warn('MongoDB disconnected');
 });
 
-export { wss };
+export { wss, broadcastSubscriberUpdate };

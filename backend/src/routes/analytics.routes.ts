@@ -45,13 +45,10 @@ router.get('/track-open/:newsletterId/:subscriberId', async (req: Request, res: 
   logger.info('Received open tracking request', { newsletterId, subscriberId }); 
 
   try {
-    await newsletterController.trackOpen(req, res, next);
-    // Send the tracking pixel after successful tracking
     res.setHeader("Content-Type", "image/gif");
     res.send(TRACKING_PIXEL);
   } catch (error) {
     logger.error('Error tracking open:', error);
-    // Still send the pixel even if tracking fails
     res.setHeader("Content-Type", "image/gif");
     res.send(TRACKING_PIXEL);
   }
