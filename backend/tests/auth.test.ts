@@ -1,11 +1,12 @@
 import request from 'supertest';
 import mongoose from 'mongoose';
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import User from '../src/models/User';
 import authRoutes from '../src/routes/auth.routes';
 import { jest, describe, beforeAll, afterAll, beforeEach, it, expect } from '@jest/globals';
 import dotenv from 'dotenv';
 import cors from 'cors';
+import { errorHandler } from '../src/middleware/error.middleware';
 
 dotenv.config({ path: '.env.test' });
 
@@ -14,6 +15,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use('/api/auth', authRoutes);
+// Add error handling middleware as the last middleware
+app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+  errorHandler(err, req, res, next);
+});
 
 const TEST_TIMEOUT = 30000;
 const TEST_USER = {
@@ -98,9 +103,8 @@ describe('Authentication', () => {
         });
 
       expect(res.status).toBe(400);
-      const response = res.body as IUserResponse;
-      expect(response.status).toBe('error');
-      expect(response.message).toBe('Password must be at least 8 characters long');
+      expect(res.body.status).toBe('error');
+      expect(res.body.message).toBe('Password must be at least 8 characters long');
     });
   });
 
@@ -137,9 +141,8 @@ describe('Authentication', () => {
           });
 
       expect(res.status).toBe(401);
-      const response = res.body as IUserResponse;
-      expect(response.status).toBe('error');
-      expect(response.message).toBe('Invalid email or password');
+      expect(res.body.status).toBe('error');
+      expect(res.body.message).toBe('Incorrect email or password');
     });
 
     it('should not login with non-existent email', async () => {
@@ -151,9 +154,8 @@ describe('Authentication', () => {
         });
 
       expect(res.status).toBe(401);
-      const response = res.body as IUserResponse;
-      expect(response.status).toBe('error');
-      expect(response.message).toBe('Invalid email or password');
+      expect(res.body.status).toBe('error');
+      expect(res.body.message).toBe('Incorrect email or password');
     });
   });
 });

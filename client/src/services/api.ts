@@ -46,6 +46,7 @@ interface Subscriber {
  status: 'active' | 'unsubscribed';
  subscribedDate: string;
  subscribed: string;
+ 
 }
 
 interface NewsletterStats {
@@ -217,7 +218,7 @@ export const settingsAPI = {
         // Return default structure if data is incomplete
         return {
           email: { fromName: '', replyTo: '' },
-          mailchimp: { apiKey: '', serverPrefix: '', enabled: false },
+          mailchimp: { apiKey: '', serverPrefix: '', enabled: false, autoSync: false },
         };
       }
       return response.data.data;
@@ -225,19 +226,54 @@ export const settingsAPI = {
       console.error('Settings error:', error);
       return {
         email: { fromName: '', replyTo: '' },
-        mailchimp: { apiKey: '', serverPrefix: '', enabled: false },
+        mailchimp: { apiKey: '', serverPrefix: '', enabled: false, autoSync: false },
       };
     }
   },
+  
   updateSettings: async (settings: any) => {
     const response = await api.put('/settings', settings);
-    return response.data;
+    return response.data.data;
   },
+  
   testIntegration: async (type: 'mailchimp') => {
-    const response = await api.post(`/settings/test/${type}`);
-    return response.data;
+    try {
+      const response = await api.post(`/settings/test/${type}`);
+      return response.data.data;
+    } catch (error: any) {
+      console.error(`${type} integration test error:`, error);
+      return {
+        success: false,
+        message: error.response?.data?.message || `Failed to connect to ${type}`
+      };
+    }
+  },
+  
+  enableIntegration: async (type: 'mailchimp', enabled: boolean, autoSync?: boolean) => {
+    try {
+      const payload: { enabled: boolean; autoSync?: boolean } = { enabled };
+      if (autoSync !== undefined) {
+        payload.autoSync = autoSync;
+      }
+      
+      const response = await api.post(`/settings/enable/${type}`, payload);
+      return response.data.data;
+    } catch (error: any) {
+      console.error(`${type} integration enable error:`, error);
+      throw error;
+    }
+  },
+  syncSubscribers: async () => {
+    try {
+      const response = await api.post('/settings/sync-subscribers');
+      return response.data.data;
+    } catch (error) {
+      console.error('Error syncing subscribers:', error);
+      throw error;
+    }
   }
 };
+
 
 export const newsletterAPI = {
   getNewsletterStats: async (): Promise<NewsletterResponse> => {
@@ -351,19 +387,23 @@ export const subscriberAPI = {
      handleError(error as AxiosError);
    }
  },
+ // Updated to use updateStatus for proper mailchimp sync
  delete: async (id: string) => {
-   try {
-     await api.delete(`/subscribers/${id}`);
-     return { success: true };
-   } catch (error) {
-     if ((error as AxiosError).response?.status === 404) {
-       console.log('Subscriber already deleted:', id);
-       return { success: true };
-     }
-     console.error('Error removing subscriber:', error);
-     handleError(error as AxiosError);
-   }
- },
+  try {
+    // Instead of deleting, update the status to unsubscribed
+    // This ensures proper syncing with mailchimp
+    await subscriberAPI.updateStatus(id, 'unsubscribed');
+    return { success: true };
+  } catch (error) {
+    if ((error as AxiosError).response?.status === 404) {
+      console.log('Subscriber already deleted:', id);
+      return { success: true };
+    }
+    console.error('Error removing subscriber:', error);
+    handleError(error as AxiosError);
+  }
+},
+
 
 // For importing large subscriber lists efficiently
 import: async (file: File) => {
@@ -397,8 +437,45 @@ export: async () => {
   } catch (error) {
     handleError(error as AxiosError);
   }
+},
+syncMailchimp: async () => {
+  try {
+    // This will sync subscribers from the user's Mailchimp account
+    const response = await api.post('/settings/sync-subscribers');
+    return response.data.data;
+  } catch (error) {
+    console.error('Error syncing Mailchimp subscribers:', error);
+    throw error;
+  }
+},
+ // Enhanced with better error handling and retry logic
+ updateStatus: async (id: string, status: 'active' | 'unsubscribed') => {
+  try {
+    console.log(`Updating subscriber ${id} status to ${status}`);
+    const response = await api.patch(`/subscribers/${id}/status`, { status });
+    
+    // Verify the response contains the updated status
+    if (response.data?.data?.status !== status) {
+      console.warn('Status update response mismatch:', response.data?.data?.status, 'expected:', status);
+    }
+    
+    return response.data.data;
+  } catch (error) {
+    console.error('Error updating subscriber status:', error);
+    // Retry once on failure
+    try {
+      console.log('Retrying status update...');
+      const response = await api.patch(`/subscribers/${id}/status`, { status });
+      return response.data.data;
+    } catch (retryError) {
+      console.error('Status update retry failed:', retryError);
+      throw retryError;
+    }
+  }
 }
 };
+
+
 
 export const analyticsAPI = {
   getSummary: async () => {

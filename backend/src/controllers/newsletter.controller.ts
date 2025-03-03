@@ -8,6 +8,10 @@ import { logger } from "../utils/logger";
 import { emailService } from "../services/email.service";
 import Subscriber from "../models/Subscriber";
 import Analytics from "../models/analytics";
+import Settings from "../models/Settings";
+
+
+
 
 export class NewsletterController {
   async create(req: Request, res: Response, next: NextFunction) {
@@ -275,11 +279,12 @@ export class NewsletterController {
         createdBy: req.user._id,
       });
 
-      await emailService.sendNewsletter(newsletter, subscribers);
+      const userSettings = await Settings.findOne({ userId: req.user._id });
+      await emailService.sendNewsletter(newsletter, subscribers, userSettings);
       newsletter.sentTo = subscribers.length;
       await newsletter.save();
 
-      res.json({ status: "success", data: newsletter });
+      res.json({ status: "Success", data: newsletter });
     } catch (error) {
       logger.error("Send newsletter error:", error);
       next(error);
@@ -296,7 +301,8 @@ export class NewsletterController {
         createdBy: newsletter.createdBy,
       });
 
-      await emailService.sendNewsletter(newsletter, subscribers);
+      const userSettings = await Settings.findOne({ userId: newsletter.createdBy });
+      await emailService.sendNewsletter(newsletter, subscribers, userSettings);
       const updatedNewsletter = await Newsletter.findByIdAndUpdate(
         newsletterId,
         { status: "sent", sentDate: new Date() },

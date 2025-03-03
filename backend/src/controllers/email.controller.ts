@@ -5,6 +5,7 @@ import Newsletter from '../models/Newsletter';
 import { APIError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import  Subscriber  from '../models/Subscriber';
+import Settings from '../models/Settings';
 
 /**
  * Controller class for handling email-related operations
@@ -23,7 +24,11 @@ export class EmailController {
       }
 
       const subscribers = await Subscriber.find({ status: 'active' });
-      await emailService.sendNewsletter(newsletter, subscribers);
+      const userSettingsPromises = subscribers.map(subscriber => 
+        Settings.findOne({ userId: subscriber._id })
+      );
+      const userSettings = await Promise.all(userSettingsPromises);
+      await emailService.sendNewsletter(newsletter, subscribers, userSettings.filter(Boolean));
 
       res.status(200).json({
         status: 'success',

@@ -2,3 +2,57 @@
 2025-02-19T18:46:37.406Z [[31merror[39m]: Error updating settings: Email name and reply-to address are required
 2025-02-19T18:58:57.898Z [[31merror[39m]: Error updating settings: Email name and reply-to address are required
 2025-02-24T19:19:39.034Z [[31merror[39m]: Error updating settings: Email name and reply-to address are required
+2025-02-25T16:17:05.992Z [[31merror[39m]: ❌ Connection failed:
+2025-02-25T16:17:43.197Z [[31merror[39m]: ❌ Connection failed:
+2025-02-25T16:48:39.352Z [[31merror[39m]: Error details: Invalid URL
+2025-02-25T16:48:40.372Z [[31merror[39m]: Error details: Invalid URL
+2025-02-25T16:48:42.454Z [[31merror[39m]: Error details: Invalid URL
+2025-02-25T16:48:43.470Z [[31merror[39m]: Error details: Invalid URL
+2025-02-25T16:49:39.247Z [[31merror[39m]: ❌ Connection failed:
+2025-02-25T16:49:44.140Z [[31merror[39m]: ❌ Connection failed:
+2025-02-25T16:49:59.935Z [[31merror[39m]: ❌ Connection failed:
+2025-02-25T16:50:06.301Z [[31merror[39m]: ❌ Connection failed:
+2025-02-25T16:53:40.160Z [[31merror[39m]: ❌ Connection failed:
+2025-02-27T15:26:14.465Z [[31merror[39m]: Error details: Request failed with status code 400
+2025-02-27T15:26:16.300Z [[31merror[39m]: Error details: Request failed with status code 400
+2025-02-27T15:26:19.263Z [[31merror[39m]: Failed to update Mailchimp for shoaibkkhn50665@gmail.com: Operation failed after 3 attempts. Last error: Request failed with status code 400
+2025-02-27T16:20:04.020Z [[31merror[39m]: Integration test error: Settings not found
+2025-02-28T14:41:24.742Z [[31merror[39m]: Error details: Request failed with status code 401
+2025-02-28T14:41:26.093Z [[31merror[39m]: Error details: Request failed with status code 401
+2025-02-28T14:41:29.006Z [[31merror[39m]: Error details: Request failed with status code 401
+2025-02-28T14:41:30.438Z [[31merror[39m]: Error details: Request failed with status code 401
+2025-02-28T14:52:26.329Z [[31merror[39m]: Error details: Request failed with status code 401
+2025-02-28T14:52:27.697Z [[31merror[39m]: Error details: Request failed with status code 401
+2025-02-28T14:52:30.599Z [[31merror[39m]: Error details: Request failed with status code 401
+2025-02-28T14:52:31.699Z [[31merror[39m]: Error details: Request failed with status code 401
+2025-02-28T14:52:31.967Z [[31merror[39m]: Error details: Request failed with status code 401
+2025-02-28T14:52:33.143Z [[31merror[39m]: Error details: Request failed with status code 401
+2025-02-28T14:52:36.058Z [[31merror[39m]: Error details: Request failed with status code 401
+2025-02-28T14:52:37.408Z [[31merror[39m]: Error details: Request failed with status code 401
+2025-02-28T14:53:14.437Z [[31merror[39m]: Error details: Request failed with status code 401
+2025-02-28T14:53:15.885Z [[31merror[39m]: Error details: Request failed with status code 401
+2025-02-28T14:53:18.757Z [[31merror[39m]: Error details: Request failed with status code 401
+2025-02-28T14:53:20.179Z [[31merror[39m]: Error details: Request failed with status code 401
+2025-02-28T14:54:51.267Z [[31merror[39m]: Error details: Request failed with status code 401
+2025-02-28T14:54:52.616Z [[31merror[39m]: Error details: Request failed with status code 401
+2025-02-28T14:54:54.985Z [[31merror[39m]: Failed to update Mailchimp for shoaibkkhn50665@gmail.com: Operation failed after 3 attempts. Last error: Request failed with status code 401
+2025-02-28T14:54:55.393Z [[31merror[39m]: Error details: Request failed with status code 401
+2025-02-28T14:54:56.759Z [[31merror[39m]: Error details: Request failed with status code 401
+2025-02-28T14:54:59.108Z [[31merror[39m]: Error syncing subscribers: Operation failed after 3 attempts. Last error: Request failed with status code 401
+2025-02-28T14:59:45.289Z [[31merror[39m]: Error details: Request failed with status code 401
+2025-02-28T14:59:46.639Z [[31merror[39m]: Error details: Request failed with status code 401
+2025-02-28T14:59:49.634Z [[31merror[39m]: Error details: Request failed with status code 401
+2025-02-28T14:59:50.993Z [[31merror[39m]: Error details: Request failed with status code 401
+2025-02-28T16:09:05.826Z [[31merror[39m]: Error updating settings: Validation failed: email.replyTo: Path `email.replyTo` is required.
+2025-02-28T16:09:20.767Z [[31merror[39m]: Error updating settings: Validation failed: email.replyTo: Path `email.replyTo` is required.
+2025-02-28T16:10:36.133Z [[31merror[39m]: Error updating settings: Validation failed: email.fromName: Path `email.fromName` is required., email.replyTo: Path `email.replyTo` is required., email.senderEmail: Path `email.senderEmail` is required.
+2025-02-28T16:11:04.814Z [[31merror[39m]: Error updating settings: Validation failed: email.fromName: Path `email.fromName` is required., email.replyTo: Path `email.replyTo` is required., email.senderEmail: Path `email.senderEmail` is required.
+2025-03-03T12:00:12.700Z [[31merror[39m]: Failed to send newsletter
+2025-03-03T12:00:12.701Z [[31merror[39m]: Failed to send newsletter
+2025-03-03T12:07:38.971Z [[31merror[39m]: Error updating settings: Validation failed: email.replyTo: Path `email.replyTo` is required.
+2025-03-03T15:26:02.883Z [[31merror[39m]: Error details: Request failed with status code 400
+2025-03-03T15:26:04.597Z [[31merror[39m]: Error details: Request failed with status code 400
+2025-03-03T15:26:07.327Z [[31merror[39m]: Failed to update Mailchimp for test2@example.com: Operation failed after 3 attempts. Last error: Request failed with status code 400
+2025-03-03T15:26:13.329Z [[31merror[39m]: Error details: Request failed with status code 400
+2025-03-03T15:26:15.163Z [[31merror[39m]: Error details: Request failed with status code 400
+2025-03-03T15:26:17.891Z [[31merror[39m]: Failed to update Mailchimp for test2@example.com: Operation failed after 3 attempts. Last error: Request failed with status code 400

@@ -4,6 +4,8 @@ import Newsletter from '../models/Newsletter';
 import { emailService } from './email.service';
 import Subscriber from '../models/Subscriber';
 import { logger } from '../utils/logger';
+import Settings from '../models/Settings';
+
 
 const scheduledJobs = new Map();
 
@@ -21,8 +23,8 @@ export const cronService = {
           status: 'active',
           createdBy: newsletter.createdBy 
         });
-
-        await emailService.sendNewsletter(newsletter, subscribers);
+        const userSettings = await Settings.findOne({ userId: newsletter.createdBy });
+        await emailService.sendNewsletter(newsletter, subscribers, userSettings);
         newsletter.status = 'sent';
         newsletter.sentDate = new Date();
         newsletter.sentTo = subscribers.length;

@@ -106,8 +106,8 @@ export default function SubscribersPage() {
 
     return (
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-        <div className="bg-gray-800/50 p-6 md:p-8 rounded-2xl w-full max-w-md border border-gray-700">
-          <h2 className="text-2xl font-bold font-inter mb-4 md:mb-6">Add New Subscriber</h2>
+        <div className="bg-gray-800 p-6 md:p-8 rounded-xl w-full max-w-md border border-gray-700 shadow-lg max-h-[90vh] overflow-y-auto">
+          <h2 className="text-2xl font-bold mb-4 md:mb-6">Add New Subscriber</h2>
           <form onSubmit={handleSubmit} className="space-y-3 md:space-y-4">
             <div>
               <label className="block mb-1 md:mb-2 font-medium">Email</label>
@@ -115,8 +115,8 @@ export default function SubscribersPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-2 bg-gray-700/50 rounded-lg border border-gray-600
-                  focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50"
+                className="w-full px-4 py-2 bg-gray-700 rounded-lg border border-gray-600
+                  focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
                 placeholder="Enter email address"
               />
               {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
@@ -127,8 +127,8 @@ export default function SubscribersPage() {
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full px-4 py-2 bg-gray-700/50 rounded-lg border border-gray-600
-                  focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50"
+                className="w-full px-4 py-2 bg-gray-700 rounded-lg border border-gray-600
+                  focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
                 placeholder="Enter name"
               />
               {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
@@ -137,7 +137,7 @@ export default function SubscribersPage() {
               <button
                 type="button"
                 onClick={() => setShowSubscribeModal(false)}
-                className="px-4 py-2 bg-gray-700/50 rounded-lg hover:bg-gray-600/50 transition-colors"
+                className="px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors"
               >
                 Cancel
               </button>
@@ -159,6 +159,7 @@ export default function SubscribersPage() {
       <button
         onClick={() => removeSubscriber(subscriber.id)}
         className="text-gray-400 hover:text-red-400 transition-colors p-2 hover:bg-red-500/10 rounded-lg"
+        aria-label="Delete subscriber"
       >
         <Trash2 className="w-4 h-4" />
       </button>
@@ -254,100 +255,110 @@ export default function SubscribersPage() {
             </div>
           </div>
 
-          <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl overflow-x-auto
+          <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl overflow-hidden
             border border-gray-700 hover:border-blue-500/50 transition-all duration-300">
-            <div className="min-w-[600px]">
-              <table className="w-full">
-              <thead className="bg-gray-900/50">
-                <tr>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[600px]">
+                <thead className="bg-gray-900/50">
+                  <tr>
                     <th className="px-2 sm:px-3 md:px-6 py-2 md:py-4 text-left">
-                    <input
-                      type="checkbox"
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          const validIds = filteredSubscribers
-                            .filter(sub => sub.id && typeof sub.id === 'string')
-                            .map(sub => sub.id);
-                          setSelectedSubscribers(validIds);
-                        } else {
-                          setSelectedSubscribers([]);
-                        }
-                      }}
-                      checked={selectedSubscribers.length === filteredSubscribers.length && filteredSubscribers.length > 0}
-                      className="rounded border-gray-600 text-blue-500 focus:ring-blue-500/50"
-                    />
-                  </th>
-                  <th className="px-3 md:px-6 py-2 md:py-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Email</th>
-                  <th className="px-3 md:px-6 py-2 md:py-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Name</th>
-                  <th className="px-3 md:px-6 py-2 md:py-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Subscribed</th>
-                  <th className="px-3 md:px-6 py-2 md:py-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Status</th>
-                  <th className="px-3 md:px-6 py-2 md:py-4 text-center text-xs font-medium text-gray-400 uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-700/50">
-                {currentSubscribers.map((subscriber, index) => (
-                  <tr key={subscriber.id || `subscriber-${index}`}
-                    className="hover:bg-blue-500/5 transition-colors">
-                    <td className="px-3 md:px-6 py-2 md:py-4 whitespace-nowrap">
                       <input
                         type="checkbox"
-                        checked={selectedSubscribers.includes(subscriber.id)}
                         onChange={(e) => {
                           if (e.target.checked) {
-                            setSelectedSubscribers([...selectedSubscribers, subscriber.id]);
+                            const validIds = filteredSubscribers
+                              .filter(sub => sub.id && typeof sub.id === 'string')
+                              .map(sub => sub.id);
+                            setSelectedSubscribers(validIds);
                           } else {
-                            setSelectedSubscribers(selectedSubscribers.filter(id => id !== subscriber.id));
+                            setSelectedSubscribers([]);
                           }
                         }}
+                        checked={selectedSubscribers.length === filteredSubscribers.length && filteredSubscribers.length > 0}
                         className="rounded border-gray-600 text-blue-500 focus:ring-blue-500/50"
                       />
-                    </td>
-                    <td className="px-3 md:px-6 py-2 md:py-4 whitespace-nowrap font-medium">{subscriber.email}</td>
-                    <td className="px-3 md:px-6 py-2 md:py-4 whitespace-nowrap text-gray-300">{subscriber.name}</td>
-                    <td className="px-3 md:px-6 py-2 md:py-4 whitespace-nowrap text-gray-400">
-                      {new Date(subscriber.subscribed).toLocaleDateString()}
-                    </td>
-                    <td className="px-3 md:px-6 py-2 md:py-4 whitespace-nowrap">
-                      <span className={`px-2 md:px-3 py-1 rounded-full text-sm ${
-                        subscriber.status === 'active'
-                          ? 'bg-green-500/10 text-green-500 border border-green-500/50'
-                          : 'bg-gray-500/10 text-gray-400 border border-gray-500/50'
-                      }`}>
-                        {subscriber.status}
-                      </span>
-                    </td>
-                    <td className="px-3 md:px-6 py-2 md:py-4 whitespace-nowrap">
-                      {renderActions(subscriber)}
-                    </td>
+                    </th>
+                    <th className="px-3 md:px-6 py-2 md:py-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Email</th>
+                    <th className="px-3 md:px-6 py-2 md:py-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Name</th>
+                    <th className="px-3 md:px-6 py-2 md:py-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Subscribed</th>
+                    <th className="px-3 md:px-6 py-2 md:py-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Status</th>
+                    <th className="px-3 md:px-6 py-2 md:py-4 text-center text-xs font-medium text-gray-400 uppercase tracking-wider">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-gray-700/50">
+                  {currentSubscribers.length > 0 ? (
+                    currentSubscribers.map((subscriber, index) => (
+                      <tr key={subscriber.id || `subscriber-${index}`}
+                        className="hover:bg-blue-500/5 transition-colors">
+                        <td className="px-3 md:px-6 py-2 md:py-4 whitespace-nowrap">
+                          <input
+                            type="checkbox"
+                            checked={selectedSubscribers.includes(subscriber.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedSubscribers([...selectedSubscribers, subscriber.id]);
+                              } else {
+                                setSelectedSubscribers(selectedSubscribers.filter(id => id !== subscriber.id));
+                              }
+                            }}
+                            className="rounded border-gray-600 text-blue-500 focus:ring-blue-500/50"
+                          />
+                        </td>
+                        <td className="px-3 md:px-6 py-2 md:py-4 whitespace-nowrap font-medium">{subscriber.email}</td>
+                        <td className="px-3 md:px-6 py-2 md:py-4 whitespace-nowrap text-gray-300">{subscriber.name}</td>
+                        <td className="px-3 md:px-6 py-2 md:py-4 whitespace-nowrap text-gray-400">
+                          {new Date(subscriber.subscribed).toLocaleDateString()}
+                        </td>
+                        <td className="px-3 md:px-6 py-2 md:py-4 whitespace-nowrap">
+                          <span className={`px-2 md:px-3 py-1 rounded-full text-xs md:text-sm ${
+                            subscriber.status === 'active'
+                              ? 'bg-green-500/10 text-green-500 border border-green-500/50'
+                              : 'bg-red-500/10 text-red-400 border border-red-500/50'
+                          }`}>
+                            {subscriber.status}
+                          </span>
+                        </td>
+                        <td className="px-3 md:px-6 py-2 md:py-4 whitespace-nowrap">
+                          {renderActions(subscriber)}
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={6} className="px-6 py-8 text-center text-gray-400">
+                        No subscribers found
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
 
-          <div className="flex justify-center mt-4 md:mt-6 gap-2">
-            {Array.from({ length: Math.ceil(filteredSubscribers.length / subscribersPerPage) }).map((_, index) => {
-              const pageNumber = index + 1;
-              return (
-                <button
-                  key={`page-${pageNumber}`}
-                  onClick={() => handlePageChange(pageNumber)}
-                  className={`px-3 md:px-4 py-1 md:py-2 rounded-lg transition-all duration-300 ${
-                    currentPage === pageNumber
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-gray-800/50 text-gray-400 hover:bg-gray-700/50'
-                  }`}
-                >
-                  {pageNumber}
-                </button>
-              );
-            })}
-          </div>
-
-                {showSubscribeModal && <SubscribeModal />}
-              </div>
+          {filteredSubscribers.length > subscribersPerPage && (
+            <div className="flex justify-center mt-4 md:mt-6 gap-2">
+              {Array.from({ length: Math.ceil(filteredSubscribers.length / subscribersPerPage) }).map((_, index) => {
+                const pageNumber = index + 1;
+                return (
+                  <button
+                    key={`page-${pageNumber}`}
+                    onClick={() => handlePageChange(pageNumber)}
+                    className={`px-3 md:px-3 py-2 md:py-1 rounded-lg transition-all duration-300 ${
+                      currentPage === pageNumber
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-gray-800/50 text-gray-400 hover:bg-gray-700/50'
+                    }`}
+                  >
+                    {pageNumber}
+                  </button>
+                );
+              })}
             </div>
           )}
+
+          {showSubscribeModal && <SubscribeModal />}
         </div>
-      );
-    }
+      )}
+    </div>
+  );
+}

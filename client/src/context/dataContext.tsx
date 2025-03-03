@@ -48,6 +48,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             ));
           } else if (data.type === 'subscriber_update') {
             // Update subscribers from WebSocket event
+            console.log('WebSocket subscriber update:', data.data);
             setSubscribers(prev => prev.map(sub => 
               sub.id === data.data.id ? { ...sub, status: data.data.status } : sub
             ));
@@ -115,7 +116,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     
         if (subscribersData && isSubscribed) {
           // Directly use the subscriber status from the database
-          // No longer using localStorage for subscriber status
           const formattedSubscribers: Subscriber[] = subscribersData.map(sub => ({
             id: sub.id || sub._id || '',
             email: sub.email,
@@ -178,6 +178,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Updated to use updateStatus instead of delete and improve error handling
   const removeSubscriber = async (id: string) => {
     try {
       if (!id) {
@@ -185,13 +186,37 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       }
   
       const cleanId = String(id).trim();
-      // Database call will now handle setting the subscriber status to 'unsubscribed'
-      await subscriberAPI.delete(cleanId);
       
-      // Update local state to reflect the change
-      setSubscribers(prev => prev.map(sub => 
-        sub.id === cleanId ? { ...sub, status: 'unsubscribed' } : sub
-      ));
+      // Get the subscriber first to check current status
+      const subscriber = subscribers.find(s => s.id === cleanId);
+      if (!subscriber) {
+        console.warn(`Subscriber with ID ${cleanId} not found in local state`);
+      }
+      
+      console.log(`Removing subscriber ${cleanId}, current status: ${subscriber?.status}`);
+      
+      // Use updateStatus instead of delete to ensure mailchimp sync
+      const updatedSubscriber = await subscriberAPI.updateStatus(cleanId, 'unsubscribed');
+      
+      if (updatedSubscriber) {
+        console.log('Subscriber status updated successfully:', updatedSubscriber.status);
+        
+        // Update the local state with the new status
+        setSubscribers(prev => prev.map(sub => 
+          sub.id === cleanId ? { ...sub, status: 'unsubscribed' } : sub
+        ));
+        
+        // Force sync with mailchimp to ensure consistency
+        try {
+          console.log('Syncing with Mailchimp after status update');
+          await subscriberAPI.syncMailchimp();
+        } catch (syncError) {
+          console.error('Mailchimp sync error after status update:', syncError);
+          // Continue execution even if sync fails
+        }
+      } else {
+        console.warn('No response received when updating subscriber status');
+      }
     } catch (error) {
       console.error('Error in DataContext removeSubscriber:', error);
       throw error;

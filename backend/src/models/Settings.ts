@@ -3,13 +3,16 @@ import mongoose, { Document, Schema } from 'mongoose';
 export interface ISettings extends Document {
   userId: mongoose.Types.ObjectId;
   email: {
-    fromName: string;
-    replyTo: string;
-  };
+    fromName: { type: String, required: true },
+    replyTo: { type: String, required: true },
+    senderEmail: { type: String, required: true }
+  },
   mailchimp?: {
     apiKey: string;
     serverPrefix: string;
     enabled: boolean;
+    listId?: string;
+    autoSync: boolean;
   };
   createdAt: Date;
   updatedAt: Date;
@@ -24,18 +27,16 @@ const settingsSchema = new Schema({
   },
   email: {
     fromName: { type: String, required: true },
-    replyTo: { type: String, required: true }
+    replyTo: { type: String, required: true },
+    senderEmail: { type: String, required: true }
   },
   mailchimp: {
     apiKey: String,
     serverPrefix: String,
-    enabled: { type: Boolean, default: false }
+    enabled: { type: Boolean, default: false },
+    listId: String,
+    autoSync: { type: Boolean, default: false }
   },
-  substack: {
-    apiKey: String,
-    publication: String,
-    enabled: { type: Boolean, default: false }
-  }
 }, {
   timestamps: true
 });

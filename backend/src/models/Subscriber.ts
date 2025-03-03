@@ -10,6 +10,7 @@ export interface ISubscriber extends Document {
   subscribed: Date;
   createdBy: mongoose.Types.ObjectId;  // Changed from optional string to required ObjectId
   unsubscribedAt: Date | null;
+  source?: string;
 }
 
 const subscriberSchema = new mongoose.Schema({

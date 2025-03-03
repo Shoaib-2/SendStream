@@ -56,7 +56,7 @@ export class EmailService {
   /**
    * Send a newsletter to a list of subscribers
    */
-  async sendNewsletter(newsletter: any, subscribers: any[]) {
+  async sendNewsletter(newsletter: any, subscribers: any[], userSettings: any) {
     try {
       // Ensure unique subscribers by email
       const uniqueSubscribers = Array.from(
@@ -67,7 +67,10 @@ export class EmailService {
       const emailPromises = uniqueSubscribers.map(async (subscriber) => {
         try {
           const info = await this.transporter.sendMail({
-            from: process.env.EMAIL_FROM,
+            from: userSettings?.email.fromName 
+              ? `"${userSettings.email.fromName}" <${userSettings?.email.senderEmail }>`
+              : process.env.EMAIL_FROM,
+            replyTo: userSettings?.email.replyTo,
             to: subscriber.email,
             subject: newsletter.subject,
             html: this.generateNewsletterHTML(newsletter, subscriber)

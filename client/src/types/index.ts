@@ -13,6 +13,7 @@ export interface Subscriber {
   name: string;
   status: 'active' | 'unsubscribed';
   subscribed: string;
+  source?: 'mailchimp' | 'csv' | 'manual';
 }
 
 export interface ApiAnalyticsSummary {

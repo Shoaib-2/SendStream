@@ -1,4 +1,3 @@
-// backend/src/middleware/error.middleware.ts
 import { Request, Response, NextFunction } from 'express';
 import { APIError } from '../utils/errors';
 
@@ -8,7 +7,11 @@ export const errorHandler = (
   res: Response,
   next: NextFunction
 ) => {
-  console.error('Error:', err);
+  // Only log errors in non-test environment
+  if (process.env.NODE_ENV !== 'test') {
+    console.error('Error:', err);
+  }
+
   if (err instanceof APIError) {
     return res.status(err.statusCode).json({
       status: 'error',
@@ -16,9 +19,6 @@ export const errorHandler = (
       data: err.data
     });
   }
-
-  // Log the error for debugging
-  console.error('Error:', err);
 
   // Default error response
   res.status(500).json({
@@ -30,4 +30,3 @@ export const errorHandler = (
 export const asyncHandler = (fn: Function) => (req: Request, res: Response, next: NextFunction) => {
   Promise.resolve(fn(req, res, next)).catch(next);
 };
-

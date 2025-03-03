@@ -20,15 +20,15 @@ interface MailchimpMember {
   timestamp_signup: string;
 }
 
-
-
 export class MailchimpService {
   private client;
   private listId!: string;
 
   constructor(apiKey: string, serverPrefix: string) {
+    // Trim whitespace from server prefix to prevent URL errors
+    const cleanServerPrefix = serverPrefix.trim();
     this.client = axios.create({
-      baseURL: `https://${serverPrefix}.api.mailchimp.com/3.0`,
+      baseURL: `https://${cleanServerPrefix}.api.mailchimp.com/3.0`,
       headers: {
         'Authorization': `Basic ${Buffer.from(`anystring:${apiKey}`).toString('base64')}`,
         'Content-Type': 'application/json'
@@ -97,6 +97,72 @@ export class MailchimpService {
     });
   }
 
+  // New method: Update subscriber status in Mailchimp
+  async updateSubscriberStatus(email: string, status: 'subscribed' | 'unsubscribed') {
+    return withRetry(async () => {
+      logger.info(`Updating status for ${email} to ${status} in Mailchimp`);
+      
+      // MD5 hash the email address for Mailchimp's member ID
+      const emailMD5 = require('crypto').createHash('md5').update(email.toLowerCase()).digest('hex');
+      
+      try {
+        // Use PATCH to update only the status field
+        const response = await mailchimpRateLimiter.withRateLimit(() => 
+          this.client.patch(`/lists/${this.listId}/members/${emailMD5}`, {
+            status: status
+          })
+        );
+        
+        logger.info(`Successfully updated ${email} status to ${status}`);
+        return response.data;
+      } catch (error: any) {
+        // If member not found, try to add with the correct status
+        if (error.response?.status === 404) {
+          logger.warn(`Member ${email} not found in Mailchimp, adding with status ${status}`);
+          const response = await mailchimpRateLimiter.withRateLimit(() => 
+            this.client.post(`/lists/${this.listId}/members`, {
+              email_address: email,
+              status: status
+            })
+          );
+          return response.data;
+        }
+        throw error;
+      }
+    });
+  }
+
+  // New method: Get specific subscriber status from Mailchimp
+  async getSubscriberStatus(email: string) {
+    return withRetry(async () => {
+      logger.info(`Checking status for ${email} in Mailchimp`);
+      
+      // MD5 hash the email address for Mailchimp's member ID
+      const emailMD5 = require('crypto').createHash('md5').update(email.toLowerCase()).digest('hex');
+      
+      try {
+        const response = await mailchimpRateLimiter.withRateLimit(() => 
+          this.client.get(`/lists/${this.listId}/members/${emailMD5}`)
+        );
+        
+        logger.info(`Current Mailchimp status for ${email}: ${response.data.status}`);
+        return {
+          status: response.data.status === 'subscribed' ? 'active' : 'unsubscribed',
+          emailExists: true
+        };
+      } catch (error: any) {
+        if (error.response?.status === 404) {
+          logger.warn(`Member ${email} not found in Mailchimp`);
+          return {
+            status: 'unknown',
+            emailExists: false
+          };
+        }
+        throw error;
+      }
+    });
+  }
+
   async sendNewsletter(newsletter: { subject: string; content: string }) {
     return withRetry(async () => {
       const campaign = await this.createCampaign(newsletter.subject);
@@ -143,13 +209,15 @@ export class MailchimpService {
     });
   }
 
+  // Enhanced with better error handling and data validation
   async syncSubscribers() {
     return withRetry(async () => {
+      logger.info('Starting subscriber sync with Mailchimp');
       const response = await mailchimpRateLimiter.withRateLimit(() => 
         this.client.get(`/lists/${this.listId}/members`, {
           params: {
             count: 1000,
-            fields: 'members.email_address,members.merge_fields,members.status'
+            fields: 'members.email_address,members.merge_fields,members.status,members.timestamp_signup'
           }
         })
       );
@@ -159,13 +227,24 @@ export class MailchimpService {
         validateMemberResponse,
         'sync subscribers'
       );
-    
-      return validatedResponse.members.map((member: MailchimpMember) => ({
+      
+      // Map Mailchimp statuses to our app statuses with careful validation
+      const subscribers = validatedResponse.members.map((member: MailchimpMember) => ({
         email: member.email_address,
         name: member.merge_fields.FNAME || '',
+        // Ensure status is properly mapped
         status: member.status === 'subscribed' ? 'active' : 'unsubscribed',
-        subscribedDate: member.timestamp_signup
+        subscribedDate: member.timestamp_signup || new Date().toISOString()
       }));
+      
+      logger.info(`Synced ${subscribers.length} subscribers from Mailchimp`);
+      
+      // Log statuses for debugging
+      const activeCount = subscribers.filter(s => s.status === 'active').length;
+      const unsubscribedCount = subscribers.filter(s => s.status === 'unsubscribed').length;
+      logger.info(`Status breakdown - Active: ${activeCount}, Unsubscribed: ${unsubscribedCount}`);
+      
+      return subscribers;
     });
   }
 

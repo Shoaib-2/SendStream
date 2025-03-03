@@ -17,7 +17,7 @@ export class APIError extends Error {
 
 export class IntegrationError extends Error {
   constructor(
-    public service: 'mailchimp' | 'substack',
+    public service: 'mailchimp',
     public code: string,
     message: string
   ) {

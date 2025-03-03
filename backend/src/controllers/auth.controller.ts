@@ -56,10 +56,15 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
       throw new APIError(400, 'User already exists');
     }
 
+    // Validate password length
+    if (password.length < 8) {
+      throw new APIError(400, 'Password must be at least 8 characters long');
+    }
+
     // Create user
     const user = await User.create({
       email,
-      password, // Will be hashed by model pre-save hook
+      password,
       name: name || email.split('@')[0],
       role: 'user'
     });
@@ -67,6 +72,10 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
     // Create token and send response
     createSendToken(user, 201, res);
   } catch (error) {
+    // Handle Mongoose validation errors
+    if (error instanceof Error && 'name' in error && error.name === 'ValidationError') {
+      return next(new APIError(400, 'Validation failed'));
+    }
     next(error);
   }
 };

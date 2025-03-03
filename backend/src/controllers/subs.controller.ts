@@ -5,6 +5,8 @@ import Papa from 'papaparse';
 import mongoose from 'mongoose';
 import { MailchimpService } from '../services/Integrations/mailchimp';
 import Settings from '../models/Settings';
+import { broadcastSubscriberUpdate } from '../server';
+import { logger } from '../utils/logger';
 
 interface MailchimpSubscriber {
   email: string;
@@ -22,29 +24,113 @@ const syncMailchimpSubscribers = async (req: Request) => {
 
   const mailchimpService = new MailchimpService(
     settings.mailchimp.apiKey,
-    settings.mailchimp.serverPrefix
+    settings.mailchimp.serverPrefix.trim() // Trim to prevent URL errors
   );
   
   await mailchimpService.initializeList();
-  const subscribers = await mailchimpService.syncSubscribers();
+  const mailchimpSubscribers = await mailchimpService.syncSubscribers();
   
-  // Bulk upsert subscribers
-  const operations = subscribers.map((sub) => ({
-    updateOne: {
-      filter: { email: sub.email, createdBy: req.user._id },
-      update: {
-        $set: {
-          name: sub.name,
-          status: sub.status as 'active' | 'unsubscribed',
-          subscribed: sub.subscribedDate,
-          source: 'mailchimp'
+  // Get all local subscribers by email for comparison
+  const localSubscribers = await Subscriber.find({ 
+    createdBy: req.user._id 
+  });
+  
+  const localSubscribersByEmail = new Map();
+  localSubscribers.forEach(sub => {
+    localSubscribersByEmail.set(sub.email.toLowerCase(), {
+      id: sub._id.toString(),
+      status: sub.status
+    });
+  });
+  
+  // Track which subscribers need updating in Mailchimp
+  const mailchimpUpdates = [];
+  
+  // Process each mailchimp subscriber with respect to local status
+  const operations = [];
+  
+  for (const mcSub of mailchimpSubscribers) {
+    const email = mcSub.email.toLowerCase();
+    const localSub = localSubscribersByEmail.get(email);
+    
+    if (localSub) {
+      // Subscriber exists locally
+      if (localSub.status === 'unsubscribed' && mcSub.status === 'active') {
+        // Local shows unsubscribed but Mailchimp shows active - update Mailchimp
+        mailchimpUpdates.push({
+          email: mcSub.email,
+          status: 'unsubscribed'
+        });
+        
+        logger.info(`Detected status mismatch for ${email}: Local=unsubscribed, Mailchimp=active`);
+        continue; // Skip updating the local record
+      }
+      
+      // Only update local if Mailchimp shows unsubscribed but local shows active
+      if (localSub.status === 'active' && mcSub.status === 'unsubscribed') {
+        operations.push({
+          updateOne: {
+            filter: { email: mcSub.email, createdBy: req.user._id },
+            update: {
+              $set: {
+                status: 'unsubscribed',
+                name: mcSub.name,
+                subscribed: mcSub.subscribedDate,
+                source: 'mailchimp'
+              }
+            }
+          }
+        });
+      }
+    } else {
+      // New subscriber from Mailchimp - add to local database
+      operations.push({
+        updateOne: {
+          filter: { email: mcSub.email, createdBy: req.user._id },
+          update: {
+            $set: {
+              name: mcSub.name,
+              status: mcSub.status,
+              subscribed: mcSub.subscribedDate,
+              source: 'mailchimp'
+            }
+          },
+          upsert: true
         }
-      },
-      upsert: true
+      });
     }
-  }));
+  }
 
-  await Subscriber.bulkWrite(operations);
+  // Perform database updates if needed
+  if (operations.length > 0) {
+    const result = await Subscriber.bulkWrite(operations);
+    
+    // Notify frontend about the updates
+    if (result.modifiedCount > 0 || result.upsertedCount > 0) {
+      // Fetch updated subscribers to broadcast their status
+      const updatedSubscribers = await Subscriber.find({
+        email: { $in: mailchimpSubscribers.map(sub => sub.email) }
+      });
+      
+      for (const sub of updatedSubscribers) {
+        broadcastSubscriberUpdate(sub._id.toString(), sub.status);
+      }
+    }
+  }
+  
+  // Update Mailchimp for any subscribers that need syncing
+  if (mailchimpUpdates.length > 0) {
+    try {
+      logger.info(`Updating ${mailchimpUpdates.length} subscribers in Mailchimp to unsubscribed`);
+      for (const update of mailchimpUpdates) {
+        await mailchimpService.updateSubscriberStatus(update.email, 'unsubscribed');
+      }
+    } catch (error) {
+      logger.error('Error updating subscribers in Mailchimp:', error);
+    }
+  }
+  
+  return mailchimpSubscribers;
 };
 
 export const getSubscribers: RequestHandler = async (req, res, next) => {
@@ -53,8 +139,13 @@ export const getSubscribers: RequestHandler = async (req, res, next) => {
       throw new APIError(401, "Authentication required");
     }
 
-     // Sync Mailchimp subscribers first
-     await syncMailchimpSubscribers(req);
+    // Sync Mailchimp subscribers first
+    try {
+      await syncMailchimpSubscribers(req);
+    } catch (error) {
+      console.error('Error syncing Mailchimp subscribers:', error);
+      // Continue even if Mailchimp sync fails
+    }
      
     const subscribers = await Subscriber.find({ 
       createdBy: req.user._id 
@@ -66,7 +157,8 @@ export const getSubscribers: RequestHandler = async (req, res, next) => {
       name: sub.name,
       status: sub.status,
       subscribed: sub.subscribed,
-      createdBy: sub.createdBy
+      createdBy: sub.createdBy,
+      source: sub.source || 'manual'
     }));
 
     res.json({ status: 'success', data: formattedSubscribers });
@@ -83,27 +175,15 @@ export const createSubscriber: RequestHandler = async (req, res, next) => {
     }
 
     const { email, name } = req.body;
-    
-    // console.log('User from request:', {
-    //   id: req.user._id,
-    //   email: req.user.email
-    // });
-
-    // console.log('Request body:', req.body);
 
     const subscriber = await Subscriber.create({
       email,
       name,
       status: 'active',
       createdBy: req.user._id,
-      subscribed: new Date()
+      subscribed: new Date(),
+      source: 'manual'
     });
-
-    // console.log('Created subscriber:', {
-    //   id: subscriber._id,
-    //   email: subscriber.email,
-    //   createdBy: subscriber.createdBy
-    // });
 
     res.status(201).json({
       status: 'success',
@@ -117,6 +197,7 @@ export const createSubscriber: RequestHandler = async (req, res, next) => {
 
 export const deleteSubscriber = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    // Instead of deleting, update the status to unsubscribed
     const subscriber = await Subscriber.findById(req.params.id);
 
     if (!subscriber) {
@@ -126,15 +207,41 @@ export const deleteSubscriber = async (req: Request, res: Response, next: NextFu
       });
     }
 
-    await subscriber.deleteOne();
-    res.status(204).send();
+    // Update status instead of deleting
+    subscriber.status = 'unsubscribed';
+    await subscriber.save();
+    
+    // Broadcast the status change
+    broadcastSubscriberUpdate(req.params.id, 'unsubscribed');
+    
+    // Sync with Mailchimp if enabled
+    try {
+      const settings = await Settings.findOne({ userId: req.user._id });
+      
+      if (settings?.mailchimp?.enabled) {
+        const mailchimpService = new MailchimpService(
+          settings.mailchimp.apiKey,
+          settings.mailchimp.serverPrefix.trim()
+        );
+        
+        await mailchimpService.initializeList();
+        await mailchimpService.updateSubscriberStatus(subscriber.email, 'unsubscribed');
+        logger.info(`Updated Mailchimp status for ${subscriber.email} to unsubscribed`);
+      }
+    } catch (mailchimpError) {
+      logger.error(`Failed to update Mailchimp for ${subscriber.email}:`, mailchimpError);
+    }
+
+    res.status(200).json({
+      status: 'success',
+      data: subscriber
+    });
   } catch (error) {
     console.error('Delete subscriber error:', error);
     next(error);
   }
 };
 
-// Add bulk delete functionality
 export const bulkDeleteSubscribers = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { ids } = req.body;
@@ -153,15 +260,56 @@ export const bulkDeleteSubscribers = async (req: Request, res: Response, next: N
       throw new APIError(400, 'Invalid subscriber ID format in the list');
     }
 
-    // Delete subscribers that belong to the authenticated user
-    const result = await Subscriber.deleteMany({
+    // Get subscribers before updating to access their emails
+    const subscribers = await Subscriber.find({
       _id: { $in: ids },
       createdBy: req.user._id
     });
 
+    if (subscribers.length === 0) {
+      return res.status(200).json({
+        status: 'success',
+        message: 'No subscribers found to delete'
+      });
+    }
+
+    // Update subscribers to unsubscribed instead of deleting
+    const result = await Subscriber.updateMany(
+      { _id: { $in: ids }, createdBy: req.user._id },
+      { $set: { status: 'unsubscribed' } }
+    );
+
+    // Broadcast updates
+    for (const sub of subscribers) {
+      broadcastSubscriberUpdate(sub._id.toString(), 'unsubscribed');
+    }
+
+    // Sync with Mailchimp if enabled
+    try {
+      const settings = await Settings.findOne({ userId: req.user._id });
+      
+      if (settings?.mailchimp?.enabled) {
+        const mailchimpService = new MailchimpService(
+          settings.mailchimp.apiKey,
+          settings.mailchimp.serverPrefix.trim()
+        );
+        
+        await mailchimpService.initializeList();
+        
+        // Update each subscriber in Mailchimp
+        for (const sub of subscribers) {
+          await mailchimpService.updateSubscriberStatus(sub.email, 'unsubscribed');
+        }
+        
+        logger.info(`Updated ${subscribers.length} subscribers in Mailchimp to unsubscribed`);
+      }
+    } catch (mailchimpError) {
+      logger.error('Failed to update Mailchimp for bulk unsubscribe:', mailchimpError);
+    }
+
     res.status(200).json({
       status: 'success',
-      message: `${result.deletedCount} subscribers deleted successfully`
+      message: `${result.modifiedCount} subscribers marked as unsubscribed`
     });
   } catch (error) {
     console.error('Bulk delete subscribers error:', error);
@@ -196,7 +344,8 @@ export const importSubscribers = async (req: Request, res: Response, next: NextF
       parsedData.data.map((row) => ({
         ...row as Record<string, any>,
         createdBy: req.user._id,
-        status: 'active'
+        status: 'active',
+        source: 'csv'
       }))
     );
 
@@ -230,7 +379,7 @@ export const exportSubscribers: RequestHandler = async (req, res) => {
     const subscribers = await Subscriber.find({ createdBy: req.user._id });
 
     const csvContent = [
-      ['ID', 'Email', 'Name', 'Status', 'Subscribed Date'],
+      ['ID', 'Email', 'Name', 'Status', 'Subscribed Date', 'Source'],
       ...subscribers.map(sub => [
         sub._id.toString(),
         sub.email,
@@ -240,7 +389,8 @@ export const exportSubscribers: RequestHandler = async (req, res) => {
           year: 'numeric',
           month: '2-digit',
           day: '2-digit'
-        }) : 'N/A'
+        }) : 'N/A',
+        sub.source || 'manual'
       ])
     ]
     .map(row => row.map(cell => `"${cell}"`).join(','))
@@ -257,22 +407,93 @@ export const exportSubscribers: RequestHandler = async (req, res) => {
   }
 };
 
-  export const unsubscribeSubscriber = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const token = req.params.token as string;
-      console.log('Unsubscribe token:', token); // Add logging
-      const subscriberId = Buffer.from(token, 'base64').toString('utf-8');
-  
-      const subscriber = await Subscriber.findById(subscriberId);
-      if (!subscriber) {
-        return res.redirect(`${process.env.CLIENT_URL}/unsubscribe-error`);
-      }
-  
-      subscriber.status = 'unsubscribed';
-      await subscriber.save();
-  
-      res.redirect(`${process.env.CLIENT_URL}/unsubscribe-success`);
-    } catch (error) {
-      next(error);
+export const unsubscribeSubscriber = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const token = req.params.token as string;
+    console.log('Unsubscribe token:', token);
+    const subscriberId = Buffer.from(token, 'base64').toString('utf-8');
+
+    const subscriber = await Subscriber.findById(subscriberId);
+    if (!subscriber) {
+      return res.redirect(`${process.env.CLIENT_URL}/unsubscribe-error`);
     }
-  };
+
+    subscriber.status = 'unsubscribed';
+    await subscriber.save();
+    
+    // Broadcast the update to all connected WebSocket clients
+    broadcastSubscriberUpdate(subscriberId, 'unsubscribed');
+    
+    // Update Mailchimp if integration is enabled
+    try {
+      const settings = await Settings.findOne({ userId: subscriber.createdBy });
+      
+      if (settings?.mailchimp?.enabled) {
+        const mailchimpService = new MailchimpService(
+          settings.mailchimp.apiKey,
+          settings.mailchimp.serverPrefix.trim()
+        );
+        
+        await mailchimpService.initializeList();
+        await mailchimpService.updateSubscriberStatus(subscriber.email, 'unsubscribed');
+        logger.info(`Updated Mailchimp status for ${subscriber.email} to unsubscribed via unsubscribe link`);
+      }
+    } catch (mailchimpError) {
+      logger.error(`Failed to update Mailchimp for ${subscriber.email} via unsubscribe link:`, mailchimpError);
+    }
+
+    res.redirect(`${process.env.CLIENT_URL}/unsubscribe-success`);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateSubscriber = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    
+    const subscriber = await Subscriber.findById(id);
+    if (!subscriber) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Subscriber not found'
+      });
+    }
+    
+    // Update the subscriber status
+    subscriber.status = status;
+    await subscriber.save();
+    
+    // Broadcast the update
+    broadcastSubscriberUpdate(id, status);
+    
+    // Update Mailchimp if integration is enabled
+    try {
+      const settings = await Settings.findOne({ userId: subscriber.createdBy });
+      
+      if (settings?.mailchimp?.enabled) {
+        const mailchimpService = new MailchimpService(
+          settings.mailchimp.apiKey,
+          settings.mailchimp.serverPrefix.trim()
+        );
+        
+        await mailchimpService.initializeList();
+        // Convert status to Mailchimp format: 'active' => 'subscribed', 'unsubscribed' => 'unsubscribed'
+        const mailchimpStatus = status === 'active' ? 'subscribed' : 'unsubscribed';
+        await mailchimpService.updateSubscriberStatus(subscriber.email, mailchimpStatus);
+        logger.info(`Updated Mailchimp status for ${subscriber.email} to ${mailchimpStatus}`);
+      }
+    } catch (mailchimpError) {
+      logger.error(`Failed to update Mailchimp for ${subscriber.email}:`, mailchimpError);
+    }
+    
+    return res.json({
+      status: 'success',
+      data: subscriber
+    });
+  } catch (error) {
+    console.error('Error updating subscriber:', error);
+    next(error);
+  }
+};

@@ -47,9 +47,19 @@ describe('Email Service', () => {
       email: 'test@example.com'
     }];
 
-    await emailService.sendNewsletter(newsletter, subscribers);
+    const userSettings = {
+      email: {
+        fromName: 'Test Sender',
+        senderEmail: 'sender@test.com',
+        replyTo: 'reply@test.com'
+      }
+    };
+
+    await emailService.sendNewsletter(newsletter, subscribers, userSettings);
     
     expect(mockSendMail).toHaveBeenCalledWith(expect.objectContaining({
+      from: '"Test Sender" <sender@test.com>',
+      replyTo: 'reply@test.com',
       to: 'test@example.com',
       subject: 'Test Newsletter',
       html: expect.stringContaining('Test Content')

@@ -1,12 +1,53 @@
 import request from 'supertest';
 import mongoose, { Types } from 'mongoose';
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import Subscriber from '../src/models/Subscriber';
 import User from '../src/models/User';
-import subscriberRoutes from '../src/routes/subscribers';
+import subscriberRoutes from '../src/routes/subscribers.route';
 import { jest, describe, beforeAll, afterAll, beforeEach, it, expect } from '@jest/globals';
 import dotenv from 'dotenv';
 import cors from 'cors';
+import { errorHandler } from '../src/middleware/error.middleware';
+import jwt from 'jsonwebtoken';
+import { Model } from 'mongoose';
+import { ISettings } from '../src/models/Settings';
+
+// Mock the server's broadcastSubscriberUpdate function
+jest.mock('../src/server', () => ({
+  broadcastSubscriberUpdate: jest.fn()
+}));
+
+// Mock the auth middleware
+jest.mock('../src/middleware/auth/auth.middleware', () => ({
+  protect: (req: any, res: any, next: any) => {
+    if (!req.headers.authorization) {
+      return res.status(401).json({ status: 'error', message: 'No token provided' });
+    }
+    const token = req.headers.authorization.split(' ')[1];
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'test-secret');
+      req.user = { _id: (decoded as any).id };
+      next();
+    } catch (error) {
+      return res.status(401).json({ status: 'error', message: 'Invalid token' });
+    }
+  }
+}));
+
+// Mock the logger
+jest.mock('../src/utils/logger', () => ({
+  logger: {
+    info: jest.fn(),
+    error: jest.fn()
+  }
+}));
+
+// Mock Settings model
+jest.mock('../src/models/Settings', () => {
+  return {
+    findOne: jest.fn().mockImplementation(() => Promise.resolve())
+  } as Partial<Model<ISettings>>;
+});
 
 dotenv.config({ path: '.env.test' });
 
@@ -15,6 +56,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use('/api/subscribers', subscriberRoutes);
+// Add error handling middleware properly
+app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+  errorHandler(err, req, res, next);
+});
 
 // Test user credentials
 const TEST_USER = {
@@ -64,6 +109,7 @@ describe('Subscriber Endpoints', () => {
 
   beforeEach(async () => {
     await Subscriber.deleteMany({});
+    jest.clearAllMocks();
   });
 
   describe('POST /api/subscribers/import', () => {
@@ -136,10 +182,9 @@ describe('Subscriber Endpoints', () => {
         .delete(`/api/subscribers/${subscriber._id}`)
         .set('Authorization', `Bearer ${authToken}`);
 
-      expect(res.status).toBe(204);
-
-      const deletedSubscriber = await Subscriber.findById(subscriber._id);
-      expect(deletedSubscriber).toBeNull();
+      expect(res.status).toBe(200);
+      expect(res.body.status).toBe('success');
+      expect(res.body.data.status).toBe('unsubscribed');
     });
 
     it('should handle non-existent subscriber', async () => {

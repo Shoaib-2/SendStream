@@ -8,13 +8,13 @@ import cookieParser from 'cookie-parser'; // Add cookie-parser
 import { Request, Response, NextFunction } from "express";
 import { errorHandler } from './middleware/error.middleware';
 import newsletterRoutes from './routes/newsletter.routes';
-import subscriberRoutes from './routes/subscribers';
+import subscriberRoutes from './routes/subscribers.route';
 import { WebSocketServer } from 'ws';
 import { createServer } from 'http';
 import analyticsRoutes from './routes/analytics.routes';
 import settingsRoutes from './routes/settings.routes';
 import jwt from 'jsonwebtoken';
-import { protect } from './middleware/auth/auth.middleware';
+
 
 dotenv.config();
 
