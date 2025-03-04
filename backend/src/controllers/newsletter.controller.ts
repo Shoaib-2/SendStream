@@ -250,23 +250,70 @@ export class NewsletterController {
     }
   }
 
-  async send(req: Request, res: Response, next: NextFunction) {
-    try {
-      const newsletter = await Newsletter.findOneAndUpdate(
-        { _id: req.params.id, createdBy: req.user._id },
-        { status: "sent", sentDate: new Date() },
-        { new: true }
-      );
+ 
+// Updated send method for newsletter.controller.ts
 
-      if (!newsletter) throw new APIError(404, "Newsletter not found");
+async send(req: Request, res: Response, next: NextFunction) {
+  try {
+    const newsletter = await Newsletter.findOne({
+      _id: req.params.id,
+      createdBy: req.user._id
+    });
 
-      await Newsletter.deleteOne({
-        title: newsletter.title,
-        status: "draft",
-        createdBy: req.user._id,
+    if (!newsletter) throw new APIError(404, "Newsletter not found");
+
+    // Get subscribers
+    const subscribers = await Subscriber.find({
+      status: "active",
+      createdBy: req.user._id,
+    });
+
+    if (!subscribers || subscribers.length === 0) {
+      logger.warn('No active subscribers found to send newsletter to');
+      throw new APIError(400, "No active subscribers to send newsletter to");
+    }
+
+    logger.info(`Sending newsletter to ${subscribers.length} unique subscribers`);
+
+    // Get or create user settings
+    let userSettings = await Settings.findOne({ userId: req.user._id });
+    
+    // If settings don't exist, create default settings
+    if (!userSettings) {
+      logger.info('Creating default settings for user');
+      userSettings = await Settings.create({
+        userId: req.user._id,
+        email: { 
+          fromName: 'Newsletter', 
+          replyTo: 'noreply@yourdomain.com',
+          senderEmail: 'noreply@yourdomain.com' 
+        },
+        mailchimp: {
+          apiKey: '',
+          serverPrefix: '',
+          enabled: false,
+          autoSync: false
+        }
       });
+    }
 
-      // Create analytics record with bounces and unsubscribes only
+    // Validate settings
+    if (!userSettings.email || !userSettings.email.fromName) {
+      logger.error('Invalid email settings configuration');
+      throw new APIError(400, "Email settings not properly configured. Please configure 'From Name' in settings.");
+    }
+
+    try {
+      // Try to send the newsletter
+      await emailService.sendNewsletter(newsletter, subscribers, userSettings);
+      
+      // Update newsletter status after successful send
+      newsletter.status = "sent";
+      newsletter.sentDate = new Date();
+      newsletter.sentTo = subscribers.length;
+      await newsletter.save();
+
+      // Create analytics record
       await Analytics.create({
         newsletterId: newsletter._id,
         createdBy: req.user._id,
@@ -274,22 +321,30 @@ export class NewsletterController {
         unsubscribes: { count: 0, details: [] }
       });
 
-      const subscribers = await Subscriber.find({
-        status: "active",
+      // Delete draft version if exists
+      await Newsletter.deleteOne({
+        title: newsletter.title,
+        status: "draft",
         createdBy: req.user._id,
+        _id: { $ne: newsletter._id }
       });
 
-      const userSettings = await Settings.findOne({ userId: req.user._id });
-      await emailService.sendNewsletter(newsletter, subscribers, userSettings);
-      newsletter.sentTo = subscribers.length;
-      await newsletter.save();
-
-      res.json({ status: "Success", data: newsletter });
-    } catch (error) {
-      logger.error("Send newsletter error:", error);
-      next(error);
+      return res.json({ 
+        status: "success", 
+        data: newsletter 
+      });
+    } catch (sendError: any) {
+      logger.error("Failed to send newsletter", { 
+        error: sendError.message, 
+        newsletter: newsletter._id 
+      });
+      throw new APIError(500, `Failed to send newsletter: ${sendError.message}`);
     }
+  } catch (error) {
+    logger.error("Send newsletter error:", error);
+    next(error);
   }
+}
 
   public async sendScheduledNewsletter(newsletterId: string) {
     try {

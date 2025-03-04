@@ -1,21 +1,19 @@
 // backend/src/routes/analytics.routes.ts
-import express, {Request, Response, NextFunction } from 'express';
+import express, { Request, Response, NextFunction, RequestHandler } from 'express';
 import { analyticsController } from '../controllers/analytics.controller';
 import { protect } from '../middleware/auth/auth.middleware';
 import { getDashboardSummary } from '../controllers/dashboard.controller';
 import { logger } from '../utils/logger';
-import { newsletterController } from '../controllers/newsletter.controller';
-
 
 const router = express.Router();
 
 router.get(
   '/newsletter/:newsletterId',
-  protect,
+  protect as RequestHandler,
   analyticsController.getNewsletterAnalytics
 );
 
-router.get('/summary', protect, (req: Request, res: Response, next: NextFunction) => {
+router.get('/summary', protect as RequestHandler, (req: Request, res: Response, next: NextFunction) => {
   const requestTime = Math.floor(Date.now());
   const lastRequestTime = req.app.locals.lastSummaryRequest;
   
@@ -34,9 +32,8 @@ router.get('/summary', protect, (req: Request, res: Response, next: NextFunction
     .catch(next);
 });
 
-router.get('/growth', protect, analyticsController.getGrowthData);
-router.get('/activity', protect, analyticsController.getRecentActivity);
-
+router.get('/growth', protect as RequestHandler, analyticsController.getGrowthData);
+router.get('/activity', protect as RequestHandler, analyticsController.getRecentActivity);
 
 const TRACKING_PIXEL = Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64');
 // Public route for tracking pixel
@@ -53,4 +50,5 @@ router.get('/track-open/:newsletterId/:subscriberId', async (req: Request, res: 
     res.send(TRACKING_PIXEL);
   }
 });
+
 export default router;

@@ -21,6 +21,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [newsletters, setNewsletters] = useState<Newsletter[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [ws, setWs] = useState<WebSocket | null>(null);
+  const [fetchAttempts, setFetchAttempts] = useState(0);
+  const MAX_FETCH_ATTEMPTS = 3;
 
   // Initialize WebSocket connection
   useEffect(() => {
@@ -32,62 +34,79 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:5000/ws';
-      const socket = new WebSocket(`${wsUrl}?token=${token}`);
+      try {
+        const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:5000/ws';
+        console.log('Attempting WebSocket connection to:', wsUrl);
+        
+        const socket = new WebSocket(`${wsUrl}?token=${token}`);
 
-      socket.onopen = () => {
-        console.log('WebSocket connected');
-      };
+        socket.onopen = () => {
+          console.log('WebSocket connected successfully');
+        };
 
-      socket.onmessage = (event: WebSocketEventMap['message']) => {
-        try {
-          const data = JSON.parse(event.data.toString());
-          if (data.type === 'newsletter_update') {
-            setNewsletters((prev: Newsletter[]) => prev.map((n: Newsletter) => 
-              n.id === data.newsletter._id ? { ...n, ...data.newsletter } : n
-            ));
-          } else if (data.type === 'subscriber_update') {
-            // Update subscribers from WebSocket event
-            console.log('WebSocket subscriber update:', data.data);
-            setSubscribers(prev => prev.map(sub => 
-              sub.id === data.data.id ? { ...sub, status: data.data.status } : sub
-            ));
+        socket.onmessage = (event: WebSocketEventMap['message']) => {
+          try {
+            const data = JSON.parse(event.data.toString());
+            if (data.type === 'newsletter_update') {
+              setNewsletters((prev: Newsletter[]) => prev.map((n: Newsletter) => 
+                n.id === data.newsletter._id ? { ...n, ...data.newsletter } : n
+              ));
+            } else if (data.type === 'subscriber_update') {
+              // Update subscribers from WebSocket event
+              console.log('WebSocket subscriber update:', data.data);
+              setSubscribers(prev => prev.map(sub => 
+                sub.id === data.data.id ? { ...sub, status: data.data.status } : sub
+              ));
+            }
+          } catch (error) {
+            console.error('Error processing WebSocket message:', error);
           }
-        } catch (error) {
-          console.error('Error processing WebSocket message:', error);
-        }
-      };
+        };
 
-      socket.onclose = (event: CloseEvent) => {
-        console.log('WebSocket disconnected:', event.code, event.reason);
-        // Only attempt to reconnect if it wasn't closed due to auth failure
-        if (event.code !== 1008) {
-          console.log('Attempting to reconnect...');
-          setTimeout(connectWebSocket, 3000);
-        }
-      };
+        socket.onclose = (event: CloseEvent) => {
+          console.log('WebSocket disconnected:', event.code, event.reason);
+          // Only attempt to reconnect if it wasn't closed due to auth failure and we have a token
+          if (event.code !== 1008 && localStorage.getItem('token')) {
+            console.log('Attempting to reconnect WebSocket in 3 seconds...');
+            setTimeout(connectWebSocket, 3000);
+          }
+        };
 
-      socket.onerror = (event: Event) => {
-        console.error('WebSocket error:', event);
-      };
+        socket.onerror = (event: Event) => {
+          console.error('WebSocket error:', event);
+          // Check if token might be invalid
+          const currentToken = localStorage.getItem('token');
+          if (currentToken !== token) {
+            console.log('Token changed, closing current socket');
+            socket.close();
+          }
+        };
 
-      setWs(socket);
+        setWs(socket);
+      } catch (error) {
+        console.error('Failed to establish WebSocket connection:', error);
+      }
     };
 
     // Connect WebSocket when component mounts or token changes
-    connectWebSocket();
+    if (token) {
+      connectWebSocket();
+    } else {
+      console.log('No token available for WebSocket connection');
+    }
 
     // Cleanup WebSocket connection on unmount or token change
     return () => {
       if (ws) {
+        console.log('Cleaning up WebSocket connection');
         ws.close();
         setWs(null);
       }
     };
   }, []); // We'll handle token changes in a separate effect
 
-   // Handle token changes
-   useEffect(() => {
+  // Handle token changes
+  useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'token') {
         if (ws) {
@@ -101,44 +120,98 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, [ws]);
 
-
   useEffect(() => {
     let isSubscribed = true;
     let redirecting = false;
 
     const fetchData = async () => {
+      // Check for token before attempting to fetch data
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.log('No token available, skipping data fetch');
+        setSubscribers([]);
+        setNewsletters([]);
+        setIsLoading(false);
+        return;
+      }
+      
+      // Prevent too many fetch attempts
+      if (fetchAttempts >= MAX_FETCH_ATTEMPTS) {
+        console.error(`Data fetching failed after ${MAX_FETCH_ATTEMPTS} attempts, stopping retries`);
+        setIsLoading(false);
+        return;
+      }
+      
       try {
         setIsLoading(true);
-        const [subscribersData, newslettersData] = await Promise.all([
-          subscriberAPI.getAll(),
-          newsletterAPI.getAll()
-        ]);
-    
+        console.log(`Fetching data (attempt ${fetchAttempts + 1})...`);
+        
+        // Define properly typed variables with default empty arrays
+        let subscribersData: Subscriber[] = [];
+        let newslettersData: Newsletter[] = [];
+        
+        try {
+          const response = await subscriberAPI.getAll();
+          if (response) subscribersData = response;
+          console.log('Subscribers fetched successfully');
+        } catch (err) {
+          console.error('Error fetching subscribers:', err);
+        }
+        
+        try {
+          const response = await newsletterAPI.getAll();
+          if (response) newslettersData = response;
+          console.log('Newsletters fetched successfully');
+        } catch (err) {
+          console.error('Error fetching newsletters:', err);
+        }
+
         if (subscribersData && isSubscribed) {
           // Directly use the subscriber status from the database
           const formattedSubscribers: Subscriber[] = subscribersData.map(sub => ({
             id: sub.id || sub._id || '',
+            _id: sub._id,
             email: sub.email,
             name: sub.name,
-            status: sub.status, // Use status directly from database
-            subscribed: sub.subscribedDate || sub.subscribed
+            status: sub.status,
+            subscribed: sub.subscribed || (sub as any).subscribedDate || new Date().toISOString(),
+            source: sub.source
           }));
           
           setSubscribers(formattedSubscribers);
+        } else {
+          setSubscribers([]);
         }
-    
+
         if (newslettersData && isSubscribed) {
           setNewsletters(newslettersData);
+        } else {
+          setNewsletters([]);
         }
+        
+        // Reset fetch attempts on success
+        setFetchAttempts(0);
       } catch (error) {
+        console.error('Data fetch error:', error);
+        
+        // Increment fetch attempts
+        setFetchAttempts(prevAttempts => prevAttempts + 1);
+        
         if (error instanceof APIError && error.status === 401 && !redirecting) {
           redirecting = true;
+          console.log('Authentication error during data fetch, clearing token');
           localStorage.removeItem('token');
           setSubscribers([]);
           setNewsletters([]);
-          if (typeof window !== 'undefined') {
+          
+          if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
             window.location.href = '/login';
           }
+        } else if (error instanceof APIError && error.status === 404) {
+          console.error('API endpoint not found during data fetch. Is the API server running?');
+          // Set empty data but don't redirect
+          setSubscribers([]);
+          setNewsletters([]);
         }
       } finally {
         if (isSubscribed) {
@@ -147,15 +220,18 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       }
     };
 
-    if (!localStorage.getItem('token')) {
+    // Only fetch if we have a token and are in the browser and haven't exceeded max attempts
+    if (typeof window !== 'undefined' && localStorage.getItem('token') && fetchAttempts < MAX_FETCH_ATTEMPTS) {
+      fetchData();
+    } else {
+      console.log('Skipping data fetch - no token, exceeded max attempts, or not in browser');
       setSubscribers([]);
       setNewsletters([]);
-    } else if (typeof window !== 'undefined') {
-      fetchData();
+      setIsLoading(false);
     }
     
     return () => { isSubscribed = false; };
-  }, []);
+  }, [fetchAttempts]); // Add fetchAttempts to dependency array
 
   const addSubscriber = async (subscriberData: Omit<Subscriber, 'id'>) => {
     try {
@@ -164,10 +240,12 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       if (response) {
         const newSubscriber: Subscriber = {
           id: response.id || response._id || String(new Date().getTime()),
+          _id: response._id,
           email: response.email,
           name: response.name,
           status: response.status,
-          subscribed: response.subscribed || new Date().toISOString()
+          subscribed: response.subscribed || new Date().toISOString(),
+          source: response.source
         };
         
         setSubscribers(prev => [...prev, newSubscriber]);
@@ -239,7 +317,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-
   const updateNewsletter = async (id: string, data: Partial<Newsletter>) => {
     try {
       const response = await newsletterAPI.update(id, data);
@@ -254,7 +331,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       throw error;
     }
   };
-
 
   return (
     <DataContext.Provider value={{

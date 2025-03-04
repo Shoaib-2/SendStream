@@ -11,14 +11,15 @@ import {
   updateSubscriber
 } from '../controllers/subs.controller';
 import { protect } from '../middleware/auth/auth.middleware';
+import { RequestHandler } from 'express';
 
 const router = Router();
 
 // Public unsubscribe route
 router.get('/unsubscribe/:token', asyncHandler(unsubscribeSubscriber));
 
-// Protected routes
-router.use(protect);
+// Protected routes - fix the type error by casting protect to RequestHandler
+router.use(protect as RequestHandler);
 router.route('/').get(getSubscribers).post(createSubscriber);
 router.route('/import').post(asyncHandler(importSubscribers));
 router.route('/export').get(exportSubscribers);

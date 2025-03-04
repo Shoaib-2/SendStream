@@ -5,23 +5,25 @@ import { Save, RefreshCw, ArrowDownToLine, ToggleLeft, ToggleRight } from 'lucid
 import { settingsAPI } from '@/services/api';
 import { useData } from '@/context/dataContext';
 
-interface Settings {
+// Custom local interface for Settings that enforces required fields
+interface LocalSettings {
   email: {
     fromName: string;
     replyTo: string;
-    senderEmail: string;
+    senderEmail: string; // Always required in our component
   };
   mailchimp: {
     apiKey: string;
     serverPrefix: string;
     enabled: boolean;
     autoSync: boolean;
+    listId?: string;
   };
 }
 
 export default function SettingsPage() {
   const { addSubscriber } = useData();
-  const [settings, setSettings] = useState<Settings>({
+  const [settings, setSettings] = useState<LocalSettings>({
     email: { 
       fromName: '', 
       replyTo: '', 
@@ -39,7 +41,24 @@ export default function SettingsPage() {
   const [testing, setTesting] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [message, setMessage] = useState({ text: '', type: '' });
-  const [connectionStatus, setConnectionStatus] = useState({ 
+  // Define a proper type that matches what we expect from the API
+// Match our local types with what we get from the API
+interface ConnectionStatus {
+  mailchimp: { 
+    connected: boolean; 
+    message: string; 
+    listId: string;
+  }
+}
+
+// Specify what we expect from the API
+interface ApiTestResponse {
+  success: boolean;
+  message: string;
+  listId?: string;
+}
+
+const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>({ 
     mailchimp: { connected: false, message: '', listId: '' } 
   });
 
@@ -50,7 +69,21 @@ export default function SettingsPage() {
   const loadSettings = async () => {
     try {
       const data = await settingsAPI.getSettings();
-      setSettings(data);
+      // Ensure senderEmail is never undefined
+      setSettings({
+        email: {
+          fromName: data.email.fromName || '',
+          replyTo: data.email.replyTo || '',
+          senderEmail: data.email.senderEmail || ''
+        },
+        mailchimp: {
+          apiKey: data.mailchimp.apiKey || '',
+          serverPrefix: data.mailchimp.serverPrefix || '',
+          enabled: data.mailchimp.enabled || false,
+          autoSync: data.mailchimp.autoSync || false,
+          listId: data.mailchimp.listId
+        }
+      });
       if (data.mailchimp?.enabled) {
         setConnectionStatus(prev => ({
           ...prev,
@@ -67,8 +100,28 @@ export default function SettingsPage() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const updatedSettings = await settingsAPI.updateSettings(settings);
-      setSettings(updatedSettings);
+      // This was missing email settings in the API call
+      const updatedSettings = await settingsAPI.updateSettings({
+        email: settings.email, // Add this line to include email settings
+        mailchimp: settings.mailchimp
+      });
+      
+      // Properly handle the response by ensuring required fields exist
+      setSettings({
+        email: {
+          fromName: updatedSettings.email.fromName || '',
+          replyTo: updatedSettings.email.replyTo || '',
+          senderEmail: updatedSettings.email.senderEmail || ''
+        },
+        mailchimp: {
+          apiKey: updatedSettings.mailchimp.apiKey || '',
+          serverPrefix: updatedSettings.mailchimp.serverPrefix || '',
+          enabled: updatedSettings.mailchimp.enabled || false,
+          autoSync: updatedSettings.mailchimp.autoSync || false,
+          listId: updatedSettings.mailchimp.listId
+        }
+      });
+      
       showMessage('Settings saved successfully', 'success');
     } catch (error) {
       showMessage('Failed to save settings', 'error');
@@ -85,10 +138,18 @@ export default function SettingsPage() {
         [type]: { ...prev[type], message: 'Testing connection...' }
       }));
       
-      const result = await settingsAPI.testIntegration(type);
+      // Pass proper credentials to test API
+      const result = await settingsAPI.testIntegration(
+        type, 
+        {
+          apiKey: settings.mailchimp.apiKey,
+          serverPrefix: settings.mailchimp.serverPrefix
+        }
+      );
       
       if (result) {
-        const success = result.success === undefined ? false : result.success;
+        // Now result is properly typed with ExtendedIntegrationResponse
+        const success = result.success;
         const message = result.message || 'Connection test completed';
         
         setConnectionStatus(prev => ({
@@ -117,7 +178,8 @@ export default function SettingsPage() {
 
   const toggleIntegration = async (type: 'mailchimp', enabled: boolean) => {
     try {
-      await settingsAPI.enableIntegration(type, enabled);
+      // Pass the current autoSync value as the third parameter
+      await settingsAPI.enableIntegration(type, enabled, settings.mailchimp.autoSync);
       
       setSettings(prev => ({
         ...prev,

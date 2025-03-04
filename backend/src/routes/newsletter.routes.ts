@@ -1,30 +1,31 @@
-// backend/src/routes/newsletter.routes.ts
 
-import express from 'express';
+import express, { RequestHandler } from 'express';
 import { newsletterController} from '../controllers/newsletter.controller';
 import { protect } from '../middleware/auth/auth.middleware';
 
 const router = express.Router();
 
-// Protected routes
-router.use(protect);
+// Protected routes - fix the type error by using the middleware correctly
+router.use(protect as express.RequestHandler);
 
+router.route('/')
+  .get((req, res, next) => newsletterController.getAll(req, res, next))
+  .post((req, res, next) => newsletterController.create(req, res, next));
 
-router.route('/').get((req, res, next) => newsletterController.getAll(req, res, next)).post((req, res, next) => newsletterController.create(req, res, next));
 router.get('/stats', (req, res, next) => newsletterController.getNewsletterStats(req, res, next));
 
-
 router.route('/:id')
-  .get(newsletterController.getOne) 
- .patch(newsletterController.update)
- .delete(newsletterController.delete);
+  .get(newsletterController.getOne as RequestHandler) 
+  .patch(newsletterController.update as RequestHandler)
+  .delete(newsletterController.delete as RequestHandler);
 
+// Fix the send route by casting to RequestHandler
+router.post('/:id/send', newsletterController.send as RequestHandler);
 
-router.post('/:id/send', newsletterController.send);
+// Fix the schedule route
 router.route('/:id/schedule').post(async (req, res, next) => {
   await newsletterController.schedule(req, res, next);
 });
-
 
 // Public route for tracking
 router.get('/newsletters/track-open/:newsletterId/:subscriberId', async (req, res, next) => {

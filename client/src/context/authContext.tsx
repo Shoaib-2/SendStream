@@ -70,50 +70,69 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
 
-  const login = async (email: string, password: string) => {
-    try {
-      const response = await authAPI.login({ email, password });
-      
-      // The JWT is now set as an HTTP-only cookie automatically
-      // We still use the response data for the user info
-      if (response?.user) {
-        setUser(response.user);
-        
-        // Save token for backward compatibility
-        if (response.token) {
-          setToken(response.token);
-          localStorage.setItem('token', response.token);
-          localStorage.setItem('user', JSON.stringify(response.user));
-        }
-      }
-    } catch (error) {
-      console.error('Login error:', error);
-      throw error;
-    }
-  };
+ // Update the login and signup methods in AuthContext
 
-  const signup = async (email: string, password: string) => {
-    try {
-      const response = await authAPI.register({ email, password });
-      
-      // The JWT is now set as an HTTP-only cookie automatically
-      // We still use the response data for the user info
-      if (response?.user) {
-        setUser(response.user);
-        
-        // Save token for backward compatibility
-        if (response.token) {
-          setToken(response.token);
-          localStorage.setItem('token', response.token);
-          localStorage.setItem('user', JSON.stringify(response.user));
-        }
-      }
-    } catch (error) {
-      console.error('Signup error:', error);
-      throw error;
+const login = async (email: string, password: string) => {
+  try {
+    const response = await authAPI.login({ email, password });
+    
+    // Check for error responses that don't throw exceptions
+    if (response?.status === 'error') {
+      console.error('Login failed:', response.message);
+      throw new Error(response.message || 'Authentication failed');
     }
-  };
+    
+    // The JWT is now set as an HTTP-only cookie automatically
+    // We still use the response data for the user info
+    if (response?.user) {
+      setUser(response.user);
+      
+      // Save token for backward compatibility
+      if (response.token) {
+        setToken(response.token);
+        localStorage.setItem('token', response.token);
+        localStorage.setItem('user', JSON.stringify(response.user));
+      }
+    } else {
+      // Handle case where response exists but user data is missing
+      throw new Error('Invalid login response - user data missing');
+    }
+  } catch (error) {
+    console.error('Login error:', error);
+    throw error;
+  }
+};
 
+const signup = async (email: string, password: string) => {
+  try {
+    const response = await authAPI.register({ email, password });
+    
+    // Check for error responses that don't throw exceptions
+    if (response?.status === 'error') {
+      console.error('Signup failed:', response.message);
+      throw new Error(response.message || 'Registration failed');
+    }
+    
+    // The JWT is now set as an HTTP-only cookie automatically
+    // We still use the response data for the user info
+    if (response?.user) {
+      setUser(response.user);
+      
+      // Save token for backward compatibility
+      if (response.token) {
+        setToken(response.token);
+        localStorage.setItem('token', response.token);
+        localStorage.setItem('user', JSON.stringify(response.user));
+      }
+    } else {
+      // Handle case where response exists but user data is missing
+      throw new Error('Invalid registration response - user data missing');
+    }
+  } catch (error) {
+    console.error('Signup error:', error);
+    throw error;
+  }
+};
   const logout = async () => {
     try {
       // Call API to clear the cookie

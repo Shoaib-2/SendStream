@@ -1644,3 +1644,128 @@
 2025-03-03T15:26:51.451Z [[32minfo[39m]: Successfully validated sync subscribers response
 2025-03-03T15:26:51.451Z [[32minfo[39m]: Synced 1 subscribers from Mailchimp
 2025-03-03T15:26:51.452Z [[32minfo[39m]: Status breakdown - Active: 1, Unsubscribed: 0
+2025-03-04T14:59:51.888Z [[32minfo[39m]: Sending newsletter to 0 unique subscribers
+2025-03-04T15:26:52.703Z [[32minfo[39m]: 🔍 Testing Mailchimp connection...
+2025-03-04T15:26:53.280Z [[31merror[39m]: ❌ Connection failed:
+2025-03-04T15:27:33.201Z [[32minfo[39m]: 🔍 Testing Mailchimp connection...
+2025-03-04T15:27:33.713Z [[31merror[39m]: ❌ Connection failed:
+2025-03-04T15:29:04.325Z [[32minfo[39m]: 🔍 Testing Mailchimp connection...
+2025-03-04T15:29:05.152Z [[31merror[39m]: ❌ Connection failed:
+2025-03-04T15:29:26.146Z [[32minfo[39m]: 🔍 Testing Mailchimp connection...
+2025-03-04T15:29:26.597Z [[31merror[39m]: ❌ Connection failed:
+2025-03-04T15:31:27.540Z [[32minfo[39m]: 🔍 Testing Mailchimp connection...
+2025-03-04T15:31:27.978Z [[31merror[39m]: ❌ Connection failed:
+2025-03-04T15:34:16.444Z [[32minfo[39m]: 🔍 Testing Mailchimp connection...
+2025-03-04T15:34:17.298Z [[31merror[39m]: ❌ Connection failed:
+2025-03-04T15:40:27.865Z [[31merror[39m]: Error updating settings: Validation failed: email.fromName: Path `email.fromName` is required.
+2025-03-04T15:43:36.684Z [[31merror[39m]: Integration test error: Settings not found
+2025-03-04T15:52:52.904Z [[31merror[39m]: Integration test error: Settings not found
+2025-03-04T15:53:40.597Z [[31merror[39m]: Integration test error: Settings not found
+2025-03-04T16:18:31.922Z [[32minfo[39m]: Sending newsletter to 1 unique subscribers
+2025-03-04T16:18:32.142Z [[31merror[39m]: Failed to send newsletter
+2025-03-04T19:08:50.872Z [[32minfo[39m]: Sending newsletter to 1 unique subscribers
+2025-03-04T19:08:51.072Z [[31merror[39m]: Failed to send newsletter
+2025-03-04T19:27:13.040Z [[32minfo[39m]: Sending newsletter to 1 unique subscribers
+2025-03-04T19:27:13.195Z [[31merror[39m]: Failed to send newsletter
+2025-03-04T19:33:53.398Z [[32minfo[39m]: Sending newsletter to 1 unique subscribers
+2025-03-04T19:33:53.429Z [[31merror[39m]: User settings not found
+2025-03-04T19:33:53.433Z [[31merror[39m]: Send newsletter error: Email settings not configured
+2025-03-04T19:35:47.038Z [[32minfo[39m]: Sending newsletter to 1 unique subscribers
+2025-03-04T19:35:47.079Z [[32minfo[39m]: Creating default settings for user
+2025-03-04T19:35:47.129Z [[32minfo[39m]: Sending newsletter to 1 unique subscribers
+2025-03-04T19:35:47.288Z [[31merror[39m]: Failed to send newsletter
+2025-03-04T19:39:59.543Z [[32minfo[39m]: Email transporter created
+2025-03-04T19:40:15.921Z [[32minfo[39m]: Sending newsletter to 1 unique subscribers
+2025-03-04T19:40:15.953Z [[32minfo[39m]: Sending newsletter to 1 unique subscribers
+2025-03-04T19:40:15.955Z [[32minfo[39m]: Processing batch 1 of 1
+2025-03-04T19:40:15.956Z [[32minfo[39m]: Unsubscribe URL:
+2025-03-04T19:40:16.083Z [[31merror[39m]: Failed to send to shoaibkkhn50665@gmail.com:
+2025-03-04T19:40:16.084Z [[32minfo[39m]: Batch completed: 0 sent, 1 failed
+2025-03-04T19:40:16.085Z [[31merror[39m]: Overall newsletter send failed:
+2025-03-04T19:40:16.086Z [[31merror[39m]: Failed to send newsletter
+2025-03-04T19:40:16.088Z [[31merror[39m]: Send newsletter error: Failed to send newsletter: Failed to send newsletter: Failed to send newsletter to any recipients
+2025-03-04T19:43:00.781Z [[33mwarn[39m]: Real email transporter failed verification, using test account instead:
+2025-03-04T19:43:00.856Z [[32minfo[39m]: Created test email account
+2025-03-04T19:43:00.857Z [[32minfo[39m]: Test email transporter ready
+2025-03-04T19:43:49.129Z [[33mwarn[39m]: Real email transporter failed verification, using test account instead:
+2025-03-04T19:43:49.221Z [[32minfo[39m]: Created test email account
+2025-03-04T19:43:49.222Z [[32minfo[39m]: Test email transporter ready
+2025-03-04T19:44:15.619Z [[33mwarn[39m]: Real email transporter failed verification, using test account instead:
+2025-03-04T19:44:15.683Z [[32minfo[39m]: Created test email account
+2025-03-04T19:44:15.684Z [[32minfo[39m]: Test email transporter ready
+2025-03-04T19:44:28.868Z [[32minfo[39m]: Sending newsletter to 1 unique subscribers
+2025-03-04T19:44:28.896Z [[32minfo[39m]: Sending newsletter to 1 unique subscribers
+2025-03-04T19:44:28.897Z [[32minfo[39m]: Sending test email to verify transporter
+2025-03-04T19:44:29.795Z [[32minfo[39m]: Test email succeeded
+2025-03-04T19:44:29.796Z [[32minfo[39m]: Processing batch 1 of 1
+2025-03-04T19:44:29.797Z [[32minfo[39m]: Unsubscribe URL:
+2025-03-04T19:44:30.576Z [[32minfo[39m]: Email sent to shoaibkkhn50665@gmail.com:
+2025-03-04T19:44:30.577Z [[32minfo[39m]: Successfully sent 1 emails, continuing with other batches
+2025-03-04T19:44:30.578Z [[32minfo[39m]: Newsletter send complete: 1/1 emails sent successfully
+2025-03-04T19:48:27.782Z [[31merror[39m]: Failed to initialize real email transporter: Missing credentials for "PLAIN"
+2025-03-04T19:48:28.004Z [[33mwarn[39m]: Using Ethereal test account for email delivery. Emails will NOT be delivered to real recipients.
+2025-03-04T19:48:28.006Z [[32minfo[39m]: Test account credentials:
+2025-03-04T19:49:29.334Z [[32minfo[39m]: Sending newsletter to 1 unique subscribers
+2025-03-04T19:49:29.366Z [[32minfo[39m]: Sending newsletter to 1 unique subscribers
+2025-03-04T19:49:29.368Z [[33mwarn[39m]: Using test account - newsletters will not be delivered to real recipients
+2025-03-04T19:49:29.369Z [[32minfo[39m]: Unsubscribe URL:
+2025-03-04T19:49:30.080Z [[32minfo[39m]: Email sent to shoaibkkhn50665@gmail.com (preview): https://ethereal.email/message/Z8dZDMMD4Py9yiaiZ8dZSmENU1iBEZ75AAAAAVUB.zgsPcVS97.tSPhWYbA
+2025-03-04T19:49:30.081Z [[32minfo[39m]: Newsletter send complete: 1/1 emails sent
+2025-03-04T19:50:31.493Z [[32minfo[39m]: Sending newsletter to 1 unique subscribers
+2025-03-04T19:50:31.531Z [[32minfo[39m]: Sending newsletter to 1 unique subscribers
+2025-03-04T19:50:31.690Z [[31merror[39m]: Failed to send newsletter
+2025-03-04T19:50:40.215Z [[31merror[39m]: Failed to initialize real email transporter: Missing credentials for "PLAIN"
+2025-03-04T19:50:40.426Z [[33mwarn[39m]: Using Ethereal test account for email delivery. Emails will NOT be delivered to real recipients.
+2025-03-04T19:50:40.427Z [[32minfo[39m]: Test account credentials:
+2025-03-04T19:52:19.701Z [[32minfo[39m]: Gmail transporter created
+2025-03-04T19:52:35.843Z [[32minfo[39m]: Sending newsletter to 1 unique subscribers
+2025-03-04T19:52:35.879Z [[32minfo[39m]: Sending newsletter to 1 unique subscribers
+2025-03-04T19:52:35.880Z [[32minfo[39m]: Processing batch 1 of 1
+2025-03-04T19:52:35.881Z [[32minfo[39m]: Unsubscribe URL:
+2025-03-04T19:52:37.001Z [[32minfo[39m]: Batch results: 1/1 emails sent
+2025-03-04T19:52:37.002Z [[32minfo[39m]: Newsletter sent successfully to 1/1 subscribers
+2025-03-04T19:55:40.538Z [[32minfo[39m]: Gmail transporter created
+2025-03-04T19:56:24.463Z [[32minfo[39m]: Sending newsletter to 2 unique subscribers
+2025-03-04T19:56:24.502Z [[32minfo[39m]: Sending newsletter to 2 unique subscribers
+2025-03-04T19:56:24.503Z [[32minfo[39m]: Processing batch 1 of 1
+2025-03-04T19:56:24.503Z [[32minfo[39m]: Unsubscribe URL:
+2025-03-04T19:56:24.507Z [[32minfo[39m]: Unsubscribe URL:
+2025-03-04T19:56:25.640Z [[32minfo[39m]: Batch results: 2/2 emails sent
+2025-03-04T19:56:25.640Z [[32minfo[39m]: Newsletter sent successfully to 2/2 subscribers
+2025-03-04T20:01:00.548Z [[32minfo[39m]: Sending newsletter to 2 unique subscribers
+2025-03-04T20:01:00.549Z [[32minfo[39m]: Processing batch 1 of 1
+2025-03-04T20:01:00.550Z [[32minfo[39m]: Unsubscribe URL:
+2025-03-04T20:01:00.550Z [[32minfo[39m]: Unsubscribe URL:
+2025-03-04T20:01:01.759Z [[32minfo[39m]: Batch results: 2/2 emails sent
+2025-03-04T20:01:01.760Z [[32minfo[39m]: Newsletter sent successfully to 2/2 subscribers
+2025-03-04T23:25:39.169Z [[32minfo[39m]: Gmail transporter created
+2025-03-04T23:26:13.399Z [[31merror[39m]: Error syncing subscribers: Mailchimp is not enabled or configured
+2025-03-04T23:26:14.979Z [[31merror[39m]: Error syncing subscribers: Mailchimp is not enabled or configured
+2025-03-04T23:27:26.879Z [[32minfo[39m]: Testing Mailchimp with provided credentials
+2025-03-04T23:27:26.881Z [[32minfo[39m]: 🔍 Testing Mailchimp connection...
+2025-03-04T23:27:27.354Z [[31merror[39m]: ❌ Connection failed:
+2025-03-04T23:27:40.125Z [[32minfo[39m]: Testing Mailchimp with provided credentials
+2025-03-04T23:27:40.127Z [[32minfo[39m]: 🔍 Testing Mailchimp connection...
+2025-03-04T23:27:40.374Z [[31merror[39m]: ❌ Connection failed:
+2025-03-04T23:27:49.064Z [[32minfo[39m]: Testing Mailchimp with provided credentials
+2025-03-04T23:27:49.065Z [[32minfo[39m]: 🔍 Testing Mailchimp connection...
+2025-03-04T23:27:51.319Z [[32minfo[39m]: Successfully validated test connection response
+2025-03-04T23:27:51.319Z [[32minfo[39m]: ✅ Connection successful
+2025-03-04T23:27:51.320Z [[32minfo[39m]: 📊 Lists found:
+2025-03-04T23:27:51.320Z [[32minfo[39m]: 📝 First list details:
+2025-03-04T23:27:51.358Z [[32minfo[39m]: Updated settings with new credentials after successful test
+2025-03-04T23:27:54.783Z [[32minfo[39m]: 🔍 Testing Mailchimp connection...
+2025-03-04T23:27:55.120Z [[32minfo[39m]: Successfully validated test connection response
+2025-03-04T23:27:55.121Z [[32minfo[39m]: ✅ Connection successful
+2025-03-04T23:27:55.121Z [[32minfo[39m]: 📊 Lists found:
+2025-03-04T23:27:55.122Z [[32minfo[39m]: 📝 First list details:
+2025-03-04T23:27:56.769Z [[32minfo[39m]: 🔍 Testing Mailchimp connection...
+2025-03-04T23:27:57.093Z [[32minfo[39m]: Successfully validated test connection response
+2025-03-04T23:27:57.093Z [[32minfo[39m]: ✅ Connection successful
+2025-03-04T23:27:57.094Z [[32minfo[39m]: 📊 Lists found:
+2025-03-04T23:27:57.094Z [[32minfo[39m]: 📝 First list details:
+2025-03-04T23:28:04.979Z [[32minfo[39m]: Successfully validated initialize list response
+2025-03-04T23:28:04.980Z [[32minfo[39m]: Starting subscriber sync with Mailchimp
+2025-03-04T23:28:05.287Z [[32minfo[39m]: Successfully validated sync subscribers response
+2025-03-04T23:28:05.288Z [[32minfo[39m]: Synced 1 subscribers from Mailchimp
+2025-03-04T23:28:05.288Z [[32minfo[39m]: Status breakdown - Active: 1, Unsubscribed: 0

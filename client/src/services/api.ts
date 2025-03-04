@@ -46,7 +46,7 @@ interface Subscriber {
  status: 'active' | 'unsubscribed';
  subscribedDate: string;
  subscribed: string;
- 
+ source?: 'mailchimp' | 'csv' | 'manual';
 }
 
 interface NewsletterStats {
@@ -69,9 +69,10 @@ interface NewsletterWithStats extends Omit<Newsletter, 'opens'> {
   sent: number;
 }
 
-interface IntegrationResponse {
-  message: string;
+interface ExtendedIntegrationResponse {
   success: boolean;
+  message: string;
+  listId?: string;
 }
 
 interface NewsletterResponse {
@@ -84,6 +85,21 @@ interface NewsletterResponse {
       low: number;
     };
     topPerformers: Newsletter[];
+  };
+}
+
+interface Settings {
+  email: {
+    fromName: string;
+    replyTo: string;
+    senderEmail?: string;
+  };
+  mailchimp: {
+    apiKey: string;
+    serverPrefix: string;
+    enabled: boolean;
+    autoSync: boolean;
+    listId?: string;
   };
 }
 
@@ -170,13 +186,73 @@ const api = axios.create({
   },
   withCredentials: true // This ensures cookies are sent with requests
 });
+// Add this to track failed requests to prevent loops
+let failedRequestsCount = 0;
+const MAX_FAILED_REQUESTS = 3;
+let lastFailedEndpoint = '';
+let isRedirecting = false;
 
-// Added support for pagination and optimization for large datasets
+// Improved response error interceptor
+api.interceptors.response.use(
+  (response) => {
+    // Reset failed requests counter on success
+    failedRequestsCount = 0;
+    lastFailedEndpoint = '';
+    return response;
+  },
+  (error) => {
+    // Check if the request failed due to auth issues
+    if (error.response?.status === 401) {
+      console.log('Authentication error:', error.config?.url);
+      
+      // Track which endpoint is failing
+      if (lastFailedEndpoint === error.config?.url) {
+        failedRequestsCount++;
+      } else {
+        lastFailedEndpoint = error.config?.url;
+        failedRequestsCount = 1;
+      }
+      
+      // Prevent infinite loops by limiting retries
+      if (failedRequestsCount >= MAX_FAILED_REQUESTS) {
+        console.error(`Too many failed requests to ${lastFailedEndpoint}, stopping retries`);
+        
+        // Reset localStorage and redirect only once
+        if (!isRedirecting) {
+          isRedirecting = true;
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          
+          // Only redirect if we're in the browser and not already on the login page
+          if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+            console.log('Redirecting to login page after too many failed requests');
+            window.location.href = '/login';
+          }
+        }
+        
+        return Promise.reject(new Error('Authentication failed after multiple attempts'));
+      }
+    }
+    
+    // Handle other errors
+    console.error('Response error:', error.response?.status, error.config?.url);
+    return Promise.reject(error);
+  }
+);
+
+// Improved request interceptor
 api.interceptors.request.use((config) => {
   // For backwards compatibility during transition - send token via header if available
   const token = localStorage.getItem('token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
+    console.log('Adding auth token to request:', config.url);
+  } else {
+    console.log('No auth token available for request:', config.url);
+    // Allow login requests without a token
+    if (!config.url?.includes('/auth/login') && !config.url?.includes('/auth/register')) {
+      console.warn('Non-auth request without token:', config.url);
+    }
   }
   
   // Add pagination support to optimize database queries
@@ -190,92 +266,128 @@ api.interceptors.request.use((config) => {
   
   return config;
 }, (error) => {
+  console.error('Request interceptor error:', error);
   return Promise.reject(error);
 });
-
-api.interceptors.response.use(
-  (response) => {
-    console.log('Response received:', response.status);
-    return response;
-  },
-  (error) => {
-    // Handle 401 Unauthorized errors
-    if (error.response?.status === 401) {
-      // We don't need to clear localStorage as cookies will be managed by the server
-      console.log('Authentication error - redirecting to login');
-    }
-    
-    console.error('Response error:', error.response?.status, error.response?.data);
-    return Promise.reject(error);
-  }
-);
-
+  
 export const settingsAPI = {
-  getSettings: async () => {
-    try {
-      const response = await api.get('/settings');
-      if (!response.data?.data?.email) {
-        // Return default structure if data is incomplete
-        return {
-          email: { fromName: '', replyTo: '' },
-          mailchimp: { apiKey: '', serverPrefix: '', enabled: false, autoSync: false },
-        };
-      }
-      return response.data.data;
-    } catch (error) {
-      console.error('Settings error:', error);
-      return {
-        email: { fromName: '', replyTo: '' },
-        mailchimp: { apiKey: '', serverPrefix: '', enabled: false, autoSync: false },
-      };
-    }
+  // Added return type and parameter type
+  getSettings: async (): Promise<Settings> => {
+    const response = await api.get('/settings');
+    return response.data.data;
   },
   
-  updateSettings: async (settings: any) => {
+  // Added parameter type
+  updateSettings: async (settings: Settings): Promise<Settings> => {
     const response = await api.put('/settings', settings);
     return response.data.data;
   },
   
-  testIntegration: async (type: 'mailchimp') => {
-    try {
-      const response = await api.post(`/settings/test/${type}`);
-      return response.data.data;
-    } catch (error: any) {
-      console.error(`${type} integration test error:`, error);
-      return {
-        success: false,
-        message: error.response?.data?.message || `Failed to connect to ${type}`
-      };
-    }
+  // Updated to use extended interface that includes listId
+  testIntegration: async (type: string, credentials: { apiKey: string; serverPrefix: string }): Promise<ExtendedIntegrationResponse> => {
+    const response = await api.post(`/settings/test/${type}`, credentials);
+    return response.data.data;
   },
   
-  enableIntegration: async (type: 'mailchimp', enabled: boolean, autoSync?: boolean) => {
-    try {
-      const payload: { enabled: boolean; autoSync?: boolean } = { enabled };
-      if (autoSync !== undefined) {
-        payload.autoSync = autoSync;
-      }
-      
-      const response = await api.post(`/settings/enable/${type}`, payload);
-      return response.data.data;
-    } catch (error: any) {
-      console.error(`${type} integration enable error:`, error);
-      throw error;
-    }
+  // Added parameter types
+  enableIntegration: async (type: string, enabled: boolean, autoSync: boolean): Promise<{ enabled: boolean; autoSync: boolean }> => {
+    const response = await api.post(`/settings/enable/${type}`, { enabled, autoSync });
+    return response.data.data;
   },
-  syncSubscribers: async () => {
-    try {
-      const response = await api.post('/settings/sync-subscribers');
-      return response.data.data;
-    } catch (error) {
-      console.error('Error syncing subscribers:', error);
-      throw error;
-    }
+  
+  // Added parameter type
+  sendNewsletter: async (newsletter: { subject: string; content: string }): Promise<any> => {
+    const response = await api.post('/settings/newsletter', newsletter);
+    return response.data.data;
+  },
+  
+  // Added parameter types
+  scheduleNewsletter: async (campaignId: string, sendTime: Date): Promise<any> => {
+    const response = await api.post('/settings/newsletter/schedule', { campaignId, sendTime });
+    return response.data.data;
+  },
+  
+  // Added return type
+  getSubscriberStats: async (): Promise<any> => {
+    const response = await api.get('/settings/subscribers/stats');
+    return response.data.data;
+  },
+  
+  // Added return type
+  syncSubscribers: async (): Promise<any[]> => {
+    const response = await api.post('/settings/sync-subscribers');
+    return response.data.data;
+  },
+  
+  // Added parameter type and return type
+  getCampaignStats: async (campaignId: string): Promise<any> => {
+    const response = await api.get(`/settings/campaigns/${campaignId}/stats`);
+    return response.data.data;
   }
 };
 
 
 export const newsletterAPI = {
+  testIntegration: async (type: 'mailchimp') => {
+    try {
+      console.log(`Testing ${type} integration...`);
+      
+      // Get current settings with a proper type definition
+      const settings = await settingsAPI.getSettings();
+      
+      // Use optional chaining and nullish coalescing to handle potential undefined values
+      const apiKey = settings?.mailchimp?.apiKey ?? '';
+      const serverPrefix = settings?.mailchimp?.serverPrefix ?? '';
+      
+      console.log('Testing with credentials:', {
+        apiKeyLength: apiKey.length,
+        apiKeyMasked: apiKey.startsWith('••••'),
+        serverPrefix,
+        hasApiKey: !!apiKey,
+        hasServerPrefix: !!serverPrefix
+      });
+      
+      // Don't try to test with masked key
+      if (apiKey.startsWith('••••')) {
+        return {
+          success: false,
+          message: 'Please enter your complete API key (masked keys cannot be used)'
+        };
+      }
+      
+      if (!apiKey) {
+        return {
+          success: false,
+          message: 'Please enter your Mailchimp API Key'
+        };
+      }
+      
+      if (!serverPrefix) {
+        return {
+          success: false,
+          message: 'Please enter your Mailchimp Server Prefix'
+        };
+      }
+      
+      // Send the API key and server prefix in the request body
+      const response = await api.post(`/settings/test/${type}`, {
+        apiKey,
+        serverPrefix
+      });
+      
+      return response.data.data;
+    } catch (error: any) {
+      console.error(`${type} integration test detailed error:`, error);
+      
+      return {
+        success: false,
+        message: error.response?.data?.data?.message || 
+                 error.response?.data?.message ||
+                 `Failed to connect to ${type}: ${error.message}`
+      };
+    }
+  },
+
   getNewsletterStats: async (): Promise<NewsletterResponse> => {
     // Use deduplication for frequently called stats methods
     return dedupRequest('newsletterStats', async () => {
@@ -346,14 +458,37 @@ export const newsletterAPI = {
     handleError(error as AxiosError);
   }
 },
- send: async (id: string) => {
-   try { 
-     const response = await api.post<ResponseData<Newsletter>>(`/newsletters/${id}/send`);
-     return response.data.data;
-   } catch (error) {
-     handleError(error as AxiosError);
-   }
- }
+send: async (id: string) => {
+  try { 
+    console.log(`Attempting to send newsletter ${id}...`);
+    
+    // Add timeout to prevent hanging requests
+    const response = await api.post<ResponseData<Newsletter>>(
+      `/newsletters/${id}/send`,
+      {},  // Empty body
+      { timeout: 30000 }  // 30 second timeout for newsletter sending
+    );
+    
+    console.log(`Newsletter sent successfully:`, response.data);
+    return response.data.data;
+  } catch (error) {
+    console.error('Newsletter send error:', error);
+    
+    // Extract specific error message if available
+    let errorMessage = 'Failed to send newsletter';
+    if ((error as AxiosError).response?.data as any) {
+      errorMessage = ((error as AxiosError).response?.data as any)?.message;
+    } else if ((error as AxiosError).message) {
+      errorMessage = (error as AxiosError).message;
+    }
+    
+    // Throw a more descriptive error
+    throw new APIError(
+      (error as AxiosError).response?.status || 500,
+      errorMessage
+    );
+  }
+}
 };
 
 export const subscriberAPI = {
@@ -373,7 +508,18 @@ export const subscriberAPI = {
       params: { page, limit }
     };
     const response = await api.get<ResponseData<Subscriber[]>>('/subscribers', config);
-    return response.data.data;
+     // Transform response to ensure it matches the Subscriber interface
+     const subscribers = response.data.data.map(sub => ({
+      id: sub.id || sub._id || '',
+      _id: sub._id,
+      email: sub.email,
+      name: sub.name,
+      status: sub.status as 'active' | 'unsubscribed',
+      subscribed: sub.subscribed || (sub as any).subscribedDate || new Date().toISOString(),
+      source: sub.source as 'mailchimp' | 'csv' | 'manual' | undefined
+    }));
+    
+    return subscribers;
   } catch (error) {
     console.error('Error fetching subscribers:', error);
     handleError(error as AxiosError);
@@ -518,41 +664,98 @@ export const analyticsAPI = {
 export const authAPI = {
   testConnection: async () => {
     try {
+      // Check if token exists before making the request
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.log('No token found, skipping auth check');
+        return { status: 'error', authenticated: false };
+      }
+      
       const response = await api.get('/auth/me');
       console.log('Auth check response:', response.data);
-      return response.data;
+      return { ...response.data, status: 'success', authenticated: true };
     } catch (error) {
       console.error('Auth check failed:', error);
-      throw error;
+      // Handle 404 errors gracefully - API endpoint might not be available
+      if ((error as AxiosError).response?.status === 404) {
+        console.log('Auth endpoint not found, API might be unreachable');
+        return { status: 'error', authenticated: false, error: 'API_UNREACHABLE' };
+      }
+      // Return a structured error response instead of throwing
+      return { status: 'error', authenticated: false, error: 'AUTH_ERROR' };
     }
   },
 
   login: async (credentials: { email: string; password: string }) => {
     try {
-      const response = await api.post('/auth/login', credentials);
+      // Add a timeout to avoid hanging requests
+      const response = await api.post('/auth/login', credentials, {
+        timeout: 10000 // 10 second timeout
+      });
       console.log('Login response:', response.data);
       return response.data.data;
     } catch (error) {
       console.error('Login error:', error);
+      // Special handling for 404 errors - don't throw, return a structured error response
+      if ((error as AxiosError).response?.status === 404) {
+        return { 
+          status: 'error', 
+          message: 'Login endpoint not available. Is the API server running?' 
+        };
+      }
+      
+      // For connection errors, return a better message
+      if ((error as AxiosError).code === 'ECONNREFUSED' || 
+          (error as AxiosError).message.includes('Network Error')) {
+        return {
+          status: 'error',
+          message: 'Cannot connect to authentication server. Please try again later.'
+        };
+      }
+      
+      // For other errors, let handleError function format them
       handleError(error as AxiosError);
     }
   },
 
   register: async (data: { email: string; password: string }) => {
     try {
-      const response = await api.post('/auth/register', data);
+      const response = await api.post('/auth/register', data, {
+        timeout: 10000 // 10 second timeout
+      });
       console.log('Register response:', response.data);
       return response.data.data;
     } catch (error) {
       console.error('Register error:', error);
+      // Special handling for 404 errors
+      if ((error as AxiosError).response?.status === 404) {
+        return { 
+          status: 'error', 
+          message: 'Registration endpoint not available. Is the API server running?' 
+        };
+      }
+      
+      // For connection errors, return a better message
+      if ((error as AxiosError).code === 'ECONNREFUSED' || 
+          (error as AxiosError).message.includes('Network Error')) {
+        return {
+          status: 'error',
+          message: 'Cannot connect to authentication server. Please try again later.'
+        };
+      }
+      
       handleError(error as AxiosError);
     }
   },
- logout: async () => {
-   try {
-     await api.post('/auth/logout');
-   } catch (error) {
-     handleError(error as AxiosError);
-   }
- }
+  
+  logout: async () => {
+    try {
+      await api.post('/auth/logout');
+      return { status: 'success' };
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Even if logout API fails, we can still clear local state
+      return { status: 'success', message: 'Logged out locally' };
+    }
+  }
 };

@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { RequestHandler } from 'express';
 import { settingsController } from '../controllers/settings.controller';
 import { protect } from '../middleware/auth/auth.middleware';
 import { Request, Response, NextFunction } from 'express';
@@ -6,7 +6,7 @@ import { Request, Response, NextFunction } from 'express';
 const router = express.Router();
 
 // All routes require authentication
-router.use(protect);
+router.use(protect as RequestHandler,);
 
 // Helper to convert class methods to route handlers
 const asyncHandler = (fn: (req: Request, res: Response, next: NextFunction) => Promise<any>) => (req: Request, res: Response, next: NextFunction) => {

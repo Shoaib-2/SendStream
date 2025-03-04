@@ -163,13 +163,100 @@ export class MailchimpService {
     });
   }
 
-  async sendNewsletter(newsletter: { subject: string; content: string }) {
-    return withRetry(async () => {
-      const campaign = await this.createCampaign(newsletter.subject);
+ // Fix the error in mailchimp.ts
+
+
+ async sendNewsletter(newsletter: { subject: string; content: string }) {
+  try {
+    logger.info('Preparing to send newsletter via Mailchimp');
+    
+    // Make sure we have API key and server prefix
+    if (!this.client.defaults.baseURL || !this.client.defaults.headers.Authorization) {
+      logger.error('Missing Mailchimp credentials');
+      return { 
+        success: false, 
+        message: 'Missing Mailchimp credentials'
+      };
+    }
+    
+    // Initialize list if needed
+    if (!this.listId) {
+      try {
+        logger.info('No list ID found, initializing...');
+        await this.initializeList();
+      } catch (listError: any) {
+        logger.error('Failed to initialize list', { error: listError.message });
+        return { 
+          success: false, 
+          message: `Failed to initialize Mailchimp list: ${listError.message}`
+        };
+      }
+    }
+    
+    if (!this.listId) {
+      logger.error('No Mailchimp list available');
+      return { 
+        success: false, 
+        message: 'No Mailchimp list configured'
+      };
+    }
+    
+    // Create campaign with better error handling
+    let campaign;
+    try {
+      logger.info('Creating Mailchimp campaign');
+      campaign = await this.createCampaign(newsletter.subject);
+      logger.info('Campaign created', { campaignId: campaign.id });
+    } catch (campaignError: any) {
+      logger.error('Failed to create campaign', { error: campaignError.message });
+      return { 
+        success: false, 
+        message: `Failed to create Mailchimp campaign: ${campaignError.message}`
+      };
+    }
+    
+    // Set campaign content
+    try {
+      logger.info('Setting campaign content', { campaignId: campaign.id });
       await this.setCampaignContent(campaign.id, newsletter.content);
-      return this.sendCampaign(campaign.id);
-    });
+      logger.info('Campaign content set successfully');
+    } catch (contentError: any) {
+      logger.error('Failed to set campaign content', { error: contentError.message });
+      return { 
+        success: false, 
+        message: `Failed to set campaign content: ${contentError.message}`
+      };
+    }
+    
+    // Send the campaign
+    try {
+      logger.info('Sending campaign', { campaignId: campaign.id });
+      await this.sendCampaign(campaign.id);
+      logger.info('Campaign sent successfully');
+      return { 
+        success: true, 
+        message: 'Newsletter sent successfully via Mailchimp',
+        campaignId: campaign.id 
+      };
+    } catch (sendError: any) {
+      logger.error('Failed to send campaign', { 
+        campaignId: campaign.id,
+        error: sendError.message 
+      });
+      return { 
+        success: false, 
+        message: `Failed to send Mailchimp campaign: ${sendError.message}`,
+        campaignId: campaign.id
+      };
+    }
+  } catch (error: any) {
+    logger.error('Unexpected error in sendNewsletter', { error });
+    return { 
+      success: false, 
+      message: `Unexpected error: ${error.message}`
+    };
   }
+}
 
   private async createCampaign(subject: string) {
     const response = await mailchimpRateLimiter.withRateLimit(() => 
@@ -317,4 +404,4 @@ export class MailchimpService {
       };
     }
   }
-}
+};

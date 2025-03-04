@@ -86,14 +86,48 @@ export class SettingsController {
   async testIntegration(req: Request, res: Response, next: NextFunction) {
     try {
       const { type } = req.params;
-      const settings = await Settings.findOne({ userId: req.user._id });
+      
+      // Create default settings if not found
+      let settings = await Settings.findOne({ userId: req.user._id });
       
       if (!settings) {
-        throw new APIError(404, 'Settings not found');
+        // Instead of throwing an error, create default settings
+        logger.info('Creating default settings for user');
+        settings = new Settings({
+          userId: req.user._id,
+          email: { fromName: '', replyTo: '', senderEmail: '' },
+          mailchimp: {
+            apiKey: '',
+            serverPrefix: '',
+            enabled: false,
+            autoSync: false
+          }
+        });
+        
+        // Save default settings
+        await settings.save();
       }
       
+      // Initialize mailchimp object if it doesn't exist
+      if (!settings.mailchimp) {
+        settings.mailchimp = {
+          apiKey: '',
+          serverPrefix: '',
+          enabled: false,
+          autoSync: false
+        };
+        await settings.save();
+      }
+      
+      // Get API key and server prefix from request body if available
+      const { apiKey, serverPrefix } = req.body;
+      
       if (type === 'mailchimp') {
-        if (!settings.mailchimp?.apiKey || !settings.mailchimp?.serverPrefix) {
+        // Use values from request body if provided, otherwise use stored settings
+        const mailchimpApiKey = apiKey || settings.mailchimp.apiKey || '';
+        const mailchimpServerPrefix = serverPrefix || settings.mailchimp.serverPrefix || '';
+        
+        if (!mailchimpApiKey || !mailchimpServerPrefix) {
           return res.status(400).json({
             status: 'error',
             data: {
@@ -103,21 +137,27 @@ export class SettingsController {
           });
         }
         
+        logger.info('Testing Mailchimp with provided credentials');
+        
         // Create service instance for this test
         const mailchimpService = new MailchimpService(
-          settings.mailchimp.apiKey,
-          settings.mailchimp.serverPrefix
+          mailchimpApiKey,
+          mailchimpServerPrefix
         );
         
         const result = await mailchimpService.testConnection();
         
-        // Store listId if test was successful
-        if (result.success && result.listId) {
-          const updatedMailchimp = { ...(settings.mailchimp || {}) };
-          updatedMailchimp.listId = result.listId;
+        // If test successful and using new credentials, update settings
+        if (result.success && (apiKey || serverPrefix)) {
+          if (apiKey) settings.mailchimp.apiKey = apiKey;
+          if (serverPrefix) settings.mailchimp.serverPrefix = serverPrefix;
           
-          settings.mailchimp = updatedMailchimp;
+          if (result.listId) {
+            settings.mailchimp.listId = result.listId;
+          }
+          
           await settings.save();
+          logger.info('Updated settings with new credentials after successful test');
         }
         
         return res.json({ 
@@ -144,7 +184,7 @@ export class SettingsController {
       });
     }
   }
-
+  
   async enableIntegration(req: Request, res: Response, next: NextFunction) {
     try {
       const { type } = req.params;
