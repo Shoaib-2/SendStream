@@ -12,6 +12,8 @@ interface IUser extends Document {
   role: string;
   comparePassword(candidatePassword: string): Promise<boolean>;
   generateToken(): string;
+  passwordResetToken?: string;
+  passwordResetExpires?: Date;
 }
 
 const userSchema = new mongoose.Schema({
@@ -32,7 +34,9 @@ const userSchema = new mongoose.Schema({
     type: String,
     enum: ['admin', 'user'],
     default: 'user'
-  }
+  },
+  passwordResetToken: String,
+  passwordResetExpires: Date
 }, {
   timestamps: true
 });
@@ -64,15 +68,23 @@ userSchema.methods.generateToken = function(): string {
 
 // Hash password before saving
 userSchema.pre('save', async function(next) {
+  // Only hash if password is modified
   if (!this.isModified('password')) return next();
+  
   try {
-    this.password = await bcrypt.hash(this.password, 12);
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
     next();
-  } catch (error) {
-    console.error('Password hashing error:', error);
-    next(error as Error);
+  } catch (error: any) {
+    next(error);
   }
 });
+
+// Compare passwords method
+userSchema.methods.comparePassword = async function(candidatePassword: string): Promise<boolean> {
+  return bcrypt.compare(candidatePassword, this.password);
+};
+
 
 const User = mongoose.model<IUser>('User', userSchema);
 export default User;

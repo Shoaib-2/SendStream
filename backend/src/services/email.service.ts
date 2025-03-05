@@ -4,6 +4,14 @@ import { APIError } from '../utils/errors';
 import dotenv from 'dotenv';
 dotenv.config();
 
+interface MailOptions {
+  from: string;
+  to: string | string[];
+  subject: string;
+  html: string;
+  replyTo?: string;
+}
+
 export class EmailService {
   private transporter: nodemailer.Transporter;
 
@@ -28,6 +36,18 @@ export class EmailService {
     } catch (error) {
       logger.error('SMTP verification failed:', error);
       throw error;
+    }
+  }
+
+  // Add a method to send custom emails
+  async sendEmail(mailOptions: MailOptions): Promise<void> {
+    try {
+      logger.info(`Sending email to ${mailOptions.to}`);
+      await this.transporter.sendMail(mailOptions);
+      logger.info(`Email sent successfully to ${mailOptions.to}`);
+    } catch (error) {
+      logger.error('Failed to send email:', error);
+      throw new APIError(500, `Failed to send email: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 

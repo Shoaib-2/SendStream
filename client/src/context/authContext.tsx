@@ -10,12 +10,19 @@ interface User {
   role?: string;
 }
 
+interface ForgotPasswordResponse {
+  status: 'success' | 'error';
+  message: string;
+}
+
 interface AuthContextType {
   user: User | null;
   token: string | null; 
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string) => Promise<void>;
   logout: () => void;
+  forgotPassword: (email: string) => Promise<ForgotPasswordResponse>;
+  resetPassword: (token: string, password: string) => Promise<any>;
   // loginWithProvider: (provider: 'google') => Promise<void>;
 }
 
@@ -133,6 +140,39 @@ const signup = async (email: string, password: string) => {
     throw error;
   }
 };
+
+const forgotPassword = async (email: string) => {
+  try {
+    return await authAPI.forgotPassword(email);
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    throw error;
+  }
+};
+
+const resetPassword = async (token: string, password: string) => {
+  try {
+    const response = await authAPI.resetPassword(token, password);
+    
+    // If successful, update user state
+    if (response?.user) {
+      setUser(response.user);
+      
+      // Save token for backward compatibility
+      if (response.token) {
+        setToken(response.token);
+        localStorage.setItem('token', response.token);
+        localStorage.setItem('user', JSON.stringify(response.user));
+      }
+    }
+    
+    return response;
+  } catch (error) {
+    console.error('Reset password error:', error);
+    throw error;
+  }
+};
+
   const logout = async () => {
     try {
       // Call API to clear the cookie
@@ -153,7 +193,15 @@ const signup = async (email: string, password: string) => {
   }
 
   return (
-    <AuthContext.Provider value={{ user, token, login, signup, logout }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      token, 
+      login, 
+      signup, 
+      logout,
+      forgotPassword,
+      resetPassword 
+    }}>
       {children}
     </AuthContext.Provider>
   );

@@ -19,8 +19,8 @@ interface AuthModalProps {
 
 const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'login' }) => {
   const router = useRouter();
-  const { login, signup } = useAuth();
-  const [mode, setMode] = useState<'login' | 'signup'>(initialMode);
+  const { login, signup, forgotPassword } = useAuth();
+  const [mode, setMode] = useState<'login' | 'signup' | 'forgotPassword'>(initialMode);
   const [email, setEmail] = useState('');
   const [newPassword, setNewPassword] = useState(''); // New state for new password
   const [confirmPassword, setConfirmPassword] = useState(''); // New state for confirm password
@@ -53,6 +53,10 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
         if (newPasswordError) newErrors.newPassword = newPasswordError;
     }
 
+    if (mode === 'login' && !newPassword) {
+        newErrors.newPassword = "Password is required";
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -65,22 +69,38 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
     try {
       if (mode === 'login') {
         await login(email, newPassword); // Use new password for login
-      } else {
+        
+        if (typeof window !== 'undefined') {
+          window.localStorage.setItem('isAuthenticated', 'true');
+          document.cookie = 'auth_token=true; path=/';
+        }
+        onClose();
+        router.push('/dashboard');
+      } else if (mode === 'signup') {
         await signup(email, newPassword); // Use new password for signup
         setSuccessMessage('Account has been created successfully!'); // Set success message
+        
+        if (typeof window !== 'undefined') {
+          window.localStorage.setItem('isAuthenticated', 'true');
+          document.cookie = 'auth_token=true; path=/';
+        }
+        onClose();
+        router.push('/dashboard');
+      } else if (mode === 'forgotPassword') {
+        const response = await forgotPassword(email);
+        if (response.status === 'success') {
+          setSuccessMessage(response.message || 'Password reset link sent to your email');
+        } else {
+          throw new Error(response.message || 'Failed to process password reset request');
+        }
       }
       
-      setEmail('');
-      setNewPassword(''); // Reset new password
-      setConfirmPassword(''); // Reset confirm password
-      setErrors({});
-      
-      if (typeof window !== 'undefined') {
-        window.localStorage.setItem('isAuthenticated', 'true');
-        document.cookie = 'auth_token=true; path=/';
+      if (mode !== 'forgotPassword') {
+        setEmail('');
+        setNewPassword('');
+        setConfirmPassword('');
+        setErrors({});
       }
-      onClose();
-      router.push('/dashboard');
     } catch (error) {
       setErrors({ 
         general: error instanceof Error ? error.message : 'Authentication failed' 
@@ -108,12 +128,18 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
         <div className="mb-8 text-center">
           <h2 className="text-3xl font-bold font-inter bg-clip-text text-transparent 
             bg-gradient-to-r from-white to-gray-400">
-            {mode === 'login' ? 'Welcome Back' : 'Create Account'}
+            {mode === 'login' 
+              ? 'Welcome Back' 
+              : mode === 'signup' 
+                ? 'Create Account' 
+                : 'Reset Password'}
           </h2>
           <p className="text-gray-400 mt-2">
             {mode === 'login' 
               ? 'Sign in to access your account' 
-              : 'Create an account to get started'}
+              : mode === 'signup'
+                ? 'Create an account to get started'
+                : 'Enter your email to receive a reset link'}
           </p>
         </div>
 
@@ -195,7 +221,17 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
 
           {mode === 'login' && ( // Only show this field in login mode
             <div>
-              <label className="block text-sm font-medium mb-2 text-gray-300">Password</label>
+              <div className="flex justify-between items-center">
+                <label className="block text-sm font-medium mb-2 text-gray-300">Password</label>
+                <button 
+                  type="button" 
+                  onClick={() => setMode('forgotPassword')}
+                  className="text-sm text-blue-400 hover:text-blue-300 mb-2"
+                  disabled={isLoading}
+                >
+                  Forgot Password?
+                </button>
+              </div>
               <input
                 type="password"
                 value={newPassword}
@@ -224,7 +260,11 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
             {isLoading ? (
               <Loader className="w-5 h-5 animate-spin mx-auto" />
             ) : (
-              mode === 'login' ? 'Sign In' : 'Create Account'
+              mode === 'login' 
+                ? 'Sign In' 
+                : mode === 'signup' 
+                  ? 'Create Account' 
+                  : 'Send Reset Link'
             )}
           </button>
         </form>
@@ -236,17 +276,31 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
             </div>
             <div className="relative flex justify-center text-sm">
               <span className="px-2 bg-gray-800/50 text-gray-400">
-                {mode === 'login' ? 'New here?' : 'Already have an account?'}
+                {mode === 'login' 
+                  ? 'New here?' 
+                  : mode === 'signup' 
+                    ? 'Already have an account?' 
+                    : 'Remember your password?'}
               </span>
             </div>
           </div>
 
           <button 
-            onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
+            onClick={() => {
+              if (mode === 'login') {
+                setMode('signup');
+              } else if (mode === 'signup' || mode === 'forgotPassword') {
+                setMode('login');
+              }
+            }}
             className="text-blue-400 hover:text-blue-300 mt-4 font-medium transition-colors"
             disabled={isLoading}
           >
-            {mode === 'login' ? 'Create an account' : 'Sign in instead'}
+            {mode === 'login' 
+              ? 'Create an account' 
+              : mode === 'signup' 
+                ? 'Sign in instead' 
+                : 'Back to login'}
           </button>
         </div>
       </div>
