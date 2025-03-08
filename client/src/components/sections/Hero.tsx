@@ -1,8 +1,13 @@
 import React from 'react';
 import Button from '../UI/Button';
 import { Send, ArrowRight } from 'lucide-react';
+import { pricingPlans, startFreeTrial } from '../../services/api';
 
 const Hero = () => {
+  const handleStartTrial = async () => {
+    await startFreeTrial(pricingPlans[0]); // Start trial with Pro plan
+  };
+
   return (
     <header className="min-h-[90vh] flex items-center justify-center relative overflow-hidden">
       {/* Background gradient */}
@@ -22,7 +27,7 @@ const Hero = () => {
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-            <Button className="group">
+            <Button className="group" onClick={handleStartTrial}>
               Start Free Trial
               <ArrowRight className="inline-block ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" />
             </Button>

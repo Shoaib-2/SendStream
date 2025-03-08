@@ -5,7 +5,7 @@ const features = [
   {
     icon: <Send className="w-6 h-6" />,
     title: "Smart Scheduling",
-    description: "AI-powered timing optimization to reach your audience when they're most engaged."
+    description: "Optimized to reach your audience when they're most engaged."
   },
   {
     icon: <Users className="w-6 h-6" />,

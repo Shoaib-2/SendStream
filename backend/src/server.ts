@@ -14,6 +14,7 @@ import { createServer } from 'http';
 import analyticsRoutes from './routes/analytics.routes';
 import settingsRoutes from './routes/settings.routes';
 import jwt from 'jsonwebtoken';
+import subscriptionRoutes from './routes/subscription.routes';
 
 
 dotenv.config();
@@ -92,6 +93,7 @@ app.use('/api/newsletters', newsletterRoutes);
 app.use('/api/subscribers', subscriberRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/subscription', subscriptionRoutes); 
 
 
 
@@ -121,6 +123,7 @@ mongoose
      console.log(' - /api/auth');
      console.log(' - /api/subscribers');
      console.log(' - /api/newsletters');
+     console.log(' - /api/subscription'); 
    });
  });
 

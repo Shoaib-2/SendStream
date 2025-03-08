@@ -6,8 +6,8 @@ import { useRouter } from 'next/navigation';
 
 interface FormErrors {
   email?: string;
-  newPassword?: string; // Only new password error
-  confirmPassword?: string; // Only confirm password error
+  newPassword?: string;
+  confirmPassword?: string;
   general?: string;
 }
 
@@ -22,20 +22,27 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
   const { login, signup, forgotPassword } = useAuth();
   const [mode, setMode] = useState<'login' | 'signup' | 'forgotPassword'>(initialMode);
   const [email, setEmail] = useState('');
-  const [newPassword, setNewPassword] = useState(''); // New state for new password
-  const [confirmPassword, setConfirmPassword] = useState(''); // New state for confirm password
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [errors, setErrors] = useState<FormErrors>({});
   const [isLoading, setIsLoading] = useState(false);
-  const [successMessage, setSuccessMessage] = useState(''); // State for success message
+  const [successMessage, setSuccessMessage] = useState('');
+  const [stripeSessionId, setStripeSessionId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isOpen) {
       setEmail('');
-      setNewPassword(''); // Reset new password
-      setConfirmPassword(''); // Reset confirm password
+      setNewPassword('');
+      setConfirmPassword('');
       setErrors({});
-      setSuccessMessage(''); // Reset success message
+      setSuccessMessage('');
       setMode(initialMode);
+    } else {
+      // Check for Stripe session ID when modal opens
+      const sessionId = localStorage.getItem('stripe_session_id');
+      if (sessionId) {
+        setStripeSessionId(sessionId);
+      }
     }
   }, [isOpen, initialMode]);
 
@@ -68,7 +75,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
   
     try {
       if (mode === 'login') {
-        await login(email, newPassword); // Use new password for login
+        await login(email, newPassword);
         
         if (typeof window !== 'undefined') {
           window.localStorage.setItem('isAuthenticated', 'true');
@@ -77,8 +84,20 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
         onClose();
         router.push('/dashboard');
       } else if (mode === 'signup') {
-        await signup(email, newPassword); // Use new password for signup
-        setSuccessMessage('Account has been created successfully!'); // Set success message
+        // Include stripe_session_id if available
+        const signupData = {
+          email,
+          password: newPassword,
+          stripeSessionId: stripeSessionId || undefined
+        };
+        
+        await signup(email, newPassword, stripeSessionId || undefined);
+        setSuccessMessage('Account has been created successfully!');
+        
+        // Clear the session ID from localStorage after successful signup
+        if (stripeSessionId) {
+          localStorage.removeItem('stripe_session_id');
+        }
         
         if (typeof window !== 'undefined') {
           window.localStorage.setItem('isAuthenticated', 'true');
@@ -138,7 +157,9 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
             {mode === 'login' 
               ? 'Sign in to access your account' 
               : mode === 'signup'
-                ? 'Create an account to get started'
+                ? (stripeSessionId 
+                   ? 'Complete your account setup to activate your trial' 
+                   : 'Create an account to get started')
                 : 'Enter your email to receive a reset link'}
           </p>
         </div>
@@ -154,6 +175,13 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
           <div className="bg-green-500/10 border border-green-500/50 text-green-400 
             px-4 py-3 rounded-xl mb-6 backdrop-blur-sm">
             {successMessage}
+          </div>
+        )}
+
+        {stripeSessionId && mode === 'signup' && (
+          <div className="bg-blue-500/10 border border-blue-500/50 text-blue-400 
+            px-4 py-3 rounded-xl mb-6 backdrop-blur-sm">
+            Your 14-day free trial is ready! Complete registration to get started.
           </div>
         )}
 
@@ -177,7 +205,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
             )}
           </div>
 
-          {mode === 'signup' && ( // Only show these fields in signup mode
+          {mode === 'signup' && (
             <>
               <div>
                 <label className="block text-sm font-medium mb-2 text-gray-300">New Password</label>
@@ -219,7 +247,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
             </>
           )}
 
-          {mode === 'login' && ( // Only show this field in login mode
+          {mode === 'login' && (
             <div>
               <div className="flex justify-between items-center">
                 <label className="block text-sm font-medium mb-2 text-gray-300">Password</label>
@@ -263,7 +291,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
               mode === 'login' 
                 ? 'Sign In' 
                 : mode === 'signup' 
-                  ? 'Create Account' 
+                  ? (stripeSessionId ? 'Activate Trial' : 'Create Account')
                   : 'Send Reset Link'
             )}
           </button>

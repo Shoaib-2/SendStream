@@ -1,7 +1,19 @@
 import axios, { AxiosError, AxiosRequestConfig } from "axios";
+import { loadStripe } from '@stripe/stripe-js';
+import type { Stripe } from '@stripe/stripe-js';
 
 // Added request queue for performance optimization with large datasets
 const pendingRequests = new Map();
+
+// Define the pricing plan interface
+export interface PricingPlan {
+  id: string;
+  name: string;
+  price: string;
+  period: string;
+  priceId: string; // Stripe Price ID
+  trialDays: number;
+}
 
 interface ResponseData<T> {
   status: "success" | "error";
@@ -796,8 +808,14 @@ export const authAPI = {
     }
   },
 
-  register: async (data: { email: string; password: string }) => {
+  register: async (data: { email: string; password: string; stripeSessionId?: string }) => {
     try {
+      console.log("Registering with data:", { 
+        email: data.email, 
+        hasPassword: !!data.password,
+        hasStripeSession: !!data.stripeSessionId 
+      });
+      
       const response = await api.post("/auth/register", data, {
         timeout: 10000, // 10 second timeout
       });
@@ -930,4 +948,104 @@ export const authAPI = {
       };
     }
   }
+};
+// Stripe methods for handling payments and subscriptions
+let stripePromise: Promise<Stripe | null>;
+const getStripe = () => {
+  if (!stripePromise) {
+    stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
+  }
+  return stripePromise;
+};
+
+// Define pricing plans with Stripe price IDs
+export const pricingPlans: PricingPlan[] = [
+  {
+    id: 'pro',
+    name: 'Pro',
+    price: '$12',
+    period: '/month',
+    priceId: 'price_1QzeqbGfclTFWug124uFjz1g', // Replace with actual Stripe price ID
+    trialDays: 14
+  }
+];
+// Create Stripe checkout session for subscription with trial
+export const createCheckoutSession = async (priceId: string, successUrl: string) => {
+  try {
+    const response = await fetch('/api/stripe/checkout', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        priceId,
+        successUrl,
+        cancelUrl: typeof window !== 'undefined' ? window.location.origin : '',
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+
+    const data: any = await response.json();
+    const sessionId = data.sessionId;
+    const stripe = await getStripe();
+    
+    if (stripe) {
+      const { error } = await stripe.redirectToCheckout({ sessionId });
+      
+      if (error) {
+        console.error('Stripe checkout error:', error);
+      }
+    }
+  } catch (error) {
+    console.error('Error creating checkout session:', error);
+  }
+};
+
+// Cancel subscription (including during trial)
+export const cancelSubscription = async (subscriptionId: string) => {
+  try {
+    const response = await fetch('/api/stripe/cancel', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ subscriptionId }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to cancel subscription');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error cancelling subscription:', error);
+    throw error;
+  }
+};
+
+// Get subscription status
+export const getSubscriptionStatus = async () => {
+  try {
+    const response = await fetch('/api/stripe/status');
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch subscription status');
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching subscription status:', error);
+    throw error;
+  }
+};
+
+// Helper to start free trial
+export const startFreeTrial = async (plan: PricingPlan) => {
+  if (typeof window === 'undefined') return;
+  // Redirect to landing page with parameters to open signup modal
+  const successUrl = `${window.location.origin}/?openAuth=signup&session_id={CHECKOUT_SESSION_ID}`;
+  await createCheckoutSession(plan.priceId, successUrl);
 };

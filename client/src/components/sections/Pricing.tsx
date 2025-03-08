@@ -1,23 +1,15 @@
 import React from 'react';
 import { Check, Zap } from 'lucide-react';
 import Button from '../UI/Button';
-
-const pricingTier = {
-  name: "Pro",
-  price: "$12",
-  period: "/month",
-  description: "Everything you need to create and grow your newsletter",
-  features: [
-    "Unlimited subscribers",
-    "Advanced analytics",
-    "Priority support",
-    "API access",
-    "Custom integrations",
-  ],
-  cta: "Start Free Trial"
-};
+import { pricingPlans, startFreeTrial } from '../../services/api';
 
 const Pricing = () => {
+  const pricingTier = pricingPlans[0]; // Use the Pro plan from the stripe integration
+
+  const handleStartTrial = async () => {
+    await startFreeTrial(pricingTier);
+  };
+
   return (
     <section className="py-24 relative">
       <div className="absolute inset-0 bg-gradient-to-b from-transparent to-blue-500/5" />
@@ -40,12 +32,12 @@ const Pricing = () => {
               bg-blue-500 text-white px-4 py-1 rounded-full 
               flex items-center gap-2 font-medium">
               <Zap className="w-4 h-4" />
-              14-day free trial
+              {pricingTier.trialDays}-day free trial
             </div>
 
             <div className="mb-8 text-center">
               <h3 className="text-2xl font-bold mb-2 font-inter">{pricingTier.name}</h3>
-              <p className="text-gray-400 mb-4">{pricingTier.description}</p>
+              <p className="text-gray-400 mb-4">Everything you need to create, manage your subscribers, and grow your newsletters</p>
               <div className="flex items-baseline justify-center gap-2">
                 <span className="text-5xl font-bold">{pricingTier.price}</span>
                 <span className="text-gray-400">{pricingTier.period}</span>
@@ -53,7 +45,12 @@ const Pricing = () => {
             </div>
 
             <ul className="space-y-4 mb-8">
-              {pricingTier.features.map((feature, i) => (
+              {[
+                "Unlimited subscribers",
+                "Advanced analytics",
+                "Priority support",
+                "Mailchimp integrations",
+              ].map((feature, i) => (
                 <li key={i} className="flex items-start gap-3">
                   <Check className="w-5 h-5 mt-1 flex-shrink-0 text-blue-400" />
                   <span className="text-gray-300">{feature}</span>
@@ -61,8 +58,8 @@ const Pricing = () => {
               ))}
             </ul>
 
-            <Button className="w-full">
-              {pricingTier.cta}
+            <Button className="w-full" onClick={handleStartTrial}>
+              Start Free Trial
             </Button>
           </div>
         </div>

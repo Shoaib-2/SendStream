@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Save, RefreshCw, ArrowDownToLine, ToggleLeft, ToggleRight } from 'lucide-react';
 import { settingsAPI } from '@/services/api';
 import { useData } from '@/context/dataContext';
+import SubscriptionManagement from '@/components/dashboard/SubscriptionManagement';
 
 // Custom local interface for Settings that enforces required fields
 interface LocalSettings {
@@ -24,16 +25,16 @@ interface LocalSettings {
 export default function SettingsPage() {
   const { addSubscriber } = useData();
   const [settings, setSettings] = useState<LocalSettings>({
-    email: { 
-      fromName: '', 
-      replyTo: '', 
-      senderEmail: '' 
+    email: {
+      fromName: '',
+      replyTo: '',
+      senderEmail: ''
     },
-    mailchimp: { 
-      apiKey: '', 
-      serverPrefix: '', 
-      enabled: false, 
-      autoSync: false 
+    mailchimp: {
+      apiKey: '',
+      serverPrefix: '',
+      enabled: false,
+      autoSync: false
     }
   });
   const [loading, setLoading] = useState(true);
@@ -42,24 +43,24 @@ export default function SettingsPage() {
   const [syncing, setSyncing] = useState(false);
   const [message, setMessage] = useState({ text: '', type: '' });
   // Define a proper type that matches what we expect from the API
-// Match our local types with what we get from the API
-interface ConnectionStatus {
-  mailchimp: { 
-    connected: boolean; 
-    message: string; 
-    listId: string;
+  // Match our local types with what we get from the API
+  interface ConnectionStatus {
+    mailchimp: {
+      connected: boolean;
+      message: string;
+      listId: string;
+    }
   }
-}
 
-// Specify what we expect from the API
-interface ApiTestResponse {
-  success: boolean;
-  message: string;
-  listId?: string;
-}
+  // Specify what we expect from the API
+  interface ApiTestResponse {
+    success: boolean;
+    message: string;
+    listId?: string;
+  }
 
-const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>({ 
-    mailchimp: { connected: false, message: '', listId: '' } 
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>({
+    mailchimp: { connected: false, message: '', listId: '' }
   });
 
   useEffect(() => {
@@ -105,7 +106,7 @@ const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>({
         email: settings.email, // Add this line to include email settings
         mailchimp: settings.mailchimp
       });
-      
+
       // Properly handle the response by ensuring required fields exist
       setSettings({
         email: {
@@ -121,7 +122,7 @@ const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>({
           listId: updatedSettings.mailchimp.listId
         }
       });
-      
+
       showMessage('Settings saved successfully', 'success');
     } catch (error) {
       showMessage('Failed to save settings', 'error');
@@ -137,30 +138,30 @@ const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>({
         ...prev,
         [type]: { ...prev[type], message: 'Testing connection...' }
       }));
-      
+
       // Pass proper credentials to test API
       const result = await settingsAPI.testIntegration(
-        type, 
+        type,
         {
           apiKey: settings.mailchimp.apiKey,
           serverPrefix: settings.mailchimp.serverPrefix
         }
       );
-      
+
       if (result) {
         // Now result is properly typed with ExtendedIntegrationResponse
         const success = result.success;
         const message = result.message || 'Connection test completed';
-        
+
         setConnectionStatus(prev => ({
           ...prev,
-          [type]: { 
-            connected: success, 
+          [type]: {
+            connected: success,
             message: message,
             listId: result.listId || ''
           }
         }));
-        
+
         showMessage(message, success ? 'success' : 'error');
       } else {
         throw new Error('Invalid response from server');
@@ -180,17 +181,17 @@ const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>({
     try {
       // Pass the current autoSync value as the third parameter
       await settingsAPI.enableIntegration(type, enabled, settings.mailchimp.autoSync);
-      
+
       setSettings(prev => ({
         ...prev,
         [type]: { ...prev[type], enabled }
       }));
-      
+
       setConnectionStatus(prev => ({
         ...prev,
         [type]: { ...prev[type], connected: enabled }
       }));
-      
+
       showMessage(`Mailchimp integration ${enabled ? 'enabled' : 'disabled'}`, 'success');
     } catch (error) {
       showMessage(`Failed to ${enabled ? 'enable' : 'disable'} integration`, 'error');
@@ -200,12 +201,12 @@ const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>({
   const toggleAutoSync = async (enabled: boolean) => {
     try {
       await settingsAPI.enableIntegration('mailchimp', settings.mailchimp.enabled, enabled);
-      
+
       setSettings(prev => ({
         ...prev,
         mailchimp: { ...prev.mailchimp, autoSync: enabled }
       }));
-      
+
       showMessage(`Auto-sync ${enabled ? 'enabled' : 'disabled'}`, 'success');
     } catch (error) {
       showMessage(`Failed to ${enabled ? 'enable' : 'disable'} auto-sync`, 'error');
@@ -279,11 +280,10 @@ const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>({
         </div>
 
         {message.text && (
-          <div className={`mb-6 p-4 rounded-xl backdrop-blur-sm ${
-            message.type === 'success' 
-              ? 'bg-green-500/10 border border-green-500/50 text-green-500' 
-              : 'bg-red-500/10 border border-red-500/50 text-red-500'
-          }`}>
+          <div className={`mb-6 p-4 rounded-xl backdrop-blur-sm ${message.type === 'success'
+            ? 'bg-green-500/10 border border-green-500/50 text-green-500'
+            : 'bg-red-500/10 border border-red-500/50 text-red-500'
+            }`}>
             {message.text}
           </div>
         )}
@@ -361,7 +361,7 @@ const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>({
                   <RefreshCw className={`w-4 h-4 ${testing ? 'animate-spin' : ''}`} />
                   {testing ? 'Testing...' : 'Test Connection'}
                 </button>
-                
+
                 {connectionStatus.mailchimp.connected && (
                   <button
                     onClick={syncSubscribers}
@@ -376,17 +376,16 @@ const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>({
                 )}
               </div>
             </div>
-            
+
             {connectionStatus.mailchimp.message && (
-              <div className={`mb-4 p-3 rounded-lg text-sm ${
-                connectionStatus.mailchimp.connected
-                  ? 'bg-green-500/10 text-green-400'
-                  : 'bg-blue-500/10 text-blue-400'
-              }`}>
+              <div className={`mb-4 p-3 rounded-lg text-sm ${connectionStatus.mailchimp.connected
+                ? 'bg-green-500/10 text-green-400'
+                : 'bg-blue-500/10 text-blue-400'
+                }`}>
                 {connectionStatus.mailchimp.message}
               </div>
             )}
-            
+
             <div className="grid gap-6 md:grid-cols-2">
               <div>
                 <label className="block text-sm font-medium mb-2 text-gray-300">API Key</label>
@@ -423,7 +422,7 @@ const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>({
                 </p>
               </div>
             </div>
-            
+
             {/* Only show these controls after successful connection test */}
             {connectionStatus.mailchimp.connected && (
               <div className="mt-6 space-y-4 border-t border-gray-700 pt-6">
@@ -432,7 +431,7 @@ const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>({
                     <h3 className="font-medium">Enable Mailchimp Integration</h3>
                     <p className="text-sm text-gray-400">Connect your newsletter with Mailchimp</p>
                   </div>
-                  <button 
+                  <button
                     onClick={() => toggleIntegration('mailchimp', !settings.mailchimp.enabled)}
                     className="text-gray-300 hover:text-blue-400"
                   >
@@ -443,13 +442,13 @@ const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>({
                     )}
                   </button>
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="font-medium">Auto-Sync on Login</h3>
                     <p className="text-sm text-gray-400">Automatically sync with Mailchimp when loading subscribers</p>
                   </div>
-                  <button 
+                  <button
                     onClick={() => toggleAutoSync(!settings.mailchimp.autoSync)}
                     className="text-gray-300 hover:text-blue-400"
                     disabled={!settings.mailchimp.enabled}
@@ -465,6 +464,10 @@ const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>({
             )}
           </section>
         </div>
+        <section className="bg-gray-800/50 backdrop-blur-sm p-8 rounded-2xl
+          border border-gray-800 hover:border-blue-500/50 transition-all duration-300 mt-6">
+          <SubscriptionManagement />
+        </section>
       </div>
     </div>
   );

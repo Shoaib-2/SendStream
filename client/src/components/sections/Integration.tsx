@@ -14,7 +14,7 @@ const Integration = () => {
               Seamless Integration
             </h2>
             <p className="text-xl text-gray-400">
-              Connect with your favorite email service provider in minutes
+              Connect with your favorite email service provider in seconds
             </p>
           </div>
 

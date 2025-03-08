@@ -10,6 +10,10 @@ interface IUser extends Document {
   email: string;
   password: string;
   role: string;
+  stripeCustomerId?: string;
+  stripeSubscriptionId?: string;
+  subscriptionStatus?: 'active' | 'trialing' | 'past_due' | 'canceled' | 'unpaid' | null;
+  trialEndsAt?: Date;
   comparePassword(candidatePassword: string): Promise<boolean>;
   generateToken(): string;
   passwordResetToken?: string;
@@ -17,6 +21,23 @@ interface IUser extends Document {
 }
 
 const userSchema = new mongoose.Schema({
+  stripeCustomerId: {
+    type: String,
+    default: null
+  },
+  stripeSubscriptionId: {
+    type: String,
+    default: null
+  },
+  subscriptionStatus: {
+    type: String,
+    enum: ['active', 'trialing', 'past_due', 'canceled', 'unpaid', null],
+    default: null
+  },
+  trialEndsAt: {
+    type: Date,
+    default: null
+  },
   email: {
     type: String,
     required: [true, 'Email is required'],
@@ -40,6 +61,7 @@ const userSchema = new mongoose.Schema({
 }, {
   timestamps: true
 });
+
 
 // Define comparePassword method
 userSchema.methods.comparePassword = async function(candidatePassword: string): Promise<boolean> {

@@ -23,6 +23,7 @@
   "license": "ISC",
   "dependencies": {
     "@jest/globals": "^29.7.0",
+    "@stripe/stripe-js": "^5.9.2",
     "@types/node-cron": "^3.0.11",
     "@types/ws": "^8.5.14",
     "axios": "^1.7.9",
@@ -38,6 +39,7 @@
     "node-cron": "^3.0.3",
     "nodemailer": "^6.10.0",
     "papaparse": "^5.5.2",
+    "stripe": "^17.7.0",
     "winston": "^3.17.0",
     "ws": "^8.18.0"
   },

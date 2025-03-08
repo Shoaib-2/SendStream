@@ -19,7 +19,7 @@ interface AuthContextType {
   user: User | null;
   token: string | null; 
   login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string) => Promise<void>;
+  signup: (email: string, password: string, stripeSessionId?: string) => Promise<void>;
   logout: () => void;
   forgotPassword: (email: string) => Promise<ForgotPasswordResponse>;
   resetPassword: (token: string, password: string) => Promise<any>;

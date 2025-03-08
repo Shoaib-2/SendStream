@@ -6,7 +6,13 @@ import User from '../models/User';
 import { APIError } from '../utils/errors';
 import dotenv from 'dotenv';
 import { emailService } from '../services/email.service';
+import Stripe from 'stripe';
 dotenv.config();
+
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: '2025-02-24.acacia', // Use the latest API version
+});
 
 // Cookie configuration for security
 const cookieOptions = {
@@ -50,35 +56,62 @@ const createSendToken = (user: any, statusCode: number, res: Response) => {
 
 export const register = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { email, password, name } = req.body;
+    const { email, password, stripeSessionId } = req.body;
 
-    // Check if user exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      throw new APIError(400, 'User already exists');
+      return res.status(400).json({
+        status: 'error',
+        message: 'User with this email already exists'
+      });
     }
 
-    // Validate password length
-    if (password.length < 8) {
-      throw new APIError(400, 'Password must be at least 8 characters long');
-    }
-
-    // Create user
-    const user = await User.create({
+    // Create new user with type assertion
+    const user = new User({
       email,
       password,
-      name: name || email.split('@')[0],
-      role: 'user'
     });
 
-    // Create token and send response
-    createSendToken(user, 201, res);
-  } catch (error) {
-    // Handle Mongoose validation errors
-    if (error instanceof Error && 'name' in error && error.name === 'ValidationError') {
-      return next(new APIError(400, 'Validation failed'));
+    // If Stripe session ID provided, associate subscription with user
+    if (stripeSessionId) {
+      try {
+        const session = await stripe.checkout.sessions.retrieve(stripeSessionId);
+        
+        if (session.subscription) {
+          // Use type assertion to access Stripe fields
+          (user as any).stripeSubscriptionId = session.subscription as string;
+          (user as any).stripeCustomerId = session.customer as string;
+          (user as any).subscriptionStatus = 'trialing';
+          
+          const trialEnd = new Date();
+          trialEnd.setDate(trialEnd.getDate() + 14);
+          (user as any).trialEndsAt = trialEnd;
+        }
+      } catch (stripeError) {
+        console.error('Error processing Stripe session:', stripeError);
+      }
     }
-    next(error);
+
+    await user.save();
+    const token = user.generateToken();
+
+    res.status(201).json({
+      status: 'success',
+      data: {
+        user: {
+          id: user._id,
+          email: user.email,
+          hasActiveSubscription: !!(user as any).stripeSubscriptionId
+        },
+        token
+      }
+    });
+  } catch (error) {
+    console.error('Registration error:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Registration failed'
+    });
   }
 };
 

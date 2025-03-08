@@ -1861,3 +1861,64 @@
 2025-03-05T13:59:53.140Z [[32minfo[39m]: Gmail transporter created
 2025-03-05T14:01:41.399Z [[32minfo[39m]: Gmail transporter created
 2025-03-05T14:03:45.614Z [[32minfo[39m]: Gmail transporter created
+2025-03-05T14:25:15.115Z [[32minfo[39m]: Gmail transporter created
+2025-03-05T14:25:20.992Z [[32minfo[39m]: Sending email to shoaib.ep96@gmail.com
+2025-03-05T14:25:21.924Z [[32minfo[39m]: Email sent successfully to shoaib.ep96@gmail.com
+2025-03-05T14:26:44.263Z [[32minfo[39m]: Successfully validated initialize list response
+2025-03-05T14:26:44.264Z [[32minfo[39m]: Starting subscriber sync with Mailchimp
+2025-03-05T14:26:44.566Z [[32minfo[39m]: Successfully validated sync subscribers response
+2025-03-05T14:26:44.567Z [[32minfo[39m]: Synced 2 subscribers from Mailchimp
+2025-03-05T14:26:44.567Z [[32minfo[39m]: Status breakdown - Active: 1, Unsubscribed: 1
+2025-03-05T14:26:45.083Z [[32minfo[39m]: Successfully validated initialize list response
+2025-03-05T14:26:45.084Z [[32minfo[39m]: Starting subscriber sync with Mailchimp
+2025-03-05T14:26:45.421Z [[32minfo[39m]: Successfully validated sync subscribers response
+2025-03-05T14:26:45.423Z [[32minfo[39m]: Synced 2 subscribers from Mailchimp
+2025-03-05T14:26:45.423Z [[32minfo[39m]: Status breakdown - Active: 1, Unsubscribed: 1
+2025-03-05T14:47:54.227Z [[32minfo[39m]: Sending email to shoaib.ep96@gmail.com
+2025-03-05T14:47:55.283Z [[32minfo[39m]: Email sent successfully to shoaib.ep96@gmail.com
+2025-03-05T14:50:22.087Z [[32minfo[39m]: Sending email to shoaib.ep96@gmail.com
+2025-03-05T14:50:22.869Z [[32minfo[39m]: Email sent successfully to shoaib.ep96@gmail.com
+2025-03-05T14:51:33.981Z [[32minfo[39m]: Successfully validated initialize list response
+2025-03-05T14:51:33.981Z [[32minfo[39m]: Starting subscriber sync with Mailchimp
+2025-03-05T14:51:34.311Z [[32minfo[39m]: Successfully validated sync subscribers response
+2025-03-05T14:51:34.311Z [[32minfo[39m]: Synced 2 subscribers from Mailchimp
+2025-03-05T14:51:34.311Z [[32minfo[39m]: Status breakdown - Active: 1, Unsubscribed: 1
+2025-03-05T14:51:34.819Z [[32minfo[39m]: Successfully validated initialize list response
+2025-03-05T14:51:34.820Z [[32minfo[39m]: Starting subscriber sync with Mailchimp
+2025-03-05T14:51:35.113Z [[32minfo[39m]: Successfully validated sync subscribers response
+2025-03-05T14:51:35.114Z [[32minfo[39m]: Synced 2 subscribers from Mailchimp
+2025-03-05T14:51:35.114Z [[32minfo[39m]: Status breakdown - Active: 1, Unsubscribed: 1
+2025-03-06T13:16:42.806Z [[32minfo[39m]: Gmail transporter created
+2025-03-06T13:27:36.091Z [[32minfo[39m]: Gmail transporter created
+2025-03-06T13:28:30.807Z [[32minfo[39m]: Gmail transporter created
+2025-03-06T13:32:13.367Z [[32minfo[39m]: Gmail transporter created
+2025-03-06T13:32:21.433Z [[32minfo[39m]: Gmail transporter created
+2025-03-06T13:33:31.673Z [[32minfo[39m]: Gmail transporter created
+2025-03-06T13:35:23.033Z [[32minfo[39m]: Gmail transporter created
+2025-03-06T13:36:34.058Z [[32minfo[39m]: Gmail transporter created
+2025-03-06T13:38:04.035Z [[32minfo[39m]: Gmail transporter created
+2025-03-06T13:41:35.251Z [[32minfo[39m]: Gmail transporter created
+2025-03-06T13:45:39.376Z [[32minfo[39m]: Gmail transporter created
+2025-03-06T13:45:52.389Z [[32minfo[39m]: Gmail transporter created
+2025-03-06T13:53:30.898Z [[32minfo[39m]: Gmail transporter created
+2025-03-06T13:56:45.182Z [[32minfo[39m]: Gmail transporter created
+2025-03-06T14:06:21.032Z [[32minfo[39m]: Gmail transporter created
+2025-03-06T14:06:31.594Z [[32minfo[39m]: Gmail transporter created
+2025-03-06T14:07:05.678Z [[32minfo[39m]: Gmail transporter created
+2025-03-06T14:08:03.233Z [[32minfo[39m]: Gmail transporter created
+2025-03-06T14:08:08.310Z [[32minfo[39m]: Gmail transporter created
+2025-03-06T14:08:17.867Z [[32minfo[39m]: Gmail transporter created
+2025-03-06T14:08:27.053Z [[32minfo[39m]: Gmail transporter created
+2025-03-06T14:08:36.237Z [[32minfo[39m]: Gmail transporter created
+2025-03-06T14:08:40.229Z [[32minfo[39m]: Gmail transporter created
+2025-03-06T14:09:04.582Z [[32minfo[39m]: Gmail transporter created
+2025-03-06T14:15:08.956Z [[32minfo[39m]: Gmail transporter created
+2025-03-06T14:15:31.414Z [[32minfo[39m]: Gmail transporter created
+2025-03-06T14:16:52.032Z [[32minfo[39m]: Gmail transporter created
+2025-03-06T14:50:30.016Z [[32minfo[39m]: Gmail transporter created
+2025-03-06T14:50:40.041Z [[32minfo[39m]: Gmail transporter created
+2025-03-06T14:51:16.398Z [[32minfo[39m]: Gmail transporter created
+2025-03-06T14:51:31.967Z [[32minfo[39m]: Gmail transporter created
+2025-03-07T15:07:26.972Z [[32minfo[39m]: Gmail transporter created
+2025-03-07T15:41:49.996Z [[32minfo[39m]: Gmail transporter created
+2025-03-07T15:55:50.842Z [[32minfo[39m]: Gmail transporter created
