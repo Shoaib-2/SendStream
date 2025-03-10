@@ -11,15 +11,20 @@ import {
   updateSubscriber
 } from '../controllers/subs.controller';
 import { protect } from '../middleware/auth/auth.middleware';
+import { requireActiveSubscription } from '../middleware/susbcription.middleware';
 import { RequestHandler } from 'express';
 
 const router = Router();
 
-// Public unsubscribe route
+// Public unsubscribe route - no auth required
 router.get('/unsubscribe/:token', asyncHandler(unsubscribeSubscriber));
 
 // Protected routes - fix the type error by casting protect to RequestHandler
 router.use(protect as RequestHandler);
+
+// Add subscription check for premium features
+router.use(requireActiveSubscription as RequestHandler);
+
 router.route('/').get(getSubscribers).post(createSubscriber);
 router.route('/import').post(asyncHandler(importSubscribers));
 router.route('/export').get(exportSubscribers);

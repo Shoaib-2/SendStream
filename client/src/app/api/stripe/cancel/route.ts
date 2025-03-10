@@ -1,26 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Stripe from 'stripe';
-
-// Initialize Stripe with secret key
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-02-24.acacia', // Use the latest API version
-});
+import axios from 'axios';
 
 export async function POST(request: NextRequest) {
   try {
-    const { subscriptionId } = await request.json();
-
-    if (!subscriptionId) {
-      return NextResponse.json({ error: 'Subscription ID is required' }, { status: 400 });
-    }
-
-    const subscription = await stripe.subscriptions.update(subscriptionId, {
-      cancel_at_period_end: true,
-    });
+    // Get the authorization header
+    const authHeader = request.headers.get('authorization');
     
-    return NextResponse.json({ subscription });
+    if (!authHeader) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    
+    // Get the request body
+    const body = await request.json();
+    
+    // Forward the request to your backend API
+    try {
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+      const response = await axios.post(`${backendUrl}/subscription/cancel`, body, {
+        headers: {
+          'Authorization': authHeader,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      return NextResponse.json(response.data);
+    } catch (apiError: any) {
+      console.error('Backend API error:', apiError.response?.data || apiError.message);
+      
+      // Forward the error status and message from backend
+      const status = apiError.response?.status || 500;
+      const errorData = apiError.response?.data || { 
+        error: 'Failed to connect to backend API' 
+      };
+      
+      return NextResponse.json(errorData, { status });
+    }
   } catch (error) {
-    console.error('Error canceling subscription:', error);
-    return NextResponse.json({ error: 'Failed to cancel subscription' }, { status: 500 });
+    console.error('Error in API route:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

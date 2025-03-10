@@ -2,18 +2,24 @@
 import express, { Request, Response, NextFunction, RequestHandler } from 'express';
 import { analyticsController } from '../controllers/analytics.controller';
 import { protect } from '../middleware/auth/auth.middleware';
+import { requireActiveSubscription } from '../middleware/susbcription.middleware';
 import { getDashboardSummary } from '../controllers/dashboard.controller';
 import { logger } from '../utils/logger';
 
 const router = express.Router();
 
+// Apply auth middleware to all protected routes
+router.use(protect as RequestHandler);
+
+// Add subscription check for premium features
+router.use(requireActiveSubscription as RequestHandler);
+
 router.get(
   '/newsletter/:newsletterId',
-  protect as RequestHandler,
   analyticsController.getNewsletterAnalytics
 );
 
-router.get('/summary', protect as RequestHandler, (req: Request, res: Response, next: NextFunction) => {
+router.get('/summary', (req: Request, res: Response, next: NextFunction) => {
   const requestTime = Math.floor(Date.now());
   const lastRequestTime = req.app.locals.lastSummaryRequest;
   
@@ -32,11 +38,11 @@ router.get('/summary', protect as RequestHandler, (req: Request, res: Response, 
     .catch(next);
 });
 
-router.get('/growth', protect as RequestHandler, analyticsController.getGrowthData);
-router.get('/activity', protect as RequestHandler, analyticsController.getRecentActivity);
+router.get('/growth', analyticsController.getGrowthData);
+router.get('/activity', analyticsController.getRecentActivity);
 
 const TRACKING_PIXEL = Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64');
-// Public route for tracking pixel
+// Public route for tracking pixel - no auth/subscription required
 router.get('/track-open/:newsletterId/:subscriberId', async (req: Request, res: Response, next: NextFunction) => {
   const { newsletterId, subscriberId } = req.params;
   logger.info('Received open tracking request', { newsletterId, subscriberId }); 

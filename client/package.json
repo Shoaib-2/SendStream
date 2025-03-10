@@ -11,9 +11,11 @@
   "dependencies": {
     "@headlessui/react": "^2.2.0",
     "@stripe/stripe-js": "^5.9.2",
+    "@types/jsonwebtoken": "^9.0.9",
     "@types/recharts": "^1.8.29",
     "autoprefixer": "^10.4.20",
     "axios": "^1.7.9",
+    "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.474.0",
     "newsletter-automation": "file:",
     "next": "15.1.6",

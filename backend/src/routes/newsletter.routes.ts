@@ -1,12 +1,15 @@
-
 import express, { RequestHandler } from 'express';
 import { newsletterController} from '../controllers/newsletter.controller';
 import { protect } from '../middleware/auth/auth.middleware';
+import { requireActiveSubscription } from '../middleware/susbcription.middleware';
 
 const router = express.Router();
 
-// Protected routes - fix the type error by using the middleware correctly
+// Apply auth middleware
 router.use(protect as express.RequestHandler);
+
+// Add subscription check for premium features
+router.use(requireActiveSubscription as express.RequestHandler);
 
 router.route('/')
   .get((req, res, next) => newsletterController.getAll(req, res, next))
@@ -27,7 +30,7 @@ router.route('/:id/schedule').post(async (req, res, next) => {
   await newsletterController.schedule(req, res, next);
 });
 
-// Public route for tracking
+// Public route for tracking - no auth/subscription required
 router.get('/newsletters/track-open/:newsletterId/:subscriberId', async (req, res, next) => {
   try {
     const { newsletterId, subscriberId } = req.params;

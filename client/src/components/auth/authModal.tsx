@@ -3,11 +3,12 @@ import { X, Loader } from 'lucide-react';
 import { validateEmail, validatePassword } from '../../utils/validation';
 import { useAuth } from '../../context/authContext';
 import { useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 
 interface FormErrors {
   email?: string;
-  newPassword?: string;
-  confirmPassword?: string;
+  newPassword?: string; // Only new password error
+  confirmPassword?: string; // Only confirm password error
   general?: string;
 }
 
@@ -19,6 +20,7 @@ interface AuthModalProps {
 
 const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'login' }) => {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { login, signup, forgotPassword } = useAuth();
   const [mode, setMode] = useState<'login' | 'signup' | 'forgotPassword'>(initialMode);
   const [email, setEmail] = useState('');
@@ -38,13 +40,23 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
       setSuccessMessage('');
       setMode(initialMode);
     } else {
-      // Check for Stripe session ID when modal opens
-      const sessionId = localStorage.getItem('stripe_session_id');
+      // When modal opens, check for session_id in URL or localStorage
+      const sessionId = searchParams?.get('session_id') || localStorage.getItem('stripe_session_id');
       if (sessionId) {
         setStripeSessionId(sessionId);
+        // If coming from URL, store in localStorage
+        if (searchParams?.get('session_id')) {
+          localStorage.setItem('stripe_session_id', sessionId);
+          // Clear URL parameter if possible
+          if (window.history && window.history.replaceState) {
+            const url = new URL(window.location.href);
+            url.searchParams.delete('session_id');
+            window.history.replaceState({}, document.title, url.toString());
+          }
+        }
       }
     }
-  }, [isOpen, initialMode]);
+  }, [isOpen, initialMode, searchParams]);
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
@@ -84,20 +96,14 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
         onClose();
         router.push('/dashboard');
       } else if (mode === 'signup') {
-        // Include stripe_session_id if available
-        const signupData = {
-          email,
-          password: newPassword,
-          stripeSessionId: stripeSessionId || undefined
-        };
+        console.log(`Signing up with stripe session ID: ${stripeSessionId || 'none'}`);
         
+        // Include the session ID
         await signup(email, newPassword, stripeSessionId || undefined);
         setSuccessMessage('Account has been created successfully!');
         
-        // Clear the session ID from localStorage after successful signup
-        if (stripeSessionId) {
-          localStorage.removeItem('stripe_session_id');
-        }
+        // Clear session ID from localStorage after successful signup
+        localStorage.removeItem('stripe_session_id');
         
         if (typeof window !== 'undefined') {
           window.localStorage.setItem('isAuthenticated', 'true');

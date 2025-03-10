@@ -1,39 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Stripe from 'stripe';
-
-// Initialize Stripe with secret key
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-02-24.acacia', // Use the latest API version
-});
+import axios from 'axios';
 
 export async function GET(request: NextRequest) {
   try {
-    // For this implementation, we'll get customerId from query or cookies
-    // In a real app, you'd use your auth system to get the user
+    // Get the authorization header
     const authHeader = request.headers.get('authorization');
     
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (!authHeader) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    // In a real app, you'd validate the token and get the user
-    // This is just a placeholder - replace with your actual auth logic
-    const customerId = request.cookies.get('stripe_customer_id')?.value;
-    
-    if (!customerId) {
-      return NextResponse.json({ error: 'No Stripe customer found' }, { status: 400 });
+    // Forward the request to your backend API
+    try {
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+      const response = await axios.get(`${backendUrl}/subscription/status`, {
+        headers: {
+          'Authorization': authHeader
+        }
+      });
+      
+      return NextResponse.json(response.data);
+    } catch (apiError: any) {
+      console.error('Backend API error:', apiError.response?.data || apiError.message);
+      
+      // Forward the error status and message from backend
+      const status = apiError.response?.status || 500;
+      const errorData = apiError.response?.data || { 
+        error: 'Failed to connect to backend API' 
+      };
+      
+      return NextResponse.json(errorData, { status });
     }
-    
-    // Get all active subscriptions for the customer
-    const subscriptions = await stripe.subscriptions.list({
-      customer: customerId,
-      status: 'all',
-      expand: ['data.default_payment_method'],
-    });
-    
-    return NextResponse.json({ subscriptions: subscriptions.data });
   } catch (error) {
-    console.error('Error fetching subscription status:', error);
-    return NextResponse.json({ error: 'Failed to fetch subscription status' }, { status: 500 });
+    console.error('Error in API route:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

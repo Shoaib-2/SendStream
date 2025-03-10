@@ -14,21 +14,27 @@ export default function Home() {
   const searchParams = useSearchParams();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
-  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [isRenewal, setIsRenewal] = useState(false);
 
   useEffect(() => {
     // Check for URL parameters
     const openAuth = searchParams.get('openAuth');
-    const session = searchParams.get('session_id');
+    const sessionId = searchParams.get('session_id');
+    const renew = searchParams.get('renew');
     
-    if (openAuth === 'signup') {
+    // Set renewal state
+    if (renew === 'true') {
+      setIsRenewal(true);
+    }
+    
+    if (openAuth === 'signup' || sessionId) {
       setAuthMode('signup');
       setIsAuthModalOpen(true);
       
-      if (session) {
-        setSessionId(session);
-        // Store session ID in localStorage for subscription association
-        localStorage.setItem('stripe_session_id', session);
+      // Store session ID to be handled by AuthModal
+      if (sessionId && typeof window !== 'undefined') {
+        localStorage.setItem('stripe_session_id', sessionId);
+        console.log('Stored Stripe session ID:', sessionId);
       }
     }
   }, [searchParams]);
@@ -37,9 +43,9 @@ export default function Home() {
     <div className="min-h-screen bg-gray-900 text-gray-100 font-inter">
       <Header />
       <main>
-        <Hero />
+        <Hero isRenewal={isRenewal}/>
         <Features />
-        <Pricing />
+        <Pricing isRenewal={isRenewal}/>
          {/* Auth Modal */}
       <AuthModal 
         isOpen={isAuthModalOpen} 

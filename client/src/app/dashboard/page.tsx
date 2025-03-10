@@ -5,6 +5,8 @@ import { useData } from '@/context/dataContext';
 import { newsletterAPI } from '@/services/api';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import type { Newsletter } from '@/types';
+import ExpiredSubscription from '@/components/subscription/ExpiredSubscription';
+import { useRouter } from 'next/navigation';
 
 const COLORS = ['#3B82F6', '#10B981', '#EF4444', '#F59E0B'];
 
@@ -16,14 +18,20 @@ interface QualityMetrics {
 }
 
 export default function DashboardPage() {
+  const router = useRouter();
   const { subscribers } = useData();
   const [newsletters, setNewsletters] = useState<Newsletter[]>([]);
   const [qualityMetrics, setQualityMetrics] = useState<QualityMetrics[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<any>(null);
+  const [subscriptionExpired, setSubscriptionExpired] = useState(false);
 
   useEffect(() => {
     const fetchNewsletters = async () => {
       try {
+        setLoading(true);
         const data = await newsletterAPI.getAll();
+        
         if (data) {
           const transformedData = data.map(newsletter => ({
             ...newsletter
@@ -37,14 +45,33 @@ export default function DashboardPage() {
             comprehensiveAnalysis: newsletter.contentQuality?.contentLength ? newsletter.contentQuality.contentLength > 500 : false
           })));
         }
-      } catch (error) {
-        console.error('Error:', error);
+      } catch (error: any) {
+        // Check if we should suppress the error
+        const suppressError = 
+          typeof window !== 'undefined' && 
+          (document.readyState !== 'complete' || 
+           window.location.pathname === '/');
+        
+        if (!suppressError) {
+          console.error('Error:', error);
+        }
+        
+        // Check if subscription expired
+        if (error?.message?.includes('Subscription expired')) {
+          setSubscriptionExpired(true);
+        }
       }
     };
   
     fetchNewsletters();
   }, []);
 
+  // Show the expired subscription component if detected
+  if (subscriptionExpired) {
+    return <ExpiredSubscription />;
+  }
+
+  // Rest of your component remains the same...
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
@@ -63,8 +90,8 @@ export default function DashboardPage() {
     return newsletter.contentQuality?.qualityScore || 0;
   };
 
-  const averageQualityScore = newsletters.reduce((acc, curr) => 
-    acc + getQualityScore(curr), 0) / newsletters.length;
+  const averageQualityScore = newsletters.length > 0 ? 
+    newsletters.reduce((acc, curr) => acc + getQualityScore(curr), 0) / newsletters.length : 0;
 
   const metrics = [
     {
@@ -127,6 +154,14 @@ export default function DashboardPage() {
     return null;
   };
 
+  if (loading) {
+    return (
+      <div className="p-6 min-h-screen bg-gradient-to-b from-gray-900 via-gray-900 to-gray-900/50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 min-h-screen bg-gradient-to-b from-gray-900 via-gray-900 to-gray-900/50">
       <div className="max-w-6xl mx-auto">
@@ -177,7 +212,7 @@ export default function DashboardPage() {
                     dataKey="value"
                   >
                     {newsletterData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index]} />
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
                   <Tooltip content={<CustomTooltip />} />

@@ -202,17 +202,28 @@ const MAX_FAILED_REQUESTS = 3;
 let lastFailedEndpoint = "";
 let isRedirecting = false;
 
-// Improved response error interceptor
+// Add after line 146 (after APIError class definition)
+const inSilentMode = () => {
+  // Don't show errors on landing page or during initial page load
+  return typeof window !== 'undefined' && 
+    (window.location.pathname === '/' || 
+     document.readyState !== 'complete');
+};
+
 api.interceptors.response.use(
-  (response) => {
-    // Reset failed requests counter on success
-    failedRequestsCount = 0;
-    lastFailedEndpoint = "";
-    return response;
-  },
+  (response) => response,
   (error) => {
-    // Check if the request failed due to auth issues
-    if (error.response?.status === 401) {
+    // Check if browser and not on login page
+    const isOnAuthPage = typeof window !== 'undefined' && 
+      (window.location.pathname.includes('/login') || 
+       window.location.pathname === '/');
+    
+    // Skip errors during initial page load
+    const inSilentMode = typeof window !== 'undefined' && 
+      (window.location.pathname === '/' || document.readyState !== 'complete');
+    
+    // Only handle auth errors loudly if not on auth pages
+    if (error.response?.status === 401 && !isOnAuthPage && !inSilentMode) {
       console.log("Authentication error:", error.config?.url);
 
       // Track which endpoint is failing
@@ -253,8 +264,11 @@ api.interceptors.response.use(
       }
     }
 
-    // Handle other errors
-    console.error("Response error:", error.response?.status, error.config?.url);
+    // Only log errors if not in silent mode
+    if (!inSilentMode) {
+      console.error("Response error:", error.response?.status, error.config?.url);
+    }
+    
     return Promise.reject(error);
   }
 );
@@ -970,7 +984,10 @@ export const pricingPlans: PricingPlan[] = [
   }
 ];
 // Create Stripe checkout session for subscription with trial
-export const createCheckoutSession = async (priceId: string, successUrl: string) => {
+// Update these functions in your api.ts file
+
+// Create Stripe checkout session for subscription with trial
+export const createCheckoutSession = async (priceId: string, successUrl: string, skipTrial = false) => {
   try {
     const response = await fetch('/api/stripe/checkout', {
       method: 'POST',
@@ -981,6 +998,7 @@ export const createCheckoutSession = async (priceId: string, successUrl: string)
         priceId,
         successUrl,
         cancelUrl: typeof window !== 'undefined' ? window.location.origin : '',
+        skipTrial, // Pass this to the API to skip trial for renewals
       }),
     });
 
@@ -1004,13 +1022,54 @@ export const createCheckoutSession = async (priceId: string, successUrl: string)
   }
 };
 
-// Cancel subscription (including during trial)
+// Helper to start free trial or renew subscription
+export const startFreeTrial = async (plan: PricingPlan) => {
+  if (typeof window === 'undefined') return;
+  
+  // Check if this is a renewal (from URL)
+  const isRenewal = window.location.search.includes('renew=true');
+  
+  // For renewals, skip trial period
+  const successUrl = `${window.location.origin}/signup?session_id={CHECKOUT_SESSION_ID}${isRenewal ? '&renew=true' : ''}`;
+  
+  await createCheckoutSession(plan.priceId, successUrl, isRenewal);
+};
+
+// Get subscription status
+export const getSubscriptionStatus = async () => {
+  try {
+    // Get token from localStorage
+    const token = localStorage.getItem('token');
+    
+    const response = await fetch('/api/stripe/status', {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': token ? `Bearer ${token}` : ''
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch subscription status');
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching subscription status:', error);
+    throw error;
+  }
+};
+
+// Cancel subscription
 export const cancelSubscription = async (subscriptionId: string) => {
   try {
+    // Get token from localStorage
+    const token = localStorage.getItem('token');
+    
     const response = await fetch('/api/stripe/cancel', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': token ? `Bearer ${token}` : ''
       },
       body: JSON.stringify({ subscriptionId }),
     });
@@ -1026,26 +1085,5 @@ export const cancelSubscription = async (subscriptionId: string) => {
   }
 };
 
-// Get subscription status
-export const getSubscriptionStatus = async () => {
-  try {
-    const response = await fetch('/api/stripe/status');
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch subscription status');
-    }
-    
-    return await response.json();
-  } catch (error) {
-    console.error('Error fetching subscription status:', error);
-    throw error;
-  }
-};
 
-// Helper to start free trial
-export const startFreeTrial = async (plan: PricingPlan) => {
-  if (typeof window === 'undefined') return;
-  // Redirect to landing page with parameters to open signup modal
-  const successUrl = `${window.location.origin}/?openAuth=signup&session_id={CHECKOUT_SESSION_ID}`;
-  await createCheckoutSession(plan.priceId, successUrl);
-};
+

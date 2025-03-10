@@ -6,6 +6,7 @@ import './globals.css'
 import { AuthProvider } from '@/context/authContext';
 import { ToastProvider } from '@/context/toastContext';
 import { DataProvider } from '@/context/dataContext';
+import SubscriptionErrorHandler from '@/components/subscription/SubscriptionErrorHandler';
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -24,6 +25,7 @@ export default function RootLayout({
       <body className={inter.className}>
         <AuthProvider>
           <ToastProvider>
+          <SubscriptionErrorHandler />
             <DataProvider> 
             {children}
             </DataProvider>

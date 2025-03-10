@@ -83,3 +83,15 @@
 2025-03-04T23:26:14.979Z [[31merror[39m]: Error syncing subscribers: Mailchimp is not enabled or configured
 2025-03-04T23:27:27.354Z [[31merror[39m]: ❌ Connection failed:
 2025-03-04T23:27:40.374Z [[31merror[39m]: ❌ Connection failed:
+2025-03-08T23:46:39.915Z [[31merror[39m]: Integration test error: Settings validation failed: email.senderEmail: Path `email.senderEmail` is required., email.replyTo: Path `email.replyTo` is required., email.fromName: Path `email.fromName` is required.
+2025-03-08T23:46:47.491Z [[31merror[39m]: Integration test error: Settings validation failed: email.senderEmail: Path `email.senderEmail` is required., email.replyTo: Path `email.replyTo` is required., email.fromName: Path `email.fromName` is required.
+2025-03-08T23:46:57.031Z [[31merror[39m]: Integration test error: Settings validation failed: email.senderEmail: Path `email.senderEmail` is required., email.replyTo: Path `email.replyTo` is required., email.fromName: Path `email.fromName` is required.
+2025-03-08T23:47:37.839Z [[31merror[39m]: ❌ Connection failed:
+2025-03-09T15:03:48.906Z [[31merror[39m]: Error syncing subscribers: Mailchimp is not enabled or configured
+2025-03-09T15:04:01.117Z [[31merror[39m]: Error syncing subscribers: Mailchimp is not enabled or configured
+2025-03-09T15:04:13.665Z [[31merror[39m]: ❌ Connection failed:
+2025-03-09T15:04:24.892Z [[31merror[39m]: Error syncing subscribers: Mailchimp is not enabled or configured
+2025-03-09T15:05:26.978Z [[31merror[39m]: Error syncing subscribers: Mailchimp is not enabled or configured
+2025-03-09T15:12:43.395Z [[31merror[39m]: Error syncing subscribers: Mailchimp is not enabled or configured
+2025-03-09T22:43:57.761Z [[31merror[39m]: Integration test error: Settings validation failed: email.senderEmail: Path `email.senderEmail` is required., email.replyTo: Path `email.replyTo` is required., email.fromName: Path `email.fromName` is required.
+2025-03-09T22:44:14.818Z [[31merror[39m]: Error syncing subscribers: Mailchimp is not enabled or configured

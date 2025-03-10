@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { Subscriber, Newsletter } from '@/types';
 import { subscriberAPI, newsletterAPI, APIError } from '@/services/api';
+import { useAuth } from './authContext';
 
 interface DataContextType {
   subscribers: Subscriber[];
@@ -23,6 +24,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [ws, setWs] = useState<WebSocket | null>(null);
   const [fetchAttempts, setFetchAttempts] = useState(0);
   const MAX_FETCH_ATTEMPTS = 3;
+  const { user } = useAuth();
 
   // Initialize WebSocket connection
   useEffect(() => {
@@ -37,7 +39,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       try {
         const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:5000/ws';
         console.log('Attempting WebSocket connection to:', wsUrl);
-        
+
         const socket = new WebSocket(`${wsUrl}?token=${token}`);
 
         socket.onopen = () => {
@@ -48,13 +50,13 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           try {
             const data = JSON.parse(event.data.toString());
             if (data.type === 'newsletter_update') {
-              setNewsletters((prev: Newsletter[]) => prev.map((n: Newsletter) => 
+              setNewsletters((prev: Newsletter[]) => prev.map((n: Newsletter) =>
                 n.id === data.newsletter._id ? { ...n, ...data.newsletter } : n
               ));
             } else if (data.type === 'subscriber_update') {
               // Update subscribers from WebSocket event
               console.log('WebSocket subscriber update:', data.data);
-              setSubscribers(prev => prev.map(sub => 
+              setSubscribers(prev => prev.map(sub =>
                 sub.id === data.data.id ? { ...sub, status: data.data.status } : sub
               ));
             }
@@ -125,6 +127,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     let redirecting = false;
 
     const fetchData = async () => {
+      // Check if we're in initial page load
+      const isInitialLoad = typeof document !== 'undefined' && document.readyState !== 'complete';
+      
       // Check for token before attempting to fetch data
       const token = localStorage.getItem('token');
       if (!token) {
@@ -134,38 +139,48 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(false);
         return;
       }
-      
+    
       // Prevent too many fetch attempts
       if (fetchAttempts >= MAX_FETCH_ATTEMPTS) {
         console.error(`Data fetching failed after ${MAX_FETCH_ATTEMPTS} attempts, stopping retries`);
         setIsLoading(false);
         return;
       }
-      
+    
       try {
         setIsLoading(true);
-        console.log(`Fetching data (attempt ${fetchAttempts + 1})...`);
-        
+        if (!isInitialLoad) {
+          console.log(`Fetching data (attempt ${fetchAttempts + 1})...`);
+        }
+    
         // Define properly typed variables with default empty arrays
         let subscribersData: Subscriber[] = [];
         let newslettersData: Newsletter[] = [];
-        
+    
         try {
           const response = await subscriberAPI.getAll();
           if (response) subscribersData = response;
-          console.log('Subscribers fetched successfully');
+          if (!isInitialLoad) {
+            console.log('Subscribers fetched successfully');
+          }
         } catch (err) {
-          console.error('Error fetching subscribers:', err);
+          if (!isInitialLoad) {
+            console.error('Error fetching subscribers:', err);
+          }
         }
-        
+    
         try {
           const response = await newsletterAPI.getAll();
           if (response) newslettersData = response;
-          console.log('Newsletters fetched successfully');
+          if (!isInitialLoad) {
+            console.log('Newsletters fetched successfully');
+          }
         } catch (err) {
-          console.error('Error fetching newsletters:', err);
+          if (!isInitialLoad) {
+            console.error('Error fetching newsletters:', err);
+          }
         }
-
+    
         if (subscribersData && isSubscribed) {
           // Directly use the subscriber status from the database
           const formattedSubscribers: Subscriber[] = subscribersData.map(sub => ({
@@ -177,38 +192,44 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             subscribed: sub.subscribed || (sub as any).subscribedDate || new Date().toISOString(),
             source: sub.source
           }));
-          
+    
           setSubscribers(formattedSubscribers);
         } else {
           setSubscribers([]);
         }
-
+    
         if (newslettersData && isSubscribed) {
           setNewsletters(newslettersData);
         } else {
           setNewsletters([]);
         }
-        
+    
         // Reset fetch attempts on success
         setFetchAttempts(0);
       } catch (error) {
-        console.error('Data fetch error:', error);
-        
+        if (!isInitialLoad) {
+          console.error('Data fetch error:', error);
+        }
+    
         // Increment fetch attempts
         setFetchAttempts(prevAttempts => prevAttempts + 1);
-        
+    
         if (error instanceof APIError && error.status === 401 && !redirecting) {
           redirecting = true;
-          console.log('Authentication error during data fetch, clearing token');
+          if (!isInitialLoad) {
+            console.log('Authentication error during data fetch, clearing token');
+          }
           localStorage.removeItem('token');
           setSubscribers([]);
           setNewsletters([]);
-          
+    
           if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
             window.location.href = '/login';
           }
         } else if (error instanceof APIError && error.status === 404) {
-          console.error('API endpoint not found during data fetch. Is the API server running?');
+          if (!isInitialLoad) {
+            console.error('API endpoint not found during data fetch. Is the API server running?');
+          }
           // Set empty data but don't redirect
           setSubscribers([]);
           setNewsletters([]);
@@ -218,25 +239,13 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           setIsLoading(false);
         }
       }
-    };
-
-    // Only fetch if we have a token and are in the browser and haven't exceeded max attempts
-    if (typeof window !== 'undefined' && localStorage.getItem('token') && fetchAttempts < MAX_FETCH_ATTEMPTS) {
-      fetchData();
-    } else {
-      console.log('Skipping data fetch - no token, exceeded max attempts, or not in browser');
-      setSubscribers([]);
-      setNewsletters([]);
-      setIsLoading(false);
     }
-    
-    return () => { isSubscribed = false; };
-  }, [fetchAttempts]); // Add fetchAttempts to dependency array
+  }, [user]);
 
   const addSubscriber = async (subscriberData: Omit<Subscriber, 'id'>) => {
     try {
       const response = await subscriberAPI.create(subscriberData);
-      
+
       if (response) {
         const newSubscriber: Subscriber = {
           id: response.id || response._id || String(new Date().getTime()),
@@ -247,7 +256,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           subscribed: response.subscribed || new Date().toISOString(),
           source: response.source
         };
-        
+
         setSubscribers(prev => [...prev, newSubscriber]);
       }
     } catch (error) {
@@ -262,28 +271,28 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       if (!id) {
         throw new Error('Subscriber ID is required');
       }
-  
+
       const cleanId = String(id).trim();
-      
+
       // Get the subscriber first to check current status
       const subscriber = subscribers.find(s => s.id === cleanId);
       if (!subscriber) {
         console.warn(`Subscriber with ID ${cleanId} not found in local state`);
       }
-      
+
       console.log(`Removing subscriber ${cleanId}, current status: ${subscriber?.status}`);
-      
+
       // Use updateStatus instead of delete to ensure mailchimp sync
       const updatedSubscriber = await subscriberAPI.updateStatus(cleanId, 'unsubscribed');
-      
+
       if (updatedSubscriber) {
         console.log('Subscriber status updated successfully:', updatedSubscriber.status);
-        
+
         // Update the local state with the new status
-        setSubscribers(prev => prev.map(sub => 
+        setSubscribers(prev => prev.map(sub =>
           sub.id === cleanId ? { ...sub, status: 'unsubscribed' } : sub
         ));
-        
+
         // Force sync with mailchimp to ensure consistency
         try {
           console.log('Syncing with Mailchimp after status update');

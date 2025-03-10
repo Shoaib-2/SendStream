@@ -110,9 +110,17 @@ const login = async (email: string, password: string) => {
   }
 };
 
-const signup = async (email: string, password: string) => {
+const signup = async (email: string, password: string, stripeSessionId?: string) => {
   try {
-    const response = await authAPI.register({ email, password });
+    console.log('Registering with Stripe session ID:', stripeSessionId || 'none');
+    
+    // Include the Stripe session ID if provided
+    const registrationData: any = { email, password };
+    if (stripeSessionId) {
+      registrationData.stripeSessionId = stripeSessionId;
+    }
+    
+    const response = await authAPI.register(registrationData);
     
     // Check for error responses that don't throw exceptions
     if (response?.status === 'error') {

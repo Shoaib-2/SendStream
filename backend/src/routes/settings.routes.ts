@@ -1,12 +1,16 @@
 import express, { RequestHandler } from 'express';
 import { settingsController } from '../controllers/settings.controller';
 import { protect } from '../middleware/auth/auth.middleware';
+import { requireActiveSubscription } from '../middleware/susbcription.middleware';
 import { Request, Response, NextFunction } from 'express';
 
 const router = express.Router();
 
 // All routes require authentication
-router.use(protect as RequestHandler,);
+router.use(protect as RequestHandler);
+
+// Add subscription check for premium features
+router.use(requireActiveSubscription as RequestHandler);
 
 // Helper to convert class methods to route handlers
 const asyncHandler = (fn: (req: Request, res: Response, next: NextFunction) => Promise<any>) => (req: Request, res: Response, next: NextFunction) => {
