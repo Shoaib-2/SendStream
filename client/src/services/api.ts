@@ -199,18 +199,17 @@ const api = axios.create({
   withCredentials: true, // This ensures cookies are sent with requests
 });
 // Add this to track failed requests to prevent loops
-let failedRequestsCount = 0;
-const MAX_FAILED_REQUESTS = 3;
-let lastFailedEndpoint = "";
-let isRedirecting = false;
-
-// Add after line 146 (after APIError class definition)
 const inSilentMode = () => {
-  // Don't show errors on landing page or during initial page load
   return typeof window !== 'undefined' && 
     (window.location.pathname === '/' || 
      document.readyState !== 'complete');
 };
+
+// Existing configuration for tracking failed requests
+let failedRequestsCount = 0;
+const MAX_FAILED_REQUESTS = 3;
+let lastFailedEndpoint = "";
+let isRedirecting = false;
 
 api.interceptors.response.use(
   (response) => response,
@@ -220,12 +219,17 @@ api.interceptors.response.use(
       (window.location.pathname.includes('/login') || 
        window.location.pathname === '/');
     
-    // Skip errors during initial page load
-    const inSilentMode = typeof window !== 'undefined' && 
-      (window.location.pathname === '/' || document.readyState !== 'complete');
+    // Silent mode for initial page load or on landing page
+    const silentMode = inSilentMode();
+    
+    // Handle 403 errors silently during initial load
+    if (error.response?.status === 403 && silentMode) {
+      console.log('Silencing 403 error during subscription check');
+      return Promise.resolve({ data: null });
+    }
     
     // Only handle auth errors loudly if not on auth pages
-    if (error.response?.status === 401 && !isOnAuthPage && !inSilentMode) {
+    if (error.response?.status === 401 && !isOnAuthPage && !silentMode) {
       console.log("Authentication error:", error.config?.url);
 
       // Track which endpoint is failing
@@ -267,7 +271,7 @@ api.interceptors.response.use(
     }
 
     // Only log errors if not in silent mode
-    if (!inSilentMode) {
+    if (!silentMode) {
       console.error("Response error:", error.response?.status, error.config?.url);
     }
     
@@ -1086,6 +1090,3 @@ export const cancelSubscription = async (subscriptionId: string) => {
     throw error;
   }
 };
-
-
-

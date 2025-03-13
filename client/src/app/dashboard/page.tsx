@@ -47,7 +47,7 @@ export default function DashboardPage() {
         }
         setLoading(false);
       } catch (error: any) {
-        // Check if we should suppress the error
+        // Silent error for 403/subscription expiration
         const suppressError = 
           typeof window !== 'undefined' && 
           (document.readyState !== 'complete' || 

@@ -9,28 +9,29 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { priceId, successUrl, cancelUrl } = body;
+    const { priceId, successUrl, cancelUrl, skipTrial = false } = body;
 
     if (!priceId) {
       return NextResponse.json({ error: 'Price ID is required' }, { status: 400 });
     }
 
-    // Add detailed logging
+    // Detailed logging for debugging
     console.log('Creating checkout session with:', { 
       priceId, 
       successUrl: successUrl || 'not provided', 
-      cancelUrl: cancelUrl || 'not provided' 
+      cancelUrl: cancelUrl || 'not provided',
+      skipTrial
     });
 
-    // Check if Stripe is properly initialized
+    // Verify Stripe configuration
     if (!process.env.STRIPE_SECRET_KEY) {
       console.error('STRIPE_SECRET_KEY is not defined');
       return NextResponse.json({ error: 'Stripe configuration error' }, { status: 500 });
     }
 
     try {
-      // Create checkout session with simplified parameters
-      const session = await stripe.checkout.sessions.create({
+      // Create checkout session with conditional trial period
+      const sessionParams: Stripe.Checkout.SessionCreateParams = {
         payment_method_types: ['card'],
         mode: 'subscription',
         line_items: [
@@ -39,12 +40,18 @@ export async function POST(request: NextRequest) {
             quantity: 1,
           },
         ],
-        subscription_data: {
-          trial_period_days: 14,
-        },
         success_url: successUrl || `${request.nextUrl.origin}/?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: cancelUrl || `${request.nextUrl.origin}/`,
-      });
+      };
+
+      // Only add trial if not skipping
+      if (!skipTrial) {
+        sessionParams.subscription_data = {
+          trial_period_days: 14,
+        };
+      }
+
+      const session = await stripe.checkout.sessions.create(sessionParams);
 
       console.log('Session created successfully:', session.id);
       return NextResponse.json({ sessionId: session.id });

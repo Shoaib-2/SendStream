@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
+import { connectToDatabase } from '../../../../utils/lib/mongodb'; // Adjust import path as needed
+import dotenv from 'dotenv';
 
-// Initialize Stripe with secret key
+dotenv.config();
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-02-24.acacia', // Use the latest API version
+  apiVersion: '2025-02-24.acacia',
 });
 
-// Special config for Stripe webhooks to get raw body
 export const config = {
   api: {
     bodyParser: false,
@@ -21,47 +22,52 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Stripe signature is required' }, { status: 400 });
     }
     
-    // Get the raw request body for Stripe
     const body = await request.text();
     
-    // Verify the event came from Stripe
     const event = stripe.webhooks.constructEvent(
       body,
       signature,
       process.env.STRIPE_WEBHOOK_SECRET!
     );
 
-    // Handle specific events
-    switch (event.type) {
-      case 'customer.subscription.created':
-        // A customer subscribed to your product
-        const subscription = event.data.object as Stripe.Subscription;
-        // Update your database with subscription status
-        break;
-      
-      case 'customer.subscription.updated':
-        // Subscription was updated
-        const updatedSubscription = event.data.object as Stripe.Subscription;
-        // Update subscription status in your database
-        break;
-      
-      case 'customer.subscription.deleted':
-        // Subscription was canceled or expired
-        const deletedSubscription = event.data.object as Stripe.Subscription;
-        // Mark subscription as inactive in your database
-        break;
+    const { client, db } = await connectToDatabase();
+
+    try {
+      switch (event.type) {
+        case 'customer.subscription.created':
+        case 'customer.subscription.updated':
+          const subscription = event.data.object as Stripe.Subscription;
+          
+          await db.collection('users').updateOne(
+            { stripeCustomerId: subscription.customer as string },
+            {
+              $set: {
+                subscriptionStatus: subscription.status,
+                stripeSubscriptionId: subscription.id,
+                trialEndsAt: subscription.trial_end 
+                  ? new Date(subscription.trial_end * 1000) 
+                  : null
+              }
+            }
+          );
+          break;
         
-      case 'invoice.payment_succeeded':
-        // Payment for subscription succeeded
-        const invoice = event.data.object as Stripe.Invoice;
-        // Update payment status in your database
-        break;
-        
-      case 'invoice.payment_failed':
-        // Payment for subscription failed
-        const failedInvoice = event.data.object as Stripe.Invoice;
-        // Notify customer about failed payment
-        break;
+        case 'customer.subscription.deleted':
+          const deletedSubscription = event.data.object as Stripe.Subscription;
+          
+          await db.collection('users').updateOne(
+            { stripeCustomerId: deletedSubscription.customer as string },
+            {
+              $set: {
+                subscriptionStatus: 'canceled',
+                stripeSubscriptionId: null
+              }
+            }
+          );
+          break;
+      }
+    } finally {
+      await client.close();
     }
 
     return NextResponse.json({ received: true });
