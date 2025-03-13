@@ -27,26 +27,28 @@ export async function POST(request: NextRequest) {
       signature,
       process.env.STRIPE_WEBHOOK_SECRET!
     );
-
+ 
     try {
       switch (event.type) {
         case 'checkout.session.completed':
           const session = event.data.object as Stripe.Checkout.Session;
           const email = session.customer_email;
           const customerId = session.customer as string;
-
+ 
           if (email) {
             await Subscriber.findOneAndUpdate(
               { email },
               { 
                 stripeCustomerId: customerId,
-                stripeCheckoutSessionId: session.id
+                stripeCheckoutSessionId: session.id,
+                subscriptionStatus: 'active', // Add this line
+                status: 'active' // Ensure status is active
               },
               { new: true }
             );
           }
           break;
-
+ 
         case 'customer.subscription.created':
         case 'customer.subscription.updated':
           const subscription = event.data.object as Stripe.Subscription;
@@ -54,9 +56,13 @@ export async function POST(request: NextRequest) {
           await Subscriber.findOneAndUpdate(
             { stripeCustomerId: subscription.customer as string },
             {
-              status: subscription.status === 'active' ? 'active' : 'unsubscribed',
+              subscriptionStatus: subscription.status,
+              status: 'active',
               stripeSubscriptionId: subscription.id,
-              subscribed: new Date().toISOString()
+              subscribed: new Date().toISOString(),
+              trialEndsAt: subscription.trial_end 
+                ? new Date(subscription.trial_end * 1000) 
+                : undefined
             }
           );
           break;
@@ -67,8 +73,10 @@ export async function POST(request: NextRequest) {
           await Subscriber.findOneAndUpdate(
             { stripeCustomerId: deletedSubscription.customer as string },
             {
+              subscriptionStatus: 'canceled',
               status: 'unsubscribed',
-              stripeSubscriptionId: undefined
+              stripeSubscriptionId: undefined,
+              trialEndsAt: undefined
             }
           );
           break;
@@ -76,10 +84,10 @@ export async function POST(request: NextRequest) {
     } catch (processError) {
       console.error('Webhook processing error:', processError);
     }
-
+ 
     return NextResponse.json({ received: true });
   } catch (error) {
     console.error('Webhook error:', error);
     return NextResponse.json({ error: 'Webhook error' }, { status: 400 });
   }
-}
+ }
