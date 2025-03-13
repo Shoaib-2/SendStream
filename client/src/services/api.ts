@@ -989,11 +989,16 @@ export const pricingPlans: PricingPlan[] = [
     trialDays: 14
   }
 ];
-// Create Stripe checkout session for subscription with trial
-// Update these functions in your api.ts file
 
 // Create Stripe checkout session for subscription with trial
-export const createCheckoutSession = async (priceId: string, successUrl: string, skipTrial = false) => {
+export const createCheckoutSession = async (
+  priceId: string, 
+  successUrl: string, 
+  options: { 
+    skipTrial?: boolean, 
+    email?: string 
+  } = {}
+) => {
   try {
     const response = await fetch('/api/stripe/checkout', {
       method: 'POST',
@@ -1004,27 +1009,29 @@ export const createCheckoutSession = async (priceId: string, successUrl: string,
         priceId,
         successUrl,
         cancelUrl: typeof window !== 'undefined' ? window.location.origin : '',
-        skipTrial, // Pass this to the API to skip trial for renewals
+        ...options
       }),
     });
 
     if (!response.ok) {
-      throw new Error('Network response was not ok');
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to create checkout session');
     }
 
-    const data: any = await response.json();
-    const sessionId = data.sessionId;
+    const data = await response.json();
     const stripe = await getStripe();
     
     if (stripe) {
-      const { error } = await stripe.redirectToCheckout({ sessionId });
+      const { error } = await stripe.redirectToCheckout({ sessionId: data.sessionId });
       
       if (error) {
         console.error('Stripe checkout error:', error);
+        throw error;
       }
     }
   } catch (error) {
     console.error('Error creating checkout session:', error);
+    throw error;
   }
 };
 
@@ -1032,13 +1039,23 @@ export const createCheckoutSession = async (priceId: string, successUrl: string,
 export const startFreeTrial = async (plan: PricingPlan) => {
   if (typeof window === 'undefined') return;
   
-  // Check if this is a renewal (from URL)
   const isRenewal = window.location.search.includes('renew=true');
-  
-  // For renewals, skip trial period
   const successUrl = `${window.location.origin}/?session_id={CHECKOUT_SESSION_ID}`;
   
-  await createCheckoutSession(plan.priceId, successUrl, isRenewal);
+  // Get email from user authentication or local storage
+  const email = localStorage.getItem('user_email') || 
+               (JSON.parse(localStorage.getItem('user') || '{}')).email ||
+               prompt('Please enter your email to continue');
+  
+  if (!email) {
+    alert('Email is required to proceed');
+    return;
+  }
+  
+  await createCheckoutSession(plan.priceId, successUrl, {
+    skipTrial: isRenewal,
+    email
+  });
 };
 
 // Get subscription status

@@ -57,3 +57,11 @@ export interface Newsletter {
   sentTo?: number;
   createdBy: string;
 }
+
+export interface User {
+  email: string;
+  stripeCustomerId?: string;
+  stripeSubscriptionId?: string;
+  subscriptionStatus?: 'active' | 'trialing' | 'past_due' | 'canceled' | 'unpaid' | null;
+  trialEndsAt?: Date;
+}

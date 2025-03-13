@@ -1,6 +1,6 @@
 import React from 'react';
 import Button from '../UI/Button';
-import { Send, ArrowRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { pricingPlans, startFreeTrial } from '../../services/api';
 
 interface HeroProps {

@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import { connectToDatabase } from '../../../../utils/lib/mongodb'; // Adjust import path as needed
-import dotenv from 'dotenv';
+import Subscriber from '../../../../utils/lib/models/User';
 
-dotenv.config();
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-02-24.acacia',
 });
@@ -30,24 +28,35 @@ export async function POST(request: NextRequest) {
       process.env.STRIPE_WEBHOOK_SECRET!
     );
 
-    const { client, db } = await connectToDatabase();
-
     try {
       switch (event.type) {
+        case 'checkout.session.completed':
+          const session = event.data.object as Stripe.Checkout.Session;
+          const email = session.customer_email;
+          const customerId = session.customer as string;
+
+          if (email) {
+            await Subscriber.findOneAndUpdate(
+              { email },
+              { 
+                stripeCustomerId: customerId,
+                stripeCheckoutSessionId: session.id
+              },
+              { new: true }
+            );
+          }
+          break;
+
         case 'customer.subscription.created':
         case 'customer.subscription.updated':
           const subscription = event.data.object as Stripe.Subscription;
           
-          await db.collection('users').updateOne(
+          await Subscriber.findOneAndUpdate(
             { stripeCustomerId: subscription.customer as string },
             {
-              $set: {
-                subscriptionStatus: subscription.status,
-                stripeSubscriptionId: subscription.id,
-                trialEndsAt: subscription.trial_end 
-                  ? new Date(subscription.trial_end * 1000) 
-                  : null
-              }
+              status: subscription.status === 'active' ? 'active' : 'unsubscribed',
+              stripeSubscriptionId: subscription.id,
+              subscribed: new Date().toISOString()
             }
           );
           break;
@@ -55,19 +64,17 @@ export async function POST(request: NextRequest) {
         case 'customer.subscription.deleted':
           const deletedSubscription = event.data.object as Stripe.Subscription;
           
-          await db.collection('users').updateOne(
+          await Subscriber.findOneAndUpdate(
             { stripeCustomerId: deletedSubscription.customer as string },
             {
-              $set: {
-                subscriptionStatus: 'canceled',
-                stripeSubscriptionId: null
-              }
+              status: 'unsubscribed',
+              stripeSubscriptionId: undefined
             }
           );
           break;
       }
-    } finally {
-      await client.close();
+    } catch (processError) {
+      console.error('Webhook processing error:', processError);
     }
 
     return NextResponse.json({ received: true });

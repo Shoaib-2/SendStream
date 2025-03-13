@@ -1,39 +1,50 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
+import mongoose from 'mongoose';
+import Subscriber from '../../../../utils/lib/models/User';
 
-// Initialize Stripe directly here
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2025-02-24.acacia', // Use the latest API version
+  apiVersion: '2025-02-24.acacia',
 });
+
+// Ensure MongoDB connection before processing
+const connectDB = async () => {
+  if (mongoose.connection.readyState !== 1) {
+    await mongoose.connect(process.env.MONGODB_URI!, {
+      // Add your connection options here
+    });
+  }
+};
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { priceId, successUrl, cancelUrl, skipTrial = false } = body;
+    await connectDB();
 
-    if (!priceId) {
-      return NextResponse.json({ error: 'Price ID is required' }, { status: 400 });
+    const body = await request.json();
+    const { priceId, successUrl, cancelUrl, skipTrial = false, email } = body;
+
+    if (!priceId || !email) {
+      return NextResponse.json({ error: 'Price ID and email are required' }, { status: 400 });
     }
 
-    // Detailed logging for debugging
-    console.log('Creating checkout session with:', { 
-      priceId, 
-      successUrl: successUrl || 'not provided', 
-      cancelUrl: cancelUrl || 'not provided',
-      skipTrial
-    });
-
-    // Verify Stripe configuration
-    if (!process.env.STRIPE_SECRET_KEY) {
-      console.error('STRIPE_SECRET_KEY is not defined');
-      return NextResponse.json({ error: 'Stripe configuration error' }, { status: 500 });
+    // Explicitly find or create subscriber
+    let subscriber = await Subscriber.findOne({ email });
+    
+    if (!subscriber) {
+      subscriber = new Subscriber({
+        email,
+        status: 'active',
+        subscribed: new Date().toISOString(),
+        name: email.split('@')[0]
+      });
+      await subscriber.save();
     }
 
     try {
-      // Create checkout session with conditional trial period
       const sessionParams: Stripe.Checkout.SessionCreateParams = {
         payment_method_types: ['card'],
         mode: 'subscription',
+        customer_email: email,
         line_items: [
           {
             price: priceId,
@@ -44,7 +55,6 @@ export async function POST(request: NextRequest) {
         cancel_url: cancelUrl || `${request.nextUrl.origin}/`,
       };
 
-      // Only add trial if not skipping
       if (!skipTrial) {
         sessionParams.subscription_data = {
           trial_period_days: 14,
@@ -53,10 +63,15 @@ export async function POST(request: NextRequest) {
 
       const session = await stripe.checkout.sessions.create(sessionParams);
 
-      console.log('Session created successfully:', session.id);
+      // Directly update using _id to avoid previous query issues
+      await Subscriber.updateOne(
+        { _id: subscriber._id },
+        { stripeCheckoutSessionId: session.id }
+      );
+
       return NextResponse.json({ sessionId: session.id });
     } catch (stripeError) {
-      console.error('Stripe error:', stripeError);
+      console.error('Stripe checkout error:', stripeError);
       return NextResponse.json(
         { error: 'Stripe API error', details: (stripeError as Error).message },
         { status: 500 }
