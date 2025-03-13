@@ -2,6 +2,8 @@ import axios, { AxiosError, AxiosRequestConfig } from "axios";
 import { loadStripe } from '@stripe/stripe-js';
 import type { Stripe } from '@stripe/stripe-js';
 
+
+
 // Added request queue for performance optimization with large datasets
 const pendingRequests = new Map();
 
@@ -1030,7 +1032,7 @@ export const startFreeTrial = async (plan: PricingPlan) => {
   const isRenewal = window.location.search.includes('renew=true');
   
   // For renewals, skip trial period
-  const successUrl = `${window.location.origin}/signup?session_id={CHECKOUT_SESSION_ID}${isRenewal ? '&renew=true' : ''}`;
+  const successUrl = `${window.location.origin}/?session_id={CHECKOUT_SESSION_ID}`;
   
   await createCheckoutSession(plan.priceId, successUrl, isRenewal);
 };

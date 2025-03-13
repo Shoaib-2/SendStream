@@ -125,7 +125,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let isSubscribed = true;
     let redirecting = false;
-
+  
     const fetchData = async () => {
       // Check if we're in initial page load
       const isInitialLoad = typeof document !== 'undefined' && document.readyState !== 'complete';
@@ -240,7 +240,15 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         }
       }
     }
-  }, [user]);
+    
+    // Call the fetchData function
+    fetchData();
+    
+    // Cleanup function
+    return () => {
+      isSubscribed = false;
+    };
+  }, [fetchAttempts, user, MAX_FETCH_ATTEMPTS]);
 
   const addSubscriber = async (subscriberData: Omit<Subscriber, 'id'>) => {
     try {

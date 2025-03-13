@@ -45,6 +45,7 @@ export default function DashboardPage() {
             comprehensiveAnalysis: newsletter.contentQuality?.contentLength ? newsletter.contentQuality.contentLength > 500 : false
           })));
         }
+        setLoading(false);
       } catch (error: any) {
         // Check if we should suppress the error
         const suppressError = 
@@ -60,6 +61,7 @@ export default function DashboardPage() {
         if (error?.message?.includes('Subscription expired')) {
           setSubscriptionExpired(true);
         }
+        setLoading(false);
       }
     };
   

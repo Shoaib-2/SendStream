@@ -8,6 +8,7 @@ router.post('/register', register as RequestHandler);
 router.post('/login', login as RequestHandler);
 router.post('/logout', logout as RequestHandler);
 
+
 // Make sure these routes are added and match your API calls
 router.post('/forgot-password', forgotPassword as RequestHandler);
 router.post('/reset-password/:token', resetPassword as RequestHandler);

@@ -2232,3 +2232,15 @@
 2025-03-10T12:20:29.058Z [[32minfo[39m]: Gmail transporter created
 2025-03-10T12:31:05.178Z [[32minfo[39m]: Gmail transporter created
 2025-03-10T13:14:00.985Z [[32minfo[39m]: Gmail transporter created
+2025-03-12T19:56:26.770Z [[32minfo[39m]: Gmail transporter created
+2025-03-12T23:01:29.812Z [[32minfo[39m]: Gmail transporter created
+2025-03-12T23:01:42.178Z [[32minfo[39m]: Gmail transporter created
+2025-03-12T23:13:38.763Z [[32minfo[39m]: Gmail transporter created
+2025-03-12T23:14:13.348Z [[32minfo[39m]: Gmail transporter created
+2025-03-12T23:36:41.039Z [[32minfo[39m]: Gmail transporter created
+2025-03-12T23:55:16.324Z [[32minfo[39m]: Gmail transporter created
+2025-03-13T00:02:08.439Z [[32minfo[39m]: Creating default settings for user
+2025-03-13T00:02:08.447Z [[31merror[39m]: Integration test error: Settings validation failed: email.senderEmail: Path `email.senderEmail` is required., email.replyTo: Path `email.replyTo` is required., email.fromName: Path `email.fromName` is required.
+2025-03-13T00:02:19.042Z [[32minfo[39m]: Testing Mailchimp with provided credentials
+2025-03-13T00:02:19.044Z [[32minfo[39m]: 🔍 Testing Mailchimp connection...
+2025-03-13T00:02:19.576Z [[31merror[39m]: ❌ Connection failed:

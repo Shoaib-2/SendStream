@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Save, RefreshCw, ArrowDownToLine, ToggleLeft, ToggleRight } from 'lucide-react';
 import { settingsAPI } from '@/services/api';
 import { useData } from '@/context/dataContext';
-import SubscriptionManagement from '@/components/dashboard/SubscriptionManagement';
+import SubscriptionManagement from '@/components/dashboardSubscription/SubscriptionManagement';
 
 // Custom local interface for Settings that enforces required fields
 interface LocalSettings {

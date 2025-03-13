@@ -95,3 +95,5 @@
 2025-03-09T15:12:43.395Z [[31merror[39m]: Error syncing subscribers: Mailchimp is not enabled or configured
 2025-03-09T22:43:57.761Z [[31merror[39m]: Integration test error: Settings validation failed: email.senderEmail: Path `email.senderEmail` is required., email.replyTo: Path `email.replyTo` is required., email.fromName: Path `email.fromName` is required.
 2025-03-09T22:44:14.818Z [[31merror[39m]: Error syncing subscribers: Mailchimp is not enabled or configured
+2025-03-13T00:02:08.447Z [[31merror[39m]: Integration test error: Settings validation failed: email.senderEmail: Path `email.senderEmail` is required., email.replyTo: Path `email.replyTo` is required., email.fromName: Path `email.fromName` is required.
+2025-03-13T00:02:19.576Z [[31merror[39m]: ❌ Connection failed:
