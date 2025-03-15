@@ -124,6 +124,34 @@ router.post('/cancel', async function(req, res) {
     }
     
     try {
+      // First check if subscription is already canceled
+      try {
+        // @ts-ignore - Ignore TypeScript checking for properties
+        const existingSubscription = await stripe.subscriptions.retrieve(user.stripeSubscriptionId);
+        
+        if (existingSubscription.status === 'canceled') {
+          // Update user status if needed
+          // @ts-ignore - Ignore TypeScript checking for properties
+          if (user.subscriptionStatus !== 'canceled') {
+            // @ts-ignore - Ignore TypeScript checking for properties
+            user.subscriptionStatus = 'canceled';
+            await user.save();
+          }
+          
+          res.status(200).json({
+            status: 'success',
+            data: {
+              message: 'Subscription already canceled',
+              willEndOn: new Date(existingSubscription.current_period_end * 1000)
+            }
+          });
+          return;
+        }
+      } catch (retrieveError) {
+        // Continue with cancel attempt if retrieve fails
+        console.error('Error retrieving subscription:', retrieveError);
+      }
+      
       // @ts-ignore - Ignore TypeScript checking for properties
       const subscription = await stripe.subscriptions.update(
         user.stripeSubscriptionId,
@@ -143,6 +171,29 @@ router.post('/cancel', async function(req, res) {
       });
     } catch (stripeError) {
       console.error('Error canceling Stripe subscription:', stripeError);
+      
+      // Handle the specific error for canceled subscriptions
+      // @ts-ignore
+      if (stripeError.type === 'StripeInvalidRequestError' && 
+          // @ts-ignore
+          stripeError.raw?.message?.includes('canceled subscription')) {
+        
+        // Update user's status
+        // @ts-ignore
+        user.subscriptionStatus = 'canceled';
+        await user.save();
+        
+        res.status(200).json({
+          status: 'success',
+          data: {
+            message: 'Subscription already canceled',
+            // @ts-ignore
+            willEndOn: user.trialEndsAt || new Date()
+          }
+        });
+        return;
+      }
+      
       res.status(400).json({
         status: 'error',
         message: 'Failed to cancel subscription with Stripe'

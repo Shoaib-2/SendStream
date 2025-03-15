@@ -111,7 +111,29 @@ export const cancelSubscription = async (req: AuthenticatedRequest, res: Respons
     }
     
     try {
-      // Cancel subscription at period end
+      // First, check the current state of the subscription
+      const existingSubscription = await stripe.subscriptions.retrieve(
+        (user as any).stripeSubscriptionId
+      );
+      
+      // If subscription is already canceled, just update the user's DB record
+      if (existingSubscription.status === 'canceled') {
+        // Update user's subscription status if it doesn't match
+        if ((user as any).subscriptionStatus !== 'canceled') {
+          (user as any).subscriptionStatus = 'canceled';
+          await user.save();
+        }
+        
+        return res.status(200).json({
+          status: 'success',
+          data: {
+            message: 'Subscription already canceled',
+            willEndOn: new Date(existingSubscription.current_period_end * 1000)
+          }
+        });
+      }
+      
+      // Only attempt to cancel at period end if not already canceled
       const subscription = await stripe.subscriptions.update(
         (user as any).stripeSubscriptionId,
         {
@@ -130,8 +152,26 @@ export const cancelSubscription = async (req: AuthenticatedRequest, res: Respons
           willEndOn: new Date(subscription.current_period_end * 1000)
         }
       });
-    } catch (stripeError) {
+    } catch (stripeError: any) {
       console.error('Error canceling Stripe subscription:', stripeError);
+      
+      // If we get "canceled subscription" error, update the user record
+      if (stripeError.type === 'StripeInvalidRequestError' && 
+          stripeError.raw?.message?.includes('canceled subscription')) {
+        
+        (user as any).subscriptionStatus = 'canceled';
+        await user.save();
+        
+        return res.status(200).json({
+          status: 'success',
+          data: {
+            message: 'Subscription already canceled',
+            // We don't have current_period_end here, so just use trialEndsAt or current date
+            willEndOn: (user as any).trialEndsAt || new Date()
+          }
+        });
+      }
+      
       return res.status(400).json({
         status: 'error',
         message: 'Failed to cancel subscription with Stripe'

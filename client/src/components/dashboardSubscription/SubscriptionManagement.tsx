@@ -131,7 +131,7 @@ const SubscriptionManagement = () => {
       setSuccessMessage(null);
       
       const response = await cancelSubscription(subscription.id);
-      setSuccessMessage('Your subscription has been cancelled successfully');
+      setSuccessMessage(response.data?.message || 'Your subscription has been cancelled successfully');
       
       // Refresh subscription status
       await fetchSubscriptionStatus();
@@ -148,7 +148,7 @@ const SubscriptionManagement = () => {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
       } else {
-        setError('Failed to cancel subscription');
+        setError(err.response?.data?.message || 'Failed to cancel subscription');
       }
     } finally {
       setCancelling(false);
