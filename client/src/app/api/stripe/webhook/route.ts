@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
               { 
                 stripeCustomerId: customerId,
                 stripeCheckoutSessionId: session.id,
-                subscriptionStatus: 'active', // Add this line
+                subscriptionStatus: 'active', 
                 status: 'active' // Ensure status is active
               },
               { new: true }

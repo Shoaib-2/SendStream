@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { X, Loader } from 'lucide-react';
+import { X, Loader, AlertCircle } from 'lucide-react';
 import { validateEmail, validatePassword } from '../../utils/validation';
 import { useAuth } from '../../context/authContext';
 import { useRouter } from 'next/navigation';
 import { useSearchParams } from 'next/navigation';
+import { startFreeTrial, pricingPlans } from '../../services/api';
 
 interface FormErrors {
   email?: string;
@@ -30,14 +31,17 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
   const [isLoading, setIsLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [stripeSessionId, setStripeSessionId] = useState<string | null>(null);
+  const [trialRequired, setTrialRequired] = useState(false);
 
   useEffect(() => {
     if (!isOpen) {
+      // Reset form state when modal closes
       setEmail('');
       setNewPassword('');
       setConfirmPassword('');
       setErrors({});
       setSuccessMessage('');
+      setTrialRequired(false);
       setMode(initialMode);
     } else {
       // When modal opens, check for session_id in URL or localStorage
@@ -84,6 +88,9 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
     e.preventDefault();
     if (!validateForm()) return;
     setIsLoading(true);
+    setTrialRequired(false);
+    setErrors({});
+    setSuccessMessage('');
   
     try {
       if (mode === 'login') {
@@ -96,21 +103,37 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
         onClose();
         router.push('/dashboard');
       } else if (mode === 'signup') {
+        // Check if we have a stripe session ID for signup
+        if (mode === 'signup' && !stripeSessionId) {
+          setTrialRequired(true);
+          throw new Error('Please start a free trial first to create an account');
+        }
+        
         console.log(`Signing up with stripe session ID: ${stripeSessionId || 'none'}`);
         
-        // Include the session ID
-        await signup(email, newPassword, stripeSessionId || undefined);
-        setSuccessMessage('Account has been created successfully!');
-        
-        // Clear session ID from localStorage after successful signup
-        localStorage.removeItem('stripe_session_id');
-        
-        if (typeof window !== 'undefined') {
-          window.localStorage.setItem('isAuthenticated', 'true');
-          document.cookie = 'auth_token=true; path=/';
+        try {
+          // Include the session ID
+          await signup(email, newPassword, stripeSessionId || undefined);
+          setSuccessMessage('Account has been created successfully!');
+          
+          // Clear session ID from localStorage after successful signup
+          localStorage.removeItem('stripe_session_id');
+          
+          if (typeof window !== 'undefined') {
+            window.localStorage.setItem('isAuthenticated', 'true');
+            document.cookie = 'auth_token=true; path=/';
+          }
+          onClose();
+          router.push('/dashboard');
+        } catch (signupError: any) {
+          // Check if it's a trial required error from the backend
+          if (signupError.response?.data?.code === 'TRIAL_REQUIRED' || 
+              signupError.response?.data?.code === 'INVALID_SESSION') {
+            setTrialRequired(true);
+            throw new Error(signupError.response?.data?.message || 'Please start a free trial first');
+          }
+          throw signupError;
         }
-        onClose();
-        router.push('/dashboard');
       } else if (mode === 'forgotPassword') {
         const response = await forgotPassword(email);
         if (response.status === 'success') {
@@ -132,6 +155,25 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleStartTrial = async () => {
+    try {
+      // Use the Pro plan from the pricingPlans array
+      const proPlan = pricingPlans.find(plan => plan.id === 'pro') || pricingPlans[0];
+      
+      // Start the free trial with email from the form
+      await startFreeTrial(proPlan, email || undefined);
+      
+      // Modal will be closed after successful redirect to Stripe
+      // No need to call onClose() here as the page will navigate away
+    } catch (error) {
+      console.error('Failed to start free trial:', error);
+      setErrors({ 
+        general: error instanceof Error ? error.message : 'Failed to start free trial' 
+      });
+      // Don't close the modal on error so user can see the error message
     }
   };
 
@@ -170,7 +212,26 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
           </p>
         </div>
 
-        {errors.general && (
+        {/* Trial Required Alert */}
+        {trialRequired && (
+          <div className="bg-amber-500/10 border border-amber-500/50 text-amber-400 
+            px-4 py-3 rounded-xl mb-6 backdrop-blur-sm flex items-start gap-2">
+            <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="font-medium">Free Trial Required</p>
+              <p className="text-sm mt-1">Please start a free trial first to create an account.</p>
+              <button
+                onClick={handleStartTrial}
+                className="mt-2 px-4 py-2 bg-amber-500/20 hover:bg-amber-500/30 rounded-lg text-sm
+                  border border-amber-500/30 hover:border-amber-500/50 transition-all duration-300"
+              >
+                Start Free Trial
+              </button>
+            </div>
+          </div>
+        )}
+
+        {errors.general && !trialRequired && (
           <div className="bg-red-500/10 border border-red-500/50 text-red-400 
             px-4 py-3 rounded-xl mb-6 backdrop-blur-sm">
             {errors.general}
@@ -289,7 +350,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
             className="w-full bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg
               transform transition-all duration-300 hover:scale-105 disabled:opacity-50
               disabled:hover:scale-100 font-medium"
-            disabled={isLoading}
+            disabled={isLoading || (mode === 'signup' && !stripeSessionId)}
           >
             {isLoading ? (
               <Loader className="w-5 h-5 animate-spin mx-auto" />
@@ -301,6 +362,18 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
                   : 'Send Reset Link'
             )}
           </button>
+
+          {mode === 'signup' && !stripeSessionId && (
+            <button
+              type="button"
+              onClick={handleStartTrial}
+              className="w-full mt-4 bg-gradient-to-r from-amber-500/20 to-amber-600/20 text-amber-400
+                hover:from-amber-500/30 hover:to-amber-600/30 px-6 py-3 rounded-lg border border-amber-500/30
+                hover:border-amber-500/50 transition-all duration-300 font-medium flex items-center justify-center gap-2"
+            >
+              Start Free Trial First
+            </button>
+          )}
         </form>
 
         <div className="mt-6 text-center">
@@ -323,8 +396,10 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
             onClick={() => {
               if (mode === 'login') {
                 setMode('signup');
+                setTrialRequired(false); // Reset trial required state when switching modes
               } else if (mode === 'signup' || mode === 'forgotPassword') {
                 setMode('login');
+                setTrialRequired(false); // Reset trial required state when switching modes
               }
             }}
             className="text-blue-400 hover:text-blue-300 mt-4 font-medium transition-colors"

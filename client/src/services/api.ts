@@ -1000,6 +1000,28 @@ export const createCheckoutSession = async (
   } = {}
 ) => {
   try {
+    // Check requirements before making request
+    if (!priceId) {
+      throw new Error('Price ID is required');
+    }
+    
+    // Make sure we have a valid success URL
+    const finalSuccessUrl = successUrl || (typeof window !== 'undefined' ? 
+      `${window.location.origin}/?session_id={CHECKOUT_SESSION_ID}` : '');
+    
+    // Make sure we have a valid cancel URL
+    const cancelUrl = typeof window !== 'undefined' ? window.location.origin : '';
+    
+    // Log what we're sending
+    console.log('Creating checkout session with:', {
+      priceId,
+      successUrl: finalSuccessUrl,
+      cancelUrl,
+      skipTrial: options.skipTrial,
+      hasEmail: !!options.email,
+      email: options.email?.substring(0, 3) + '...' // Log just first few chars for privacy
+    });
+
     const response = await fetch('/api/stripe/checkout', {
       method: 'POST',
       headers: {
@@ -1007,27 +1029,36 @@ export const createCheckoutSession = async (
       },
       body: JSON.stringify({
         priceId,
-        successUrl,
-        cancelUrl: typeof window !== 'undefined' ? window.location.origin : '',
-        ...options
+        successUrl: finalSuccessUrl,
+        cancelUrl,
+        skipTrial: options.skipTrial || false,
+        email: options.email || ''
       }),
     });
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to create checkout session');
+      console.error('Checkout API error response:', errorData);
+      throw new Error(errorData.error || errorData.details || 'Failed to create checkout session');
     }
 
     const data = await response.json();
     const stripe = await getStripe();
     
-    if (stripe) {
-      const { error } = await stripe.redirectToCheckout({ sessionId: data.sessionId });
-      
-      if (error) {
-        console.error('Stripe checkout error:', error);
-        throw error;
-      }
+    if (!stripe) {
+      throw new Error('Failed to initialize Stripe');
+    }
+    
+    if (!data.sessionId) {
+      throw new Error('No session ID returned from checkout API');
+    }
+    
+    console.log('Redirecting to Stripe checkout with session:', data.sessionId);
+    const { error } = await stripe.redirectToCheckout({ sessionId: data.sessionId });
+    
+    if (error) {
+      console.error('Stripe checkout error:', error);
+      throw error;
     }
   } catch (error) {
     console.error('Error creating checkout session:', error);
@@ -1036,25 +1067,25 @@ export const createCheckoutSession = async (
 };
 
 // Helper to start free trial or renew subscription
-export const startFreeTrial = async (plan: PricingPlan) => {
+// Update the startFreeTrial function to not prompt for email
+export const startFreeTrial = async (plan: PricingPlan, userEmail?: string) => {
   if (typeof window === 'undefined') return;
   
   const isRenewal = window.location.search.includes('renew=true');
   const successUrl = `${window.location.origin}/?session_id={CHECKOUT_SESSION_ID}`;
   
-  // Get email from user authentication or local storage
-  const email = localStorage.getItem('user_email') || 
-               (JSON.parse(localStorage.getItem('user') || '{}')).email ||
-               prompt('Please enter your email to continue');
+  // Get email from user authentication, local storage, or passed parameter
+  // Don't use prompt() which shows a browser dialog
+  const email = userEmail || 
+                localStorage.getItem('user_email') || 
+                (JSON.parse(localStorage.getItem('user') || '{}')).email;
   
-  if (!email) {
-    alert('Email is required to proceed');
-    return;
-  }
+  // If we still don't have an email, don't show a prompt - instead use an empty string
+  // Stripe will collect the email during checkout
   
   await createCheckoutSession(plan.priceId, successUrl, {
     skipTrial: isRenewal,
-    email
+    email: email || ''  // Use empty string instead of prompting
   });
 };
 

@@ -1,4 +1,3 @@
-// backend/src/controllers/auth.controller.ts
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
@@ -66,30 +65,48 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
       });
     }
 
+    // Require Stripe session ID for registration
+    if (!stripeSessionId) {
+      return res.status(403).json({
+        status: 'error',
+        message: 'Direct signup is not allowed. Please start a free trial first.',
+        code: 'TRIAL_REQUIRED'
+      });
+    }
+
     // Create new user with type assertion
     const user = new User({
       email,
       password,
     });
 
-    // If Stripe session ID provided, associate subscription with user
-    if (stripeSessionId) {
-      try {
-        const session = await stripe.checkout.sessions.retrieve(stripeSessionId);
-        
-        if (session.subscription) {
-          // Use type assertion to access Stripe fields
-          (user as any).stripeSubscriptionId = session.subscription as string;
-          (user as any).stripeCustomerId = session.customer as string;
-          (user as any).subscriptionStatus = 'trialing';
-          
-          const trialEnd = new Date();
-          trialEnd.setDate(trialEnd.getDate() + 14);
-          (user as any).trialEndsAt = trialEnd;
-        }
-      } catch (stripeError) {
-        console.error('Error processing Stripe session:', stripeError);
+    // Validate and associate subscription with user
+    try {
+      const session = await stripe.checkout.sessions.retrieve(stripeSessionId);
+      
+      if (!session || !session.subscription) {
+        return res.status(400).json({
+          status: 'error',
+          message: 'Invalid or expired session. Please start a free trial again.',
+          code: 'INVALID_SESSION'
+        });
       }
+      
+      // Use type assertion to access Stripe fields
+      (user as any).stripeSubscriptionId = session.subscription as string;
+      (user as any).stripeCustomerId = session.customer as string;
+      (user as any).subscriptionStatus = 'trialing';
+      
+      const trialEnd = new Date();
+      trialEnd.setDate(trialEnd.getDate() + 14);
+      (user as any).trialEndsAt = trialEnd;
+    } catch (stripeError) {
+      console.error('Error processing Stripe session:', stripeError);
+      return res.status(400).json({
+        status: 'error',
+        message: 'Invalid or expired trial session. Please start a free trial again.',
+        code: 'STRIPE_ERROR'
+      });
     }
 
     await user.save();

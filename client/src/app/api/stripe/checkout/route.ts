@@ -21,53 +21,72 @@ export async function POST(request: NextRequest) {
     await connectDB();
 
     const body = await request.json();
-    const { priceId, successUrl, cancelUrl, skipTrial = false, email } = body;
+    const { priceId, successUrl, cancelUrl, skipTrial = false, email = '' } = body;
 
-    if (!priceId || !email) {
-      return NextResponse.json({ error: 'Price ID and email are required' }, { status: 400 });
+    if (!priceId) {
+      return NextResponse.json({ error: 'Price ID is required' }, { status: 400 });
     }
 
-    // Explicitly find or create subscriber
-    let subscriber = await Subscriber.findOne({ email });
-    
-    if (!subscriber) {
-      subscriber = new Subscriber({
-        email,
-        status: 'active',
-        subscribed: new Date().toISOString(),
-        name: email.split('@')[0]
-      });
-      await subscriber.save();
+    // Prepare session parameters
+    const sessionParams: Stripe.Checkout.SessionCreateParams = {
+      payment_method_types: ['card'],
+      mode: 'subscription',
+      line_items: [
+        {
+          price: priceId,
+          quantity: 1,
+        },
+      ],
+      success_url: successUrl || `${request.nextUrl.origin}/?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: cancelUrl || `${request.nextUrl.origin}/`,
+    };
+
+    // If email is provided, add it and try to find/create subscriber
+    if (email) {
+      sessionParams.customer_email = email;
+      
+      // Find or create subscriber (only if email is provided)
+      try {
+        let subscriber = await Subscriber.findOne({ email });
+        
+        if (!subscriber) {
+          subscriber = new Subscriber({
+            email,
+            status: 'active',
+            subscribed: new Date().toISOString(),
+            name: email.split('@')[0]
+          });
+          await subscriber.save();
+        }
+      } catch (dbError) {
+        console.warn('Non-critical DB error when creating subscriber:', dbError);
+        // Continue with Stripe checkout even if subscriber creation fails
+      }
+    }
+
+    // Add trial period if not skipped
+    if (!skipTrial) {
+      sessionParams.subscription_data = {
+        trial_period_days: 14,
+      };
     }
 
     try {
-      const sessionParams: Stripe.Checkout.SessionCreateParams = {
-        payment_method_types: ['card'],
-        mode: 'subscription',
-        customer_email: email,
-        line_items: [
-          {
-            price: priceId,
-            quantity: 1,
-          },
-        ],
-        success_url: successUrl || `${request.nextUrl.origin}/?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: cancelUrl || `${request.nextUrl.origin}/`,
-      };
-
-      if (!skipTrial) {
-        sessionParams.subscription_data = {
-          trial_period_days: 14,
-        };
-      }
-
+      // Create Stripe checkout session
       const session = await stripe.checkout.sessions.create(sessionParams);
-
-      // Directly update using _id to avoid previous query issues
-      await Subscriber.updateOne(
-        { _id: subscriber._id },
-        { stripeCheckoutSessionId: session.id }
-      );
+      
+      // If email was provided, try to update subscriber with session ID
+      if (email) {
+        try {
+          await Subscriber.updateOne(
+            { email },
+            { stripeCheckoutSessionId: session.id }
+          );
+        } catch (updateError) {
+          console.warn('Non-critical DB error when updating subscriber:', updateError);
+          // Continue even if updating fails
+        }
+      }
 
       return NextResponse.json({ sessionId: session.id });
     } catch (stripeError) {
