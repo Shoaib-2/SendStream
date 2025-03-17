@@ -17,8 +17,14 @@ declare global {
   }
 }
 
+
 export const protect = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    // Skip auth check for login and register routes
+    if (req.path === '/auth/login' || req.path === '/auth/register') {
+      return next();
+    }
+    
     // Get token from HTTP-only cookie instead of header
     const token = req.cookies?.jwt;
     

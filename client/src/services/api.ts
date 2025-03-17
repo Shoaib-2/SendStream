@@ -211,8 +211,26 @@ const MAX_FAILED_REQUESTS = 3;
 let lastFailedEndpoint = "";
 let isRedirecting = false;
 
+// Updated API response interceptor to handle subscription errors
+
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Check if response includes "paid period" message
+    if (response.config?.url?.includes('/subscription/status') || 
+        response.config?.url?.includes('/auth/me')) {
+      // Check for paid period message in logs or response
+      const responseData = JSON.stringify(response.data);
+      if (responseData.includes('paid period') || 
+          responseData.includes('active') || 
+          (response.data?.data?.subscription?.status === 'canceled' && 
+           new Date(response.data?.data?.subscription?.currentPeriodEnd) > new Date())) {
+        // Set a flag that this user has valid access
+        localStorage.setItem('has_active_access', 'true');
+        console.log('Setting active access flag based on subscription status');
+      }
+    }
+    return response;
+  },
   (error) => {
     // Check if browser and not on login page
     const isOnAuthPage = typeof window !== 'undefined' && 
@@ -221,6 +239,71 @@ api.interceptors.response.use(
     
     // Silent mode for initial page load or on landing page
     const silentMode = inSilentMode();
+    
+    // Check for stored valid access flag
+    const hasValidAccess = localStorage.getItem('has_active_access') === 'true';
+    
+    // If error is subscription expired but user has valid access
+    if (error.response?.status === 403 && 
+        (error.response?.data?.code === 'SUBSCRIPTION_EXPIRED' || 
+         error.response?.data?.message?.includes('Subscription expired')) &&
+        hasValidAccess) {
+      
+      console.log('User has valid access despite subscription expired error');
+      // Resolve with empty data to prevent redirect
+      return Promise.resolve({ 
+        data: { 
+          status: 'success', 
+          data: error.config?.url?.includes('subscribers') ? [] : {} 
+        } 
+      });
+    }
+
+    // First check if user just renewed (has renewal flag in localStorage)
+    const justRenewed = localStorage.getItem('subscription_renewed');
+    if (justRenewed && error.response?.status === 403) {
+      console.log('User just renewed, refreshing token before retry');
+      
+      // Clear the renewal flag
+      localStorage.removeItem('subscription_renewed');
+      
+      // Force a page refresh to get a fresh token and session
+      window.location.reload();
+      return Promise.reject(error);
+    }
+    
+    // If it's a subscription expired error
+    if (error.response?.status === 403 && 
+        (error.response?.data?.code === 'SUBSCRIPTION_EXPIRED' || 
+         error.response?.data?.message?.includes('Subscription expired'))) {
+      
+      console.log('Handling subscription expired error');
+      
+      // Don't redirect during initial load
+      if (!silentMode && !isOnAuthPage) {
+        // Store the current page for after renewal
+        localStorage.setItem('returnPath', window.location.pathname);
+        
+        // Check if we should redirect
+        if (!isRedirecting) {
+          isRedirecting = true;
+          console.log('Redirecting due to expired subscription');
+          
+          // Use timeout to allow the current execution to complete
+          setTimeout(() => {
+            // Redirect to home page with query param instead of pricing
+            window.location.href = '/?renew=true';
+            isRedirecting = false;
+          }, 100);
+        }
+      }
+      
+      // For API calls during page load, resolve with null
+      if (silentMode) {
+        console.log('Silencing subscription expired error during initial load');
+        return Promise.resolve({ data: null });
+      }
+    }
     
     // Handle 403 errors silently during initial load
     if (error.response?.status === 403 && silentMode) {
@@ -282,20 +365,19 @@ api.interceptors.response.use(
 // Improved request interceptor
 api.interceptors.request.use(
   (config) => {
-    // For backwards compatibility during transition - send token via header if available
+    // For login requests, don't add the Authorization header
+    if (config.url && (config.url.includes('/auth/login') || config.url.includes('/auth/register'))) {
+      console.log('Skipping auth token for auth requests');
+      return config;
+    }
+    
+    // For other requests, add token if available
     const token = localStorage.getItem("token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
       console.log("Adding auth token to request:", config.url);
     } else {
       console.log("No auth token available for request:", config.url);
-      // Allow login requests without a token
-      if (
-        !config.url?.includes("/auth/login") &&
-        !config.url?.includes("/auth/register")
-      ) {
-        console.warn("Non-auth request without token:", config.url);
-      }
     }
 
     // Add pagination support to optimize database queries

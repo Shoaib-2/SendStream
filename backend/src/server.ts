@@ -1,5 +1,5 @@
 // server.ts
-import express from 'express';
+import express, { RequestHandler } from 'express';
 import cors from 'cors';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
@@ -15,7 +15,8 @@ import analyticsRoutes from './routes/analytics.routes';
 import settingsRoutes from './routes/settings.routes';
 import jwt from 'jsonwebtoken';
 import subscriptionRoutes from './routes/subscription.routes';
-
+import { protect } from '../src/middleware/auth/auth.middleware'; // Make sure this exists
+import { checkSubscription } from '../src/middleware/susbcription.middleware';
 
 dotenv.config();
 
@@ -83,10 +84,13 @@ wss.on('headers', (headers) => {
 app.use(express.json());
 app.use(cookieParser()); // Add cookie-parser middleware
 
-app.use((req, _res, next) => {
- console.log(`${req.method} ${req.path}`);
- next();
-});
+app.use('/api', protect as RequestHandler); // Apply auth middleware to all API routes
+app.use('/api', checkSubscription as RequestHandler); // Apply subscription check after auth
+
+// app.use((req, _res, next) => {
+//  console.log(`${req.method} ${req.path}`);
+//  next();
+// });
 
 app.use('/api/auth', authRoutes);
 app.use('/api/newsletters', newsletterRoutes);

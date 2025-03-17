@@ -1,7 +1,7 @@
 import express, { RequestHandler } from 'express';
 import { newsletterController} from '../controllers/newsletter.controller';
 import { protect } from '../middleware/auth/auth.middleware';
-import { requireActiveSubscription } from '../middleware/susbcription.middleware';
+import { checkSubscription } from '../middleware/susbcription.middleware';
 
 const router = express.Router();
 
@@ -9,7 +9,7 @@ const router = express.Router();
 router.use(protect as express.RequestHandler);
 
 // Add subscription check for premium features
-router.use(requireActiveSubscription as express.RequestHandler);
+router.use(checkSubscription as express.RequestHandler);
 
 router.route('/')
   .get((req, res, next) => newsletterController.getAll(req, res, next))

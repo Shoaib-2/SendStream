@@ -1,3 +1,4 @@
+// backend/src/middleware/subscription/subscription.middleware.ts
 import { Request, Response, NextFunction } from 'express';
 import User from '../models/User';
 import Stripe from 'stripe';
@@ -7,100 +8,143 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-02-24.acacia',
 });
 
-/**
- * Middleware to check if a user has an active subscription
- * Redirects to payment page if subscription has expired or doesn't exist
- */
-export const requireActiveSubscription = async (
-  req: Request, 
-  res: Response, 
-  next: NextFunction
-) => {
+export const checkSubscription = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    // Skip if no authenticated user
-    if (!req.user || !req.user.id) {
+    // Skip check for auth routes and webhooks
+    if (
+      req.path.includes('/auth/') ||
+      req.path.includes('/webhook') ||
+      req.path.includes('/public') ||
+      req.method === 'OPTIONS'
+    ) {
+      return next();
+    }
+
+    // Get user from request (set by auth middleware)
+    const user = req.user;
+    if (!user) {
       return res.status(401).json({
         status: 'error',
-        message: 'Authentication required',
-        code: 'AUTHENTICATION_REQUIRED'
+        message: 'Authentication required'
       });
     }
 
-    // Get user with subscription details
-    const user = await User.findById(req.user.id);
-    if (!user) {
-      return res.status(404).json({
-        status: 'error',
-        message: 'User not found',
-        code: 'USER_NOT_FOUND'
-      });
-    }
-
-    // Check if user has any subscription
-    if (!user.stripeSubscriptionId) {
-      return res.status(403).json({
-        status: 'error',
-        message: 'Subscription required',
-        code: 'SUBSCRIPTION_REQUIRED'
-      });
-    }
-
-    // If subscription exists, verify its status from Stripe
+    // Always check Stripe for the latest subscription status
     try {
-      const subscription = await stripe.subscriptions.retrieve(user.stripeSubscriptionId);
-      
-      // Allow access for active, trialing, or past_due subscriptions
-      const activeStatuses = ['active', 'trialing', 'past_due'];
-      
-      if (!activeStatuses.includes(subscription.status)) {
-        // Check if canceled but still in paid period
-        if (subscription.status === 'canceled' && 
-            subscription.current_period_end * 1000 > Date.now()) {
-          // Still within paid period despite cancellation
+      if (user.stripeSubscriptionId) {
+        // Get the latest subscription status from Stripe
+        const subscription = await stripe.subscriptions.retrieve(user.stripeSubscriptionId);
+        
+        // Update user's subscription status in the database
+        const currentStatus = user.subscriptionStatus;
+        const stripeStatus = subscription.status;
+        
+        if (currentStatus !== stripeStatus) {
+          console.log(`Updating subscription status from ${currentStatus} to ${stripeStatus}`);
+          user.subscriptionStatus = stripeStatus;
+          await User.findByIdAndUpdate(user._id, { 
+            subscriptionStatus: stripeStatus,
+            updatedAt: new Date()
+          });
+        }
+        
+        // Check if subscription is active or trialing
+        if (stripeStatus === 'active' || stripeStatus === 'trialing') {
           return next();
         }
         
-        return res.status(403).json({
-          status: 'error',
-          message: 'Subscription expired',
-          code: 'SUBSCRIPTION_EXPIRED'
-        });
+        // Check if subscription is past_due or incomplete but still usable
+        if (['past_due', 'incomplete'].includes(stripeStatus)) {
+          console.log(`User ${user.email} has subscription in ${stripeStatus} state`);
+          return next();
+        }
+        
+        // For canceled subscriptions, check if still in paid period
+        if (stripeStatus === 'canceled') {
+          const currentTime = Math.floor(Date.now() / 1000);
+          if (subscription.current_period_end > currentTime) {
+            // console.log(`User ${user.email} has canceled subscription but still in paid period`);
+            // Update database to reflect access is still valid
+            await User.findByIdAndUpdate(user._id, { 
+              hasActiveAccess: true,
+              updatedAt: new Date()
+            });
+            return next();
+          }
+        }
       }
       
-      // Update user subscription status in database if needed
-      if (user.subscriptionStatus === 'canceled' || 
-        (user.trialEndsAt && new Date(user.trialEndsAt) < new Date())) {
+      // Also check if user recently renewed
+      // This handles the case where they have a new subscription that hasn't been linked yet
+      try {
+        if (user.stripeCustomerId) {
+          const customerSubscriptions = await stripe.subscriptions.list({
+            customer: user.stripeCustomerId,
+            status: 'active',
+            limit: 1
+          });
+          
+          if (customerSubscriptions.data.length > 0) {
+            const latestSubscription = customerSubscriptions.data[0];
+            
+            // If there's a newer subscription than what we have saved
+            if (latestSubscription.id !== user.stripeSubscriptionId) {
+              console.log(`User ${user.email} has a new subscription ${latestSubscription.id}`);
+              
+              // Update user with new subscription details
+              await User.findByIdAndUpdate(user._id, {
+                stripeSubscriptionId: latestSubscription.id,
+                subscriptionStatus: latestSubscription.status,
+                hasActiveAccess: true,
+                updatedAt: new Date()
+              });
+              
+              return next();
+            }
+          }
+        }
+      } catch (listError) {
+        console.error('Error checking for newer subscriptions:', listError);
+      }
+      
+      // Also check trial end date
+      if (user.trialEndsAt && new Date(user.trialEndsAt) > new Date()) {
+        console.log(`User ${user.email} has an active trial until ${user.trialEndsAt}`);
+        return next();
+      }
+      
+      // If we get here, subscription is not active
+      return res.status(403).json({
+        status: 'error',
+        message: 'Subscription expired',
+        code: 'SUBSCRIPTION_EXPIRED'
+      });
+    } catch (stripeError) {
+      console.error('Error checking subscription with Stripe:', stripeError);
+      
+      // If Stripe error, fall back to database status
+      if (user.subscriptionStatus === 'active' || user.subscriptionStatus === 'trialing') {
+        return next();
+      }
+      
+      // If user has active access flag set
+      if (user.hasActiveAccess) {
+        return next();
+      }
+      
+      // If trial is still active by our database
+      if (user.trialEndsAt && new Date(user.trialEndsAt) > new Date()) {
+        return next();
+      }
+      
       return res.status(403).json({
         status: 'error',
         message: 'Subscription expired',
         code: 'SUBSCRIPTION_EXPIRED'
       });
     }
-      
-      // If all checks pass, continue
-      return next();
-    } catch (stripeError) {
-      console.error('Error verifying subscription with Stripe:', stripeError);
-      
-      // Fall back to database status if Stripe API fails
-      if (user.subscriptionStatus === 'active' || 
-          user.subscriptionStatus === 'trialing') {
-        return next();
-      }
-      
-      // If subscription status in database isn't active, require renewal
-      return res.status(403).json({
-        status: 'error',
-        message: 'Subscription validation failed',
-        code: 'SUBSCRIPTION_VALIDATION_FAILED'
-      });
-    }
   } catch (error) {
     console.error('Subscription middleware error:', error);
-    return res.status(500).json({
-      status: 'error',
-      message: 'Internal server error',
-      code: 'INTERNAL_SERVER_ERROR'
-    });
+    next(error);
   }
 };

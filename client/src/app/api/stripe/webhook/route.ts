@@ -54,15 +54,19 @@ export async function POST(request: NextRequest) {
           const subscription = event.data.object as Stripe.Subscription;
           
           await Subscriber.findOneAndUpdate(
-            { stripeCustomerId: subscription.customer as string },
+            { 
+              stripeCustomerId: subscription.customer as string
+            },
             {
               subscriptionStatus: subscription.status,
               status: 'active',
+              stripeCustomerId: subscription.customer as string,
               stripeSubscriptionId: subscription.id,
               subscribed: new Date().toISOString(),
               trialEndsAt: subscription.trial_end 
                 ? new Date(subscription.trial_end * 1000) 
-                : undefined
+                : undefined,
+              updatedAt: new Date() // Force update timestamp
             }
           );
           break;

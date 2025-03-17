@@ -2,7 +2,7 @@
 import express, { Request, Response, NextFunction, RequestHandler } from 'express';
 import { analyticsController } from '../controllers/analytics.controller';
 import { protect } from '../middleware/auth/auth.middleware';
-import { requireActiveSubscription } from '../middleware/susbcription.middleware';
+import { checkSubscription} from '../middleware/susbcription.middleware';
 import { getDashboardSummary } from '../controllers/dashboard.controller';
 import { logger } from '../utils/logger';
 
@@ -12,7 +12,7 @@ const router = express.Router();
 router.use(protect as RequestHandler);
 
 // Add subscription check for premium features
-router.use(requireActiveSubscription as RequestHandler);
+router.use(checkSubscription as RequestHandler);
 
 router.get(
   '/newsletter/:newsletterId',

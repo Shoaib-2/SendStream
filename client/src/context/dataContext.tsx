@@ -2,7 +2,7 @@
 "use client";
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { Subscriber, Newsletter } from '@/types';
-import { subscriberAPI, newsletterAPI, APIError } from '@/services/api';
+import { subscriberAPI, newsletterAPI, APIError, getSubscriptionStatus } from '@/services/api';
 import { useAuth } from './authContext';
 
 interface DataContextType {
@@ -122,133 +122,190 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, [ws]);
 
-  useEffect(() => {
-    let isSubscribed = true;
-    let redirecting = false;
+ // Updated useEffect for fetching data in dataContext.tsx
+useEffect(() => {
+  let isSubscribed = true;
+  let redirecting = false;
+
+  const fetchData = async () => {
+    // Check if we're in initial page load
+    const isInitialLoad = typeof document !== 'undefined' && document.readyState !== 'complete';
+    
+    // Check for token before attempting to fetch data
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.log('No token available, skipping data fetch');
+      setSubscribers([]);
+      setNewsletters([]);
+      setIsLoading(false);
+      return;
+    }
   
-    const fetchData = async () => {
-      // Check if we're in initial page load
-      const isInitialLoad = typeof document !== 'undefined' && document.readyState !== 'complete';
+    // Prevent too many fetch attempts
+    if (fetchAttempts >= MAX_FETCH_ATTEMPTS) {
+      console.error(`Data fetching failed after ${MAX_FETCH_ATTEMPTS} attempts, stopping retries`);
+      setIsLoading(false);
+      return;
+    }
+  
+    try {
+      setIsLoading(true);
+      if (!isInitialLoad) {
+        console.log(`Fetching data (attempt ${fetchAttempts + 1})...`);
+      }
+  
+      // Check subscription status first before fetching data
+      let subscriptionActive = true;
+      try {
+        // Use getSubscriptionStatus from API
+        const subscriptionStatus = await getSubscriptionStatus();
+        if (!subscriptionStatus.data?.hasSubscription) {
+          subscriptionActive = false;
+          console.log('No active subscription found');
+        } else if (subscriptionStatus.data?.subscription?.status !== 'active' && 
+                   subscriptionStatus.data?.subscription?.status !== 'trialing') {
+          subscriptionActive = false;
+          console.log(`Subscription status: ${subscriptionStatus.data?.subscription?.status}`);
+        }
+      } catch (subError) {
+        // Continue even if subscription check fails
+        console.log('Subscription check error:', subError);
+      }
       
-      // Check for token before attempting to fetch data
-      const token = localStorage.getItem('token');
-      if (!token) {
-        console.log('No token available, skipping data fetch');
+      // Define properly typed variables with default empty arrays
+      let subscribersData: Subscriber[] = [];
+      let newslettersData: Newsletter[] = [];
+  
+      try {
+        const response = await subscriberAPI.getAll();
+        if (response) subscribersData = response;
+        if (!isInitialLoad) {
+          console.log('Subscribers fetched successfully');
+        }
+      } catch (err) {
+        if ((err as any).status === 403 && (err as any).message?.includes('Subscription expired')) {
+          subscriptionActive = false;
+        }
+        
+        if (!isInitialLoad) {
+          console.error('Error fetching subscribers:', err);
+        }
+      }
+  
+      try {
+        const response = await newsletterAPI.getAll();
+        if (response) newslettersData = response;
+        if (!isInitialLoad) {
+          console.log('Newsletters fetched successfully');
+        }
+      } catch (err) {
+        if ((err as any).status === 403 && (err as any).message?.includes('Subscription expired')) {
+          subscriptionActive = false;
+        }
+        
+        if (!isInitialLoad) {
+          console.error('Error fetching newsletters:', err);
+        }
+      }
+  
+      if (subscribersData && isSubscribed) {
+        // Directly use the subscriber status from the database
+        const formattedSubscribers: Subscriber[] = subscribersData.map(sub => ({
+          id: sub.id || sub._id || '',
+          _id: sub._id,
+          email: sub.email,
+          name: sub.name,
+          status: sub.status,
+          subscribed: sub.subscribed || (sub as any).subscribedDate || new Date().toISOString(),
+          source: sub.source
+        }));
+  
+        setSubscribers(formattedSubscribers);
+      } else {
+        setSubscribers([]);
+      }
+  
+      if (newslettersData && isSubscribed) {
+        setNewsletters(newslettersData);
+      } else {
+        setNewsletters([]);
+      }
+      
+      // Check if we need to redirect due to inactive subscription
+      if (!subscriptionActive && !isInitialLoad && !isOnAuthPage() && !redirecting) {
+        // Check if subscription is in paid period
+        const subscriptionData = await getSubscriptionStatus();
+        const canceledButPaid = subscriptionData?.data?.subscription?.status === 'canceled' && 
+                               new Date(subscriptionData?.data?.subscription?.currentPeriodEnd) > new Date();
+                               
+        if (canceledButPaid) {
+          console.log('Subscription is canceled but still in paid period, allowing access');
+          subscriptionActive = true; // Override to allow access
+        } else {
+          redirecting = true;
+          
+          // Store return path
+          localStorage.setItem('returnPath', window.location.pathname);
+          
+          // Wait a bit to allow current execution to complete
+          setTimeout(() => {
+            window.location.href = '/?renew=true';
+          }, 100);
+        }
+      }
+  
+      // Reset fetch attempts on success
+      setFetchAttempts(0);
+    } catch (error) {
+      if (!isInitialLoad) {
+        console.error('Data fetch error:', error);
+      }
+  
+      // Increment fetch attempts
+      setFetchAttempts(prevAttempts => prevAttempts + 1);
+  
+      if ((error as any).status === 401 && !redirecting) {
+        redirecting = true;
+        if (!isInitialLoad) {
+          console.log('Authentication error during data fetch, clearing token');
+        }
+        localStorage.removeItem('token');
         setSubscribers([]);
         setNewsletters([]);
-        setIsLoading(false);
-        return;
-      }
-    
-      // Prevent too many fetch attempts
-      if (fetchAttempts >= MAX_FETCH_ATTEMPTS) {
-        console.error(`Data fetching failed after ${MAX_FETCH_ATTEMPTS} attempts, stopping retries`);
-        setIsLoading(false);
-        return;
-      }
-    
-      try {
-        setIsLoading(true);
+  
+        if (typeof window !== 'undefined' && !isOnAuthPage()) {
+          window.location.href = '/login';
+        }
+      } else if ((error as any).status === 404) {
         if (!isInitialLoad) {
-          console.log(`Fetching data (attempt ${fetchAttempts + 1})...`);
+          console.error('API endpoint not found during data fetch. Is the API server running?');
         }
-    
-        // Define properly typed variables with default empty arrays
-        let subscribersData: Subscriber[] = [];
-        let newslettersData: Newsletter[] = [];
-    
-        try {
-          const response = await subscriberAPI.getAll();
-          if (response) subscribersData = response;
-          if (!isInitialLoad) {
-            console.log('Subscribers fetched successfully');
-          }
-        } catch (err) {
-          if (!isInitialLoad) {
-            console.error('Error fetching subscribers:', err);
-          }
-        }
-    
-        try {
-          const response = await newsletterAPI.getAll();
-          if (response) newslettersData = response;
-          if (!isInitialLoad) {
-            console.log('Newsletters fetched successfully');
-          }
-        } catch (err) {
-          if (!isInitialLoad) {
-            console.error('Error fetching newsletters:', err);
-          }
-        }
-    
-        if (subscribersData && isSubscribed) {
-          // Directly use the subscriber status from the database
-          const formattedSubscribers: Subscriber[] = subscribersData.map(sub => ({
-            id: sub.id || sub._id || '',
-            _id: sub._id,
-            email: sub.email,
-            name: sub.name,
-            status: sub.status,
-            subscribed: sub.subscribed || (sub as any).subscribedDate || new Date().toISOString(),
-            source: sub.source
-          }));
-    
-          setSubscribers(formattedSubscribers);
-        } else {
-          setSubscribers([]);
-        }
-    
-        if (newslettersData && isSubscribed) {
-          setNewsletters(newslettersData);
-        } else {
-          setNewsletters([]);
-        }
-    
-        // Reset fetch attempts on success
-        setFetchAttempts(0);
-      } catch (error) {
-        if (!isInitialLoad) {
-          console.error('Data fetch error:', error);
-        }
-    
-        // Increment fetch attempts
-        setFetchAttempts(prevAttempts => prevAttempts + 1);
-    
-        if (error instanceof APIError && error.status === 401 && !redirecting) {
-          redirecting = true;
-          if (!isInitialLoad) {
-            console.log('Authentication error during data fetch, clearing token');
-          }
-          localStorage.removeItem('token');
-          setSubscribers([]);
-          setNewsletters([]);
-    
-          if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
-            window.location.href = '/login';
-          }
-        } else if (error instanceof APIError && error.status === 404) {
-          if (!isInitialLoad) {
-            console.error('API endpoint not found during data fetch. Is the API server running?');
-          }
-          // Set empty data but don't redirect
-          setSubscribers([]);
-          setNewsletters([]);
-        }
-      } finally {
-        if (isSubscribed) {
-          setIsLoading(false);
-        }
+        // Set empty data but don't redirect
+        setSubscribers([]);
+        setNewsletters([]);
+      }
+    } finally {
+      if (isSubscribed) {
+        setIsLoading(false);
       }
     }
-    
-    // Call the fetchData function
-    fetchData();
-    
-    // Cleanup function
-    return () => {
-      isSubscribed = false;
-    };
-  }, [fetchAttempts, user, MAX_FETCH_ATTEMPTS]);
+  };
+  
+  // Helper function to check if we're on auth page
+  const isOnAuthPage = () => {
+    return typeof window !== 'undefined' && 
+      (window.location.pathname.includes('/login') || 
+       window.location.pathname === '/');
+  };
+  
+  // Call the fetchData function
+  fetchData();
+  
+  // Cleanup function
+  return () => {
+    isSubscribed = false;
+  };
+}, [fetchAttempts, user, MAX_FETCH_ATTEMPTS]);
 
   const addSubscriber = async (subscriberData: Omit<Subscriber, 'id'>) => {
     try {

@@ -11,7 +11,7 @@ import {
   updateSubscriber
 } from '../controllers/subs.controller';
 import { protect } from '../middleware/auth/auth.middleware';
-import { requireActiveSubscription } from '../middleware/susbcription.middleware';
+import { checkSubscription } from '../middleware/susbcription.middleware';
 import { RequestHandler } from 'express';
 
 const router = Router();
@@ -23,7 +23,7 @@ router.get('/unsubscribe/:token', asyncHandler(unsubscribeSubscriber));
 router.use(protect as RequestHandler);
 
 // Add subscription check for premium features
-router.use(requireActiveSubscription as RequestHandler);
+router.use(checkSubscription as RequestHandler);
 
 router.route('/').get(getSubscribers).post(createSubscriber);
 router.route('/import').post(asyncHandler(importSubscribers));
