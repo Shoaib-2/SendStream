@@ -1051,6 +1051,9 @@ export const authAPI = {
     }
   }
 };
+
+
+
 // Stripe methods for handling payments and subscriptions
 let stripePromise: Promise<Stripe | null>;
 const getStripe = () => {
@@ -1217,6 +1220,36 @@ export const cancelSubscription = async (subscriptionId: string) => {
     return await response.json();
   } catch (error) {
     console.error('Error cancelling subscription:', error);
+    throw error;
+  }
+};
+
+// Update subscription auto-renewal setting
+export const updateSubscriptionRenewal = async (subscriptionId: string, autoRenew: boolean) => {
+  try {
+    // Get token from localStorage
+    const token = localStorage.getItem('token');
+    
+    // Convert autoRenew boolean to cancelAtPeriodEnd (they're opposites)
+    const cancelAtPeriodEnd = !autoRenew;
+    
+    const response = await fetch('/api/stripe/update-renewal', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': token ? `Bearer ${token}` : ''
+      },
+      body: JSON.stringify({ subscriptionId, cancelAtPeriodEnd }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to update subscription renewal settings');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error updating subscription renewal:', error);
     throw error;
   }
 };

@@ -208,4 +208,114 @@ router.post('/cancel', async function(req, res) {
   }
 });
 
+// Update subscription auto-renewal settings
+router.post('/update-renewal', async function(req, res) {
+  // Check if user exists in request
+  if (!req.user || !req.user.id) {
+    res.status(401).json({
+      status: 'error',
+      message: 'Not authenticated',
+      code: 'NOT_AUTHENTICATED'
+    });
+    return;
+  }
+  
+  const { subscriptionId, cancelAtPeriodEnd } = req.body;
+  
+  if (!subscriptionId) {
+    res.status(400).json({
+      status: 'error',
+      message: 'Subscription ID is required'
+    });
+    return;
+  }
+  
+  if (typeof cancelAtPeriodEnd !== 'boolean') {
+    res.status(400).json({
+      status: 'error',
+      message: 'cancelAtPeriodEnd must be a boolean value'
+    });
+    return;
+  }
+  
+  try {
+    const user = await User.findById(req.user.id);
+    
+    if (!user) {
+      res.status(404).json({ 
+        status: 'error', 
+        message: 'User not found' 
+      });
+      return;
+    }
+    
+    // @ts-ignore - Ignore TypeScript checking for properties
+    if (user.stripeSubscriptionId !== subscriptionId) {
+      res.status(403).json({
+        status: 'error',
+        message: 'Subscription does not belong to this user'
+      });
+      return;
+    }
+    
+    try {
+      // First check subscription status to avoid errors with canceled subscriptions
+      const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+      
+      // If subscription is already canceled, we can't modify cancel_at_period_end
+      if (subscription.status === 'canceled') {
+        // Just return success with the current details
+        res.status(200).json({
+          status: 'success',
+          data: {
+            subscription: {
+              id: subscription.id,
+              status: subscription.status,
+              currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+              cancelAtPeriodEnd: true // Canceled subscriptions are effectively cancelAtPeriodEnd
+            }
+          },
+          message: 'No changes needed - subscription is already canceled'
+        });
+        return;
+      }
+      
+      // Only update if the subscription is active or trialing
+      const updatedSubscription = await stripe.subscriptions.update(
+        subscriptionId,
+        { cancel_at_period_end: cancelAtPeriodEnd }
+      );
+      
+      res.status(200).json({
+        status: 'success',
+        data: {
+          subscription: {
+            id: updatedSubscription.id,
+            status: updatedSubscription.status,
+            currentPeriodEnd: new Date(updatedSubscription.current_period_end * 1000),
+            cancelAtPeriodEnd: updatedSubscription.cancel_at_period_end
+          }
+        },
+        message: cancelAtPeriodEnd ? 
+          'Auto-renewal has been disabled' : 
+          'Auto-renewal has been enabled'
+      });
+    } catch (stripeError) {
+      console.error('Error updating subscription in Stripe:', stripeError);
+      
+      res.status(400).json({
+        status: 'error',
+        message: 'Failed to update subscription settings in Stripe'
+      });
+    }
+  } catch (error) {
+    console.error('Error updating subscription renewal:', error);
+    
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to update subscription renewal settings'
+    });
+  }
+});
+
 export default router;

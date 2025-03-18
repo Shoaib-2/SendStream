@@ -185,3 +185,80 @@ export const cancelSubscription = async (req: AuthenticatedRequest, res: Respons
     });
   }
 };
+
+
+export const updateRenewal = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { subscriptionId, cancelAtPeriodEnd } = req.body;
+    
+    // Validate request parameters
+    if (!subscriptionId) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Subscription ID is required'
+      });
+    }
+    
+    if (typeof cancelAtPeriodEnd !== 'boolean') {
+      return res.status(400).json({
+        status: 'error',
+        message: 'cancelAtPeriodEnd must be a boolean value'
+      });
+    }
+    
+    // Get user from request
+    const user = await User.findById(req.user.id);
+    
+    if (!user) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'User not found'
+      });
+    }
+    
+    // Verify the subscription belongs to this user
+    if (user.stripeSubscriptionId !== subscriptionId) {
+      return res.status(403).json({
+        status: 'error',
+        message: 'Subscription does not belong to this user'
+      });
+    }
+    
+    try {
+      // Update the subscription in Stripe
+      const subscription = await stripe.subscriptions.update(subscriptionId, {
+        cancel_at_period_end: cancelAtPeriodEnd
+      });
+      
+      // Return the updated subscription
+      return res.status(200).json({
+        status: 'success',
+        data: {
+          subscription: {
+            id: subscription.id,
+            status: subscription.status,
+            currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+            cancelAtPeriodEnd: subscription.cancel_at_period_end
+          }
+        },
+        message: cancelAtPeriodEnd ? 
+          'Auto-renewal has been disabled' : 
+          'Auto-renewal has been enabled'
+      });
+    } catch (stripeError) {
+      console.error('Error updating subscription in Stripe:', stripeError);
+      
+      return res.status(400).json({
+        status: 'error',
+        message: 'Failed to update subscription settings in Stripe'
+      });
+    }
+  } catch (error) {
+    console.error('Error updating subscription renewal:', error);
+    
+    return res.status(500).json({
+      status: 'error',
+      message: 'Failed to update subscription renewal settings'
+    });
+  }
+};

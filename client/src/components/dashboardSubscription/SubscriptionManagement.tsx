@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { getSubscriptionStatus, cancelSubscription } from '../../services/api';
-import { Loader, AlertCircle, XCircle, CheckCircle } from 'lucide-react';
+import { Loader, AlertCircle, XCircle, CheckCircle, ToggleLeft, ToggleRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import axios from 'axios';
 
 interface CancelModalProps {
   isOpen: boolean;
@@ -69,6 +70,7 @@ const SubscriptionManagement = () => {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [authError, setAuthError] = useState(false);
+  const [updatingAutoRenew, setUpdatingAutoRenew] = useState(false);
 
   useEffect(() => {
     fetchSubscriptionStatus();
@@ -155,6 +157,50 @@ const SubscriptionManagement = () => {
       setShowCancelModal(false);
     }
   };
+  
+  // Handle toggling auto-renewal
+  const toggleAutoRenew = async () => {
+    if (!subscription?.id) {
+      setError('No subscription ID found');
+      return;
+    }
+    
+    try {
+      setUpdatingAutoRenew(true);
+      setError(null);
+      
+      // Current value determines what we want to set it to
+      const currentAutoRenew = !subscription.cancelAtPeriodEnd;
+      const newAutoRenew = !currentAutoRenew;
+      
+      // Import the function from api.ts
+      const { updateSubscriptionRenewal } = await import('../../services/api');
+      
+      // Call the new API function
+      const response = await updateSubscriptionRenewal(
+        subscription.id, 
+        newAutoRenew // pass the desired auto-renew state
+      );
+      
+      if (response?.status === 'success') {
+        // Update the local subscription object
+        setSubscription({
+          ...subscription,
+          cancelAtPeriodEnd: !newAutoRenew
+        });
+        
+        setSuccessMessage(newAutoRenew ? 
+          'Auto-renewal enabled successfully' : 
+          'Auto-renewal disabled successfully');
+      }
+    } catch (err: any) {
+      console.error("Error updating auto-renewal:", err);
+      setError(err.message || 'Failed to update auto-renewal settings');
+    } finally {
+      setUpdatingAutoRenew(false);
+    }
+  };
+
   
   // Handle login redirect for auth errors
   const handleLogin = () => {
@@ -258,14 +304,33 @@ const SubscriptionManagement = () => {
           </div>
         )}
         
-        <div className="flex justify-between">
+        {/* Auto-renew toggle - always show this row */}
+        <div className="flex justify-between items-center">
           <span className="text-gray-400">Auto renew</span>
-          <span className="font-medium">
-            {subscription.cancelAtPeriodEnd ? 'No' : 'Yes'}
-          </span>
+          {/* Display toggle button for auto-renewal */}
+          <div className="flex items-center gap-2">
+            <span className="font-medium">
+              {subscription.cancelAtPeriodEnd ? 'No' : 'Yes'}
+            </span>
+            <button 
+              onClick={toggleAutoRenew}
+              disabled={updatingAutoRenew || isExpired}
+              className="text-gray-300 hover:text-blue-400 disabled:opacity-50"
+              aria-label={subscription.cancelAtPeriodEnd ? "Enable auto-renewal" : "Disable auto-renewal"}
+            >
+              {updatingAutoRenew ? (
+                <Loader className="w-5 h-5 animate-spin" />
+              ) : subscription.cancelAtPeriodEnd ? (
+                <ToggleLeft className="w-8 h-8" />
+              ) : (
+                <ToggleRight className="w-8 h-8 text-blue-500" />
+              )}
+            </button>
+          </div>
         </div>
       </div>
       
+      {/* Always show Cancel button if not expired and auto-renewal is on */}
       {!subscription.cancelAtPeriodEnd && !isExpired && (
         <button
           onClick={handleCancelButton}
