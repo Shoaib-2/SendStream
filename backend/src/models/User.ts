@@ -14,10 +14,12 @@ interface IUser extends Document {
   stripeSubscriptionId?: string;
   subscriptionStatus?: 'active' | 'trialing' | 'past_due' | 'canceled' | 'unpaid' | null;
   trialEndsAt?: Date;
+  cancelAtPeriodEndPreference?: boolean; 
   comparePassword(candidatePassword: string): Promise<boolean>;
   generateToken(): string;
   passwordResetToken?: string;
   passwordResetExpires?: Date;
+  trialUsed: boolean;
 }
 
 const userSchema = new mongoose.Schema({
@@ -37,6 +39,18 @@ const userSchema = new mongoose.Schema({
   trialEndsAt: {
     type: Date,
     default: null
+  },
+  trialUsed: {
+    type: Boolean,
+    default: false
+  },
+  subscribed: {
+    type: Date,
+    default: () => new Date()
+  },
+  cancelAtPeriodEndPreference: {
+    type: Boolean,
+    default: false
   },
   email: {
     type: String,
@@ -59,7 +73,8 @@ const userSchema = new mongoose.Schema({
   passwordResetToken: String,
   passwordResetExpires: Date
 }, {
-  timestamps: true
+  timestamps: true,
+  _id: true 
 });
 
 

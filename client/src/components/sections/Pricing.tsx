@@ -2,6 +2,7 @@ import React from 'react';
 import { Check, Zap } from 'lucide-react';
 import Button from '../UI/Button';
 import { pricingPlans, startFreeTrial } from '../../../src/services/api';
+import { findUserEmail, recordTrialAttempt } from '../../utils/trialTracking';
 
 interface PricingProps {
   isRenewal?: boolean;
@@ -11,7 +12,12 @@ const Pricing: React.FC<PricingProps> = ({ isRenewal = false }) => {
   const pricingTier = pricingPlans[0]; // Use the Pro plan from our stripe integration
 
   const handleStartTrial = async () => {
-    await startFreeTrial(pricingTier);
+    // Use utility functions instead of inline code
+    const email = findUserEmail();
+    recordTrialAttempt(email);
+    
+    console.log('Pricing - Email for checkout:', { email });
+    await startFreeTrial(pricingTier, email);
   };
 
   return (

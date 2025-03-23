@@ -1,5 +1,5 @@
 import express, { RequestHandler } from 'express';
-import { register, login, logout, forgotPassword, resetPassword } from '../controllers/auth.controller';
+import { register, login, logout, forgotPassword, resetPassword, checkTrialEligibility } from '../controllers/auth.controller';
 
 const router = express.Router();
 
@@ -7,6 +7,7 @@ const router = express.Router();
 router.post('/register', register as RequestHandler);
 router.post('/login', login as RequestHandler);
 router.post('/logout', logout as RequestHandler);
+router.get('/check-trial-eligibility', checkTrialEligibility as RequestHandler);
 
 
 // Make sure these routes are added and match your API calls

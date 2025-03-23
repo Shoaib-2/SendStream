@@ -2,6 +2,7 @@ import React from 'react';
 import Button from '../UI/Button';
 import { ArrowRight } from 'lucide-react';
 import { pricingPlans, startFreeTrial } from '../../services/api';
+import { findUserEmail, recordTrialAttempt } from '../../utils/trialTracking';
 
 interface HeroProps {
   isRenewal?: boolean;
@@ -9,7 +10,12 @@ interface HeroProps {
 
 const Hero: React.FC<HeroProps> = ({ isRenewal = false }) => {
   const handleStartTrial = async () => {
-    await startFreeTrial(pricingPlans[0]); // Start trial with Pro plan
+    // Use utility functions instead of inline code
+    const email = findUserEmail();
+    recordTrialAttempt(email);
+    
+    console.log('Hero - Email for checkout:', { email });
+    await startFreeTrial(pricingPlans[0], email);
   };
 
   return (
@@ -46,20 +52,10 @@ const Hero: React.FC<HeroProps> = ({ isRenewal = false }) => {
               </Button>
             )}
           </div>
-
-          {/* Social proof */}
-          {/* <div className="pt-12 border-t border-gray-800 mt-16">
-            <p className="text-gray-500 mb-4">Trusted by content creators worldwide</p>
-            <div className="flex justify-center items-center gap-8">
-              <div className="w-24 h-8 bg-gray-800 rounded animate-pulse" />
-              <div className="w-24 h-8 bg-gray-800 rounded animate-pulse [animation-delay:200ms]" />
-              <div className="w-24 h-8 bg-gray-800 rounded animate-pulse [animation-delay:400ms]" />
-            </div>
-          </div> */}
         </div>
       </div>
     </header>
   );
 };
 
-export default Hero;
+export default Hero;  

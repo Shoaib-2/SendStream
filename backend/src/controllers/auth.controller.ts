@@ -283,3 +283,62 @@ export const resetPassword = async (req: Request, res: Response, next: NextFunct
     next(error);
   }
 };
+
+const rateLimitStore: {[key: string]: number[]} = {};
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const recentChecks = rateLimitStore[ip] || [];
+  
+  // Remove checks older than 1 hour
+  const filteredChecks = recentChecks.filter(time => now - time < 3600000);
+  
+  // Allow max 10 checks per hour
+  if (filteredChecks.length >= 10) {
+    return false;
+  }
+  
+  // Add current timestamp
+  filteredChecks.push(now);
+  rateLimitStore[ip] = filteredChecks;
+  
+  return true;
+}
+
+
+export const checkTrialEligibility = async (req: Request, res: Response, next: NextFunction) => {
+  const { email } = req.query;
+
+  // Validate email is present and not empty
+  if (!email || typeof email !== 'string' || email.trim() === '') {
+    return res.status(400).json({
+      status: 'error',
+      message: 'Valid email is required'
+    });
+  }
+
+  try {
+    const user = await User.findOne({ email });
+
+    res.status(200).json({
+      status: 'success',
+      eligibleForTrial: !user || !user.trialUsed
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'error',
+      message: 'Internal server error'
+    });
+  }
+};
+
+// Implement token validation and generation
+function generateTrialCheckToken() {
+  // Create a short-lived, cryptographically secure token
+  return crypto.randomBytes(16).toString('hex');
+}
+
+function isValidTrialCheckToken(token: string) {
+  // Implement token validation logic
+  // Check against stored tokens, expiration, etc.
+}

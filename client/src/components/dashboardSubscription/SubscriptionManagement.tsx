@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { getSubscriptionStatus, cancelSubscription } from '../../services/api';
 import { Loader, AlertCircle, XCircle, CheckCircle, ToggleLeft, ToggleRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import axios from 'axios';
+
 
 interface CancelModalProps {
   isOpen: boolean;
@@ -307,7 +307,7 @@ const SubscriptionManagement = () => {
         {/* Auto-renew toggle - always show this row */}
         <div className="flex justify-between items-center">
           <span className="text-gray-400">Auto renew</span>
-          {/* Display toggle button for auto-renewal */}
+          
           <div className="flex items-center gap-2">
             <span className="font-medium">
               {subscription.cancelAtPeriodEnd ? 'No' : 'Yes'}

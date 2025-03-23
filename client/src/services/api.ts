@@ -1,8 +1,7 @@
 import axios, { AxiosError, AxiosRequestConfig } from "axios";
-import { loadStripe } from '@stripe/stripe-js';
-import type { Stripe } from '@stripe/stripe-js';
-
-
+import { loadStripe } from "@stripe/stripe-js";
+import type { Stripe } from "@stripe/stripe-js";
+import { checkTrialEligibility } from "@/utils/trialTracking";
 
 // Added request queue for performance optimization with large datasets
 const pendingRequests = new Map();
@@ -200,9 +199,10 @@ const api = axios.create({
 });
 // Add this to track failed requests to prevent loops
 const inSilentMode = () => {
-  return typeof window !== 'undefined' && 
-    (window.location.pathname === '/' || 
-     document.readyState !== 'complete');
+  return (
+    typeof window !== "undefined" &&
+    (window.location.pathname === "/" || document.readyState !== "complete")
+  );
 };
 
 // Existing configuration for tracking failed requests
@@ -216,101 +216,109 @@ let isRedirecting = false;
 api.interceptors.response.use(
   (response) => {
     // Check if response includes "paid period" message
-    if (response.config?.url?.includes('/subscription/status') || 
-        response.config?.url?.includes('/auth/me')) {
+    if (
+      response.config?.url?.includes("/subscription/status") ||
+      response.config?.url?.includes("/auth/me")
+    ) {
       // Check for paid period message in logs or response
       const responseData = JSON.stringify(response.data);
-      if (responseData.includes('paid period') || 
-          responseData.includes('active') || 
-          (response.data?.data?.subscription?.status === 'canceled' && 
-           new Date(response.data?.data?.subscription?.currentPeriodEnd) > new Date())) {
+      if (
+        responseData.includes("paid period") ||
+        responseData.includes("active") ||
+        (response.data?.data?.subscription?.status === "canceled" &&
+          new Date(response.data?.data?.subscription?.currentPeriodEnd) >
+            new Date())
+      ) {
         // Set a flag that this user has valid access
-        localStorage.setItem('has_active_access', 'true');
-        console.log('Setting active access flag based on subscription status');
+        localStorage.setItem("has_active_access", "true");
+        console.log("Setting active access flag based on subscription status");
       }
     }
     return response;
   },
   (error) => {
     // Check if browser and not on login page
-    const isOnAuthPage = typeof window !== 'undefined' && 
-      (window.location.pathname.includes('/login') || 
-       window.location.pathname === '/');
-    
+    const isOnAuthPage =
+      typeof window !== "undefined" &&
+      (window.location.pathname.includes("/login") ||
+        window.location.pathname === "/");
+
     // Silent mode for initial page load or on landing page
     const silentMode = inSilentMode();
-    
+
     // Check for stored valid access flag
-    const hasValidAccess = localStorage.getItem('has_active_access') === 'true';
-    
+    const hasValidAccess = localStorage.getItem("has_active_access") === "true";
+
     // If error is subscription expired but user has valid access
-    if (error.response?.status === 403 && 
-        (error.response?.data?.code === 'SUBSCRIPTION_EXPIRED' || 
-         error.response?.data?.message?.includes('Subscription expired')) &&
-        hasValidAccess) {
-      
-      console.log('User has valid access despite subscription expired error');
+    if (
+      error.response?.status === 403 &&
+      (error.response?.data?.code === "SUBSCRIPTION_EXPIRED" ||
+        error.response?.data?.message?.includes("Subscription expired")) &&
+      hasValidAccess
+    ) {
+      console.log("User has valid access despite subscription expired error");
       // Resolve with empty data to prevent redirect
-      return Promise.resolve({ 
-        data: { 
-          status: 'success', 
-          data: error.config?.url?.includes('subscribers') ? [] : {} 
-        } 
+      return Promise.resolve({
+        data: {
+          status: "success",
+          data: error.config?.url?.includes("subscribers") ? [] : {},
+        },
       });
     }
 
     // First check if user just renewed (has renewal flag in localStorage)
-    const justRenewed = localStorage.getItem('subscription_renewed');
+    const justRenewed = localStorage.getItem("subscription_renewed");
     if (justRenewed && error.response?.status === 403) {
-      console.log('User just renewed, refreshing token before retry');
-      
+      console.log("User just renewed, refreshing token before retry");
+
       // Clear the renewal flag
-      localStorage.removeItem('subscription_renewed');
-      
+      localStorage.removeItem("subscription_renewed");
+
       // Force a page refresh to get a fresh token and session
       window.location.reload();
       return Promise.reject(error);
     }
-    
+
     // If it's a subscription expired error
-    if (error.response?.status === 403 && 
-        (error.response?.data?.code === 'SUBSCRIPTION_EXPIRED' || 
-         error.response?.data?.message?.includes('Subscription expired'))) {
-      
-      console.log('Handling subscription expired error');
-      
+    if (
+      error.response?.status === 403 &&
+      (error.response?.data?.code === "SUBSCRIPTION_EXPIRED" ||
+        error.response?.data?.message?.includes("Subscription expired"))
+    ) {
+      console.log("Handling subscription expired error");
+
       // Don't redirect during initial load
       if (!silentMode && !isOnAuthPage) {
         // Store the current page for after renewal
-        localStorage.setItem('returnPath', window.location.pathname);
-        
+        localStorage.setItem("returnPath", window.location.pathname);
+
         // Check if we should redirect
         if (!isRedirecting) {
           isRedirecting = true;
-          console.log('Redirecting due to expired subscription');
-          
+          console.log("Redirecting due to expired subscription");
+
           // Use timeout to allow the current execution to complete
           setTimeout(() => {
             // Redirect to home page with query param instead of pricing
-            window.location.href = '/?renew=true';
+            window.location.href = "/?renew=true";
             isRedirecting = false;
           }, 100);
         }
       }
-      
+
       // For API calls during page load, resolve with null
       if (silentMode) {
-        console.log('Silencing subscription expired error during initial load');
+        console.log("Silencing subscription expired error during initial load");
         return Promise.resolve({ data: null });
       }
     }
-    
+
     // Handle 403 errors silently during initial load
     if (error.response?.status === 403 && silentMode) {
-      console.log('Silencing 403 error during subscription check');
+      console.log("Silencing 403 error during subscription check");
       return Promise.resolve({ data: null });
     }
-    
+
     // Only handle auth errors loudly if not on auth pages
     if (error.response?.status === 401 && !isOnAuthPage && !silentMode) {
       console.log("Authentication error:", error.config?.url);
@@ -355,9 +363,13 @@ api.interceptors.response.use(
 
     // Only log errors if not in silent mode
     if (!silentMode) {
-      console.error("Response error:", error.response?.status, error.config?.url);
+      console.error(
+        "Response error:",
+        error.response?.status,
+        error.config?.url
+      );
     }
-    
+
     return Promise.reject(error);
   }
 );
@@ -366,11 +378,20 @@ api.interceptors.response.use(
 api.interceptors.request.use(
   (config) => {
     // For login requests, don't add the Authorization header
-    if (config.url && (config.url.includes('/auth/login') || config.url.includes('/auth/register'))) {
-      console.log('Skipping auth token for auth requests');
+    if (
+      config.url &&
+      (config.url.includes("/auth/login") ||
+        config.url.includes("/auth/register") ||
+        config.url.includes("/auth/check-trial-eligibility"))
+    ) {
+      delete config.headers.Authorization;
+      console.log(
+        "Skipping auth token for auth requests and Checing trial eligibility:",
+        config.url
+      );
       return config;
     }
-    
+
     // For other requests, add token if available
     const token = localStorage.getItem("token");
     if (token) {
@@ -910,14 +931,18 @@ export const authAPI = {
     }
   },
 
-  register: async (data: { email: string; password: string; stripeSessionId?: string }) => {
+  register: async (data: {
+    email: string;
+    password: string;
+    stripeSessionId?: string;
+  }) => {
     try {
-      console.log("Registering with data:", { 
-        email: data.email, 
+      console.log("Registering with data:", {
+        email: data.email,
         hasPassword: !!data.password,
-        hasStripeSession: !!data.stripeSessionId 
+        hasStripeSession: !!data.stripeSessionId,
       });
-      
+
       const response = await api.post("/auth/register", data, {
         timeout: 10000, // 10 second timeout
       });
@@ -1013,46 +1038,61 @@ export const authAPI = {
     }
   },
 
-  resetPassword: async (token: string, password: string): Promise<{status: 'success' | 'error', message?: string, user?: any, token?: string}> => {
+  resetPassword: async (
+    token: string,
+    password: string
+  ): Promise<{
+    status: "success" | "error";
+    message?: string;
+    user?: any;
+    token?: string;
+  }> => {
     try {
-      const response = await api.post(`/auth/reset-password/${token}`, { password }, {
-        timeout: 10000 // 10 second timeout
-      });
-      console.log('Reset password response:', response.data);
+      const response = await api.post(
+        `/auth/reset-password/${token}`,
+        { password },
+        {
+          timeout: 10000, // 10 second timeout
+        }
+      );
+      console.log("Reset password response:", response.data);
       return {
-        status: 'success',
-        ...response.data.data
+        status: "success",
+        ...response.data.data,
       };
     } catch (error) {
-      console.error('Reset password error:', error);
-      
+      console.error("Reset password error:", error);
+
       // Type guard for AxiosError
       const isAxiosError = (err: unknown): err is AxiosError => {
-        return typeof err === 'object' && err !== null && 'isAxiosError' in err;
+        return typeof err === "object" && err !== null && "isAxiosError" in err;
       };
-      
+
       if (isAxiosError(error)) {
         // Extract message from response if available
         if (error.response?.data) {
           const errorData = error.response.data;
-          if (typeof errorData === 'object' && errorData !== null && 'message' in errorData) {
+          if (
+            typeof errorData === "object" &&
+            errorData !== null &&
+            "message" in errorData
+          ) {
             return {
-              status: 'error',
-              message: String(errorData.message)
+              status: "error",
+              message: String(errorData.message),
             };
           }
         }
       }
-      
+
       return {
-        status: 'error',
-        message: 'Failed to reset password. The link may be invalid or expired.'
+        status: "error",
+        message:
+          "Failed to reset password. The link may be invalid or expired.",
       };
     }
-  }
+  },
 };
-
-
 
 // Stripe methods for handling payments and subscriptions
 let stripePromise: Promise<Stripe | null>;
@@ -1066,134 +1106,173 @@ const getStripe = () => {
 // Define pricing plans with Stripe price IDs
 export const pricingPlans: PricingPlan[] = [
   {
-    id: 'pro',
-    name: 'Pro',
-    price: '$12',
-    period: '/month',
-    priceId: 'price_1QzeqbGfclTFWug124uFjz1g', // Replace with actual Stripe price ID
-    trialDays: 14
-  }
+    id: "pro",
+    name: "Pro",
+    price: "$12",
+    period: "/month",
+    priceId: "price_1QzeqbGfclTFWug124uFjz1g", // Replace with actual Stripe price ID
+    trialDays: 14,
+  },
 ];
 
 // Create Stripe checkout session for subscription with trial
 export const createCheckoutSession = async (
-  priceId: string, 
-  successUrl: string, 
-  options: { 
-    skipTrial?: boolean, 
-    email?: string 
+  priceId: string,
+  successUrl: string,
+  options: {
+    skipTrial?: boolean;
+    email?: string;
   } = {}
 ) => {
   try {
-    // Check requirements before making request
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    const email = user.email || options.email || "";
+
+    console.log("Checkout Session Email Debug:", {
+      userFromStorage: user,
+      optionsEmail: options.email,
+      finalEmail: email,
+    });
+
     if (!priceId) {
-      throw new Error('Price ID is required');
+      throw new Error("Price ID is required");
     }
-    
-    // Make sure we have a valid success URL
-    const finalSuccessUrl = successUrl || (typeof window !== 'undefined' ? 
-      `${window.location.origin}/?session_id={CHECKOUT_SESSION_ID}` : '');
-    
-    // Make sure we have a valid cancel URL
-    const cancelUrl = typeof window !== 'undefined' ? window.location.origin : '';
-    
-    // Log what we're sending
-    console.log('Creating checkout session with:', {
+
+    const finalSuccessUrl =
+      successUrl ||
+      (typeof window !== "undefined"
+        ? `${window.location.origin}/?session_id={CHECKOUT_SESSION_ID}`
+        : "");
+
+    const cancelUrl =
+      typeof window !== "undefined" ? window.location.origin : "";
+
+    console.log("Creating checkout session with:", {
       priceId,
       successUrl: finalSuccessUrl,
       cancelUrl,
       skipTrial: options.skipTrial,
-      hasEmail: !!options.email,
-      email: options.email?.substring(0, 3) + '...' // Log just first few chars for privacy
+      hasEmail: !!email,
+      email: email?.substring(0, 3) + "...", // Log just first few chars for privacy
     });
 
-    const response = await fetch('/api/stripe/checkout', {
-      method: 'POST',
+    const response = await fetch("/api/stripe/checkout", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         priceId,
         successUrl: finalSuccessUrl,
         cancelUrl,
         skipTrial: options.skipTrial || false,
-        email: options.email || ''
+        email, // Use the resolved email
       }),
     });
 
     if (!response.ok) {
       const errorData = await response.json();
-      console.error('Checkout API error response:', errorData);
-      throw new Error(errorData.error || errorData.details || 'Failed to create checkout session');
+      console.error("Checkout API error response:", errorData);
+      throw new Error(
+        errorData.error ||
+          errorData.details ||
+          "Failed to create checkout session"
+      );
     }
 
     const data = await response.json();
     const stripe = await getStripe();
-    
+
     if (!stripe) {
-      throw new Error('Failed to initialize Stripe');
+      throw new Error("Failed to initialize Stripe");
     }
-    
+
     if (!data.sessionId) {
-      throw new Error('No session ID returned from checkout API');
+      throw new Error("No session ID returned from checkout API");
     }
-    
-    console.log('Redirecting to Stripe checkout with session:', data.sessionId);
-    const { error } = await stripe.redirectToCheckout({ sessionId: data.sessionId });
-    
+
+    console.log("Redirecting to Stripe checkout with session:", data.sessionId);
+    const { error } = await stripe.redirectToCheckout({
+      sessionId: data.sessionId,
+    });
+
     if (error) {
-      console.error('Stripe checkout error:', error);
+      console.error("Stripe checkout error:", error);
       throw error;
     }
   } catch (error) {
-    console.error('Error creating checkout session:', error);
+    console.error("Error creating checkout session:", error);
     throw error;
   }
 };
 
+
 // Helper to start free trial or renew subscription
-// Update the startFreeTrial function to not prompt for email
 export const startFreeTrial = async (plan: PricingPlan, userEmail?: string) => {
   if (typeof window === 'undefined') return;
+  
+  console.log('Starting trial checkout process...');
   
   const isRenewal = window.location.search.includes('renew=true');
   const successUrl = `${window.location.origin}/?session_id={CHECKOUT_SESSION_ID}`;
   
-  // Get email from user authentication, local storage, or passed parameter
-  // Don't use prompt() which shows a browser dialog
-  const email = userEmail || 
-                localStorage.getItem('user_email') || 
-                (JSON.parse(localStorage.getItem('user') || '{}')).email;
+  // Get email (should already be found by components, this is a fallback)
+  const email = userEmail || '';
   
-  // If we still don't have an email, don't show a prompt - instead use an empty string
-  // Stripe will collect the email during checkout
+  console.log('Email for checkout:', { email });
   
-  await createCheckoutSession(plan.priceId, successUrl, {
-    skipTrial: isRenewal,
-    email: email || ''  // Use empty string instead of prompting
-  });
+  // Check if this email is eligible for trial
+  let forceSkipTrial = isRenewal;
+  
+  if (email && email.includes('@') && !isRenewal) {
+    try {
+      // Check trial eligibility with our utility function
+      const isEligible = await checkTrialEligibility(email);
+      
+      if (!isEligible) {
+        console.log('User not eligible for trial, forcing renewal flow');
+        forceSkipTrial = true;
+      }
+    } catch (error) {
+      console.error('Error checking trial eligibility:', error);
+    }
+  }
+  
+  // Final logging before checkout
+  console.log(`Proceeding to checkout (skipTrial: ${forceSkipTrial})`);
+  
+  // Create checkout session with or without trial
+  try {
+    await createCheckoutSession(plan.priceId, successUrl, {
+      skipTrial: forceSkipTrial,
+      email: email  // Pass email even if empty
+    });
+  } catch (error) {
+    console.error('Failed to create checkout session:', error);
+  }
 };
+
 
 // Get subscription status
 export const getSubscriptionStatus = async () => {
   try {
     // Get token from localStorage
-    const token = localStorage.getItem('token');
-    
-    const response = await fetch('/api/stripe/status', {
+    const token = localStorage.getItem("token");
+
+    const response = await fetch("/api/stripe/status", {
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': token ? `Bearer ${token}` : ''
-      }
+        "Content-Type": "application/json",
+        Authorization: token ? `Bearer ${token}` : "",
+      },
     });
-    
+
     if (!response.ok) {
-      throw new Error('Failed to fetch subscription status');
+      throw new Error("Failed to fetch subscription status");
     }
-    
+
     return await response.json();
   } catch (error) {
-    console.error('Error fetching subscription status:', error);
+    console.error("Error fetching subscription status:", error);
     throw error;
   }
 };
@@ -1202,54 +1281,59 @@ export const getSubscriptionStatus = async () => {
 export const cancelSubscription = async (subscriptionId: string) => {
   try {
     // Get token from localStorage
-    const token = localStorage.getItem('token');
-    
-    const response = await fetch('/api/stripe/cancel', {
-      method: 'POST',
+    const token = localStorage.getItem("token");
+
+    const response = await fetch("/api/stripe/cancel", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': token ? `Bearer ${token}` : ''
+        "Content-Type": "application/json",
+        Authorization: token ? `Bearer ${token}` : "",
       },
       body: JSON.stringify({ subscriptionId }),
     });
 
     if (!response.ok) {
-      throw new Error('Failed to cancel subscription');
+      throw new Error("Failed to cancel subscription");
     }
 
     return await response.json();
   } catch (error) {
-    console.error('Error cancelling subscription:', error);
+    console.error("Error cancelling subscription:", error);
     throw error;
   }
 };
 
 // Update subscription auto-renewal setting
-export const updateSubscriptionRenewal = async (subscriptionId: string, autoRenew: boolean) => {
+export const updateSubscriptionRenewal = async (
+  subscriptionId: string,
+  autoRenew: boolean
+) => {
   try {
     // Get token from localStorage
-    const token = localStorage.getItem('token');
-    
+    const token = localStorage.getItem("token");
+
     // Convert autoRenew boolean to cancelAtPeriodEnd (they're opposites)
     const cancelAtPeriodEnd = !autoRenew;
-    
-    const response = await fetch('/api/stripe/update-renewal', {
-      method: 'POST',
+
+    const response = await fetch("/api/stripe/update-renewal", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': token ? `Bearer ${token}` : ''
+        "Content-Type": "application/json",
+        Authorization: token ? `Bearer ${token}` : "",
       },
       body: JSON.stringify({ subscriptionId, cancelAtPeriodEnd }),
     });
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to update subscription renewal settings');
+      throw new Error(
+        errorData.message || "Failed to update subscription renewal settings"
+      );
     }
 
     return await response.json();
   } catch (error) {
-    console.error('Error updating subscription renewal:', error);
+    console.error("Error updating subscription renewal:", error);
     throw error;
   }
 };

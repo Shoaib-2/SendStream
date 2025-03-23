@@ -19,9 +19,25 @@ declare global {
 
 
 export const protect = async (req: Request, res: Response, next: NextFunction) => {
+  console.log('Trial Eligibility Middleware Debug:', {
+    path: req.path,
+    headers: req.headers,
+    cookies: req.cookies
+  });
+
+  // Explicit routes bypass
+  const publicRoutes = [
+    '/auth/login', 
+    '/auth/register', 
+    '/auth/check-trial-eligibility'
+  ];
+
+  if (publicRoutes.includes(req.path)) {
+    return next();
+  }
   try {
     // Skip auth check for login and register routes
-    if (req.path === '/auth/login' || req.path === '/auth/register') {
+    if (req.path === '/auth/login' || req.path === '/auth/register' ||  req.path === '/auth/check-trial-eligibility') {
       return next();
     }
     

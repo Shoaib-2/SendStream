@@ -53,11 +53,11 @@ export default function SettingsPage() {
   }
 
   // Specify what we expect from the API
-  interface ApiTestResponse {
-    success: boolean;
-    message: string;
-    listId?: string;
-  }
+  // interface ApiTestResponse {
+  //   success: boolean;
+  //   message: string;
+  //   listId?: string;
+  // }
 
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>({
     mailchimp: { connected: false, message: '', listId: '' }

@@ -14,21 +14,39 @@ export interface ISubscriber extends Document {
 }
 
 const subscriberSchema = new mongoose.Schema({
-  email: { type: String, required: true },
-  name: { type: String },
-  status: { type: String, enum: ['active', 'unsubscribed'], default: 'active' },
+  email: { 
+    type: String, 
+    required: true,
+    unique: true 
+  },
+  name: { 
+    type: String,
+    default: function(this: { email: string }) { 
+      return this.email.split('@')[0]; 
+    }
+  },
+  status: { 
+    type: String, 
+    enum: ['active', 'unsubscribed'], 
+    default: 'active' 
+  },
   createdBy: { 
     type: Schema.Types.ObjectId, 
-    ref: 'User', 
-    required: true,
+    ref: 'User',
+    required: false  // Make this optional
   },
-  subscribed: { type: Date, default: Date.now },
+  subscribed: {
+    type: String,
+    default: () => new Date().toISOString()
+  },
   unsubscribedAt: {
     type: Date,
     default: null
   }
 }, {
-  timestamps: true
+  timestamps: true,
+  // Add this to automatically generate _id if not provided
+  _id: true 
 });
 
 
