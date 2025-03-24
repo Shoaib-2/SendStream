@@ -11,7 +11,7 @@ interface LocalSettings {
   email: {
     fromName: string;
     replyTo: string;
-    senderEmail: string; // Always required in our component
+    senderEmail: string; 
   };
   mailchimp: {
     apiKey: string;
@@ -101,9 +101,8 @@ export default function SettingsPage() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      // This was missing email settings in the API call
       const updatedSettings = await settingsAPI.updateSettings({
-        email: settings.email, // Add this line to include email settings
+        email: settings.email, 
         mailchimp: settings.mailchimp
       });
 

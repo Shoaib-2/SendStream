@@ -19,11 +19,6 @@ declare global {
 
 
 export const protect = async (req: Request, res: Response, next: NextFunction) => {
-  console.log('Trial Eligibility Middleware Debug:', {
-    path: req.path,
-    headers: req.headers,
-    cookies: req.cookies
-  });
 
   // Explicit routes bypass
   const publicRoutes = [

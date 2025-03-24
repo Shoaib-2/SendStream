@@ -215,7 +215,7 @@ let isRedirecting = false;
 
 api.interceptors.response.use(
   (response) => {
-    // Check if response includes "paid period" message
+    // Check if response includes subscription status information
     if (
       response.config?.url?.includes("/subscription/status") ||
       response.config?.url?.includes("/auth/me")
@@ -225,6 +225,8 @@ api.interceptors.response.use(
       if (
         responseData.includes("paid period") ||
         responseData.includes("active") ||
+        (response.data?.data?.subscription?.status === "active") ||
+        (response.data?.data?.subscription?.status === "trialing") ||
         (response.data?.data?.subscription?.status === "canceled" &&
           new Date(response.data?.data?.subscription?.currentPeriodEnd) >
             new Date())
@@ -232,6 +234,36 @@ api.interceptors.response.use(
         // Set a flag that this user has valid access
         localStorage.setItem("has_active_access", "true");
         console.log("Setting active access flag based on subscription status");
+      } else if (
+        response.data?.data?.subscription?.status === "canceled" &&
+        new Date(response.data?.data?.subscription?.currentPeriodEnd) <=
+          new Date()
+      ) {
+        // Handle expired canceled subscription - set no access flag
+        localStorage.removeItem("has_active_access");
+        console.log("Detected expired subscription, removing access flag");
+        
+        // Check if we're not already on the renewal page
+        if (
+          typeof window !== "undefined" &&
+          !window.location.href.includes("renew=true") &&
+          !isRedirecting
+        ) {
+          console.log("Initiating renewal redirect flow");
+          isRedirecting = true;
+          
+          // Store the current page for after renewal
+          localStorage.setItem("returnPath", window.location.pathname);
+          
+          // Use timeout to avoid navigation conflicts
+          setTimeout(() => {
+            window.location.href = "/?renew=true";
+            // Reset flag after redirect
+            setTimeout(() => {
+              isRedirecting = false;
+            }, 1000);
+          }, 100);
+        }
       }
     }
     return response;
@@ -249,23 +281,6 @@ api.interceptors.response.use(
     // Check for stored valid access flag
     const hasValidAccess = localStorage.getItem("has_active_access") === "true";
 
-    // If error is subscription expired but user has valid access
-    if (
-      error.response?.status === 403 &&
-      (error.response?.data?.code === "SUBSCRIPTION_EXPIRED" ||
-        error.response?.data?.message?.includes("Subscription expired")) &&
-      hasValidAccess
-    ) {
-      console.log("User has valid access despite subscription expired error");
-      // Resolve with empty data to prevent redirect
-      return Promise.resolve({
-        data: {
-          status: "success",
-          data: error.config?.url?.includes("subscribers") ? [] : {},
-        },
-      });
-    }
-
     // First check if user just renewed (has renewal flag in localStorage)
     const justRenewed = localStorage.getItem("subscription_renewed");
     if (justRenewed && error.response?.status === 403) {
@@ -279,15 +294,19 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // If it's a subscription expired error
+    // Enhanced detection for subscription expired errors
     if (
       error.response?.status === 403 &&
       (error.response?.data?.code === "SUBSCRIPTION_EXPIRED" ||
-        error.response?.data?.message?.includes("Subscription expired"))
+        error.response?.data?.message?.includes("Subscription expired") ||
+        error.response?.data?.message?.includes("Subscription required"))
     ) {
-      console.log("Handling subscription expired error");
+      console.log("Handling subscription expired error more aggressively");
 
-      // Don't redirect during initial load
+      // Force clear any problematic cache
+      localStorage.removeItem("has_active_access");
+
+      // Don't redirect during initial load or if already on auth page
       if (!silentMode && !isOnAuthPage) {
         // Store the current page for after renewal
         localStorage.setItem("returnPath", window.location.pathname);
@@ -301,7 +320,10 @@ api.interceptors.response.use(
           setTimeout(() => {
             // Redirect to home page with query param instead of pricing
             window.location.href = "/?renew=true";
-            isRedirecting = false;
+            // Reset the flag after redirect
+            setTimeout(() => {
+              isRedirecting = false;
+            }, 1000);
           }, 100);
         }
       }
