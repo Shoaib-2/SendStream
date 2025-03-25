@@ -19,7 +19,6 @@ declare global {
 
 
 export const protect = async (req: Request, res: Response, next: NextFunction) => {
-
   // Explicit routes bypass
   const publicRoutes = [
     '/auth/login', 

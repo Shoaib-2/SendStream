@@ -24,7 +24,34 @@ export default function DashboardPage() {
   const [qualityMetrics, setQualityMetrics] = useState<QualityMetrics[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<any>(null);
+  
+  // Use localStorage to check subscription status - more consistent with SubscriptionErrorHandler
   const [subscriptionExpired, setSubscriptionExpired] = useState(false);
+
+  // Check if subscription has expired using our centralized approach
+  useEffect(() => {
+    const checkSubscriptionStatus = () => {
+      const hasAccess = localStorage.getItem('has_active_access') === 'true';
+      setSubscriptionExpired(!hasAccess);
+    };
+    
+    // Check on initial render
+    checkSubscriptionStatus();
+    
+    // Also set up a listener for subscription changes
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'has_active_access') {
+        checkSubscriptionStatus();
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Clean up
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
 
   useEffect(() => {
     const fetchNewsletters = async () => {
@@ -47,26 +74,28 @@ export default function DashboardPage() {
         }
         setLoading(false);
       } catch (error: any) {
-        // Silent error for 403/subscription expiration
-        const suppressError = 
-          typeof window !== 'undefined' && 
-          (document.readyState !== 'complete' || 
-           window.location.pathname === '/');
+        console.error('Error fetching newsletters:', error);
         
-        if (!suppressError) {
-          console.error('Error:', error);
-        }
-        
-        // Check if subscription expired
-        if (error?.message?.includes('Subscription expired')) {
+        // Update our subscription expired state if the error is related to subscription
+        if (
+          error?.message?.includes('Subscription expired') ||
+          error?.message?.includes('Subscription required') ||
+          error?.response?.status === 403
+        ) {
+          // Let SubscriptionErrorHandler manage the redirection
+          localStorage.removeItem('has_active_access');
           setSubscriptionExpired(true);
         }
+        
         setLoading(false);
       }
     };
   
-    fetchNewsletters();
-  }, []);
+    // Only fetch newsletters if subscription is not expired
+    if (!subscriptionExpired) {
+      fetchNewsletters();
+    }
+  }, [subscriptionExpired]);
 
   // Show the expired subscription component if detected
   if (subscriptionExpired) {
