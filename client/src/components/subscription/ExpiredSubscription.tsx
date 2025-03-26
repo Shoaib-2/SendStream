@@ -6,10 +6,20 @@ const ExpiredSubscription = () => {
   const router = useRouter();
   const [redirecting, setRedirecting] = useState(false);
   const [countdown, setCountdown] = useState(5);
+  const [isAlreadyOnRenewalPage, setIsAlreadyOnRenewalPage] = useState(false);
+
+  // Check if already on renewal page
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const isOnRenewalPage = window.location.search.includes('renew=true');
+      setIsAlreadyOnRenewalPage(isOnRenewalPage);
+      console.log('Already on renewal page:', isOnRenewalPage);
+    }
+  }, []);
 
   // Handle redirection based on already stored return path
   const handleRenewClick = () => {
-    if (!redirecting) {
+    if (!redirecting && !isAlreadyOnRenewalPage) {
       setRedirecting(true);
       
       // Check if there's a stored return path
@@ -27,38 +37,36 @@ const ExpiredSubscription = () => {
     }
   };
 
-  // Handle automatic redirection
+  // Handle automatic redirection - in a separate useEffect to ensure it runs
   useEffect(() => {
-    // Skip auto-redirect if we're already on the renewal page or already redirecting
-    if (redirecting || (typeof window !== 'undefined' && window.location.href.includes('renew=true'))) {
+    console.log('Countdown effect running, already on renewal page:', isAlreadyOnRenewalPage);
+    
+    // Skip auto-redirect if already redirecting or already on renewal page
+    if (redirecting || isAlreadyOnRenewalPage) {
       return;
     }
     
+    console.log('Starting countdown timer from', countdown);
     const timer = setInterval(() => {
       setCountdown((prev) => {
+        console.log('Countdown:', prev);
         if (prev <= 1) {
           clearInterval(timer);
-          setRedirecting(true);
-          
-          // Store return path
-          const returnPath = localStorage.getItem('returnPath');
-          if (!returnPath) {
-            localStorage.setItem('returnPath', window.location.pathname);
-          }
-          
-          // Schedule navigation outside of render cycle
-          setTimeout(() => {
-            router.push('/?renew=true');
-          }, 0);
-          
+          console.log('Countdown finished, redirecting');
+          handleRenewClick();
           return 0;
         }
         return prev - 1;
       });
     }, 1000);
 
-    return () => clearInterval(timer);
-  }, [redirecting, router]);
+    return () => {
+      console.log('Clearing countdown timer');
+      clearInterval(timer);
+    };
+  }, [redirecting, isAlreadyOnRenewalPage]);
+
+  console.log('Rendering ExpiredSubscription, redirecting:', redirecting, 'countdown:', countdown);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] p-6">
@@ -74,7 +82,7 @@ const ExpiredSubscription = () => {
           Your subscription has expired. Please renew to continue using the service.
         </p>
         
-        {!redirecting && (
+        {!redirecting && !isAlreadyOnRenewalPage && (
           <div className="mb-6">
             <div className="flex justify-between text-xs text-gray-400 mb-2">
               <span>Redirecting shortly</span>
@@ -89,25 +97,33 @@ const ExpiredSubscription = () => {
           </div>
         )}
         
-        {redirecting && (
+        {(redirecting || isAlreadyOnRenewalPage) && (
           <div className="flex items-center justify-center gap-2 mb-6 text-gray-400 text-sm">
-            <div className="flex space-x-1">
-              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" style={{ animationDelay: '0s' }}></div>
-              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
-              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
-            </div>
-            <span>Redirecting to renewal page</span>
+            {isAlreadyOnRenewalPage ? (
+              <span>You're on the renewal page now</span>
+            ) : (
+              <>
+                <div className="flex space-x-1">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" style={{ animationDelay: '0s' }}></div>
+                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+                </div>
+                <span>Redirecting to renewal page</span>
+              </>
+            )}
           </div>
         )}
         
-        {/* <button
+        <button
           onClick={handleRenewClick}
-          disabled={redirecting}
+          disabled={redirecting || isAlreadyOnRenewalPage}
           className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-3 rounded-lg
             transition-all duration-300 flex items-center justify-center gap-2 w-full
             disabled:opacity-70 disabled:cursor-not-allowed"
         >
-          {redirecting ? (
+          {isAlreadyOnRenewalPage ? (
+            "Select a Plan to Renew"
+          ) : redirecting ? (
             <>
               <Loader className="w-4 h-4 animate-spin" />
               Redirecting...
@@ -118,7 +134,7 @@ const ExpiredSubscription = () => {
               Renew Now
             </>
           )}
-        </button> */}
+        </button>
       </div>
     </div>
   );

@@ -99,6 +99,14 @@ const login = async (email: string, password: string) => {
         setToken(response.token);
         localStorage.setItem('token', response.token);
         localStorage.setItem('user', JSON.stringify(response.user));
+        
+        // Add these lines to reset renewal flow state
+        localStorage.setItem('has_active_access', 'true');
+        sessionStorage.removeItem('redirecting_for_renewal');
+        // Clear renewal URL parameter if present
+        if (typeof window !== 'undefined' && window.location.search.includes('renew=true')) {
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
       }
     } else {
       // Handle case where response exists but user data is missing
@@ -138,6 +146,14 @@ const signup = async (email: string, password: string, stripeSessionId?: string)
         setToken(response.token);
         localStorage.setItem('token', response.token);
         localStorage.setItem('user', JSON.stringify(response.user));
+        
+        // Add these lines to reset renewal flow state
+        localStorage.setItem('has_active_access', 'true');
+        sessionStorage.removeItem('redirecting_for_renewal');
+        // Clear renewal URL parameter if present
+        if (typeof window !== 'undefined' && window.location.search.includes('renew=true')) {
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
       }
     } else {
       // Handle case where response exists but user data is missing
@@ -181,20 +197,20 @@ const resetPassword = async (token: string, password: string) => {
   }
 };
 
-  const logout = async () => {
-    try {
-      // Call API to clear the cookie
-      await authAPI.logout();
-    } catch (error) {
-      console.error('Logout error:', error);
-    } finally {
-      // Clear local storage regardless of API response
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      setToken(null);
-      setUser(null);
-    }
-  };
+const logout = async () => {
+  try {
+    await authAPI.logout();
+  } catch (error) {
+    console.error('Logout error:', error);
+  } finally {
+    // Clear all subscription-related flags
+    localStorage.clear(); // Clear everything
+    sessionStorage.clear(); // Clear all session storage
+    
+    // Force navigation to home without parameters
+    window.location.href = '/';
+  }
+};
 
   if (isLoading) {
     return null;
