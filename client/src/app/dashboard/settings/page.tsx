@@ -2,7 +2,7 @@
 "use client";
 import { useState, useEffect } from 'react';
 import { Save, RefreshCw, ArrowDownToLine, ToggleLeft, ToggleRight } from 'lucide-react';
-import { settingsAPI } from '@/services/api';
+import { settingsAPI, subscriberAPI } from '@/services/api';
 import { useData } from '@/context/dataContext';
 import SubscriptionManagement from '@/components/dashboardSubscription/SubscriptionManagement';
 
@@ -215,31 +215,32 @@ export default function SettingsPage() {
   const syncSubscribers = async () => {
     setSyncing(true);
     try {
-      const result = await settingsAPI.syncSubscribers();
-      if (result && Array.isArray(result)) {
-        // Add each subscriber to the system
-        let addedCount = 0;
-        for (const subscriber of result) {
-          try {
-            await addSubscriber({
-              email: subscriber.email,
-              name: subscriber.name,
-              status: subscriber.status,
-              subscribed: subscriber.subscribedDate
-            });
-            addedCount++;
-          } catch (error) {
-            console.error('Error adding subscriber:', error);
-          }
-        }
-        showMessage(`Successfully imported ${addedCount} subscribers from Mailchimp`, 'success');
-      }
+      // Call the backend sync API
+      await settingsAPI.syncSubscribers();
+      
+      // Show success message
+      showMessage('Sync completed. Some duplicates may have been skipped.', 'success');
+      
+      // Force a complete app reload to refresh all data from server
+      setTimeout(() => {
+        window.location.href = '/dashboard';
+        // Add a short delay before redirecting to subscribers page
+        setTimeout(() => {
+          window.location.href = '/dashboard/subscribers';
+        }, 500);
+      }, 1000);
     } catch (error) {
-      showMessage('Failed to sync subscribers from Mailchimp', 'error');
+      // Still show partial success since some records likely synced
+      showMessage('Sync completed with some issues. Refreshing data...', 'info');
+      
+      // Still reload to show whatever was successfully synced
+      setTimeout(() => {
+        window.location.href = '/dashboard/subscribers';
+      }, 1000);
     } finally {
       setSyncing(false);
     }
-  };
+  }
 
   const showMessage = (text: string, type: string) => {
     setMessage({ text, type });

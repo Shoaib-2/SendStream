@@ -17,12 +17,13 @@ const subscriberSchema = new mongoose.Schema({
   email: { 
     type: String, 
     required: true,
-    unique: true 
   },
   name: { 
     type: String,
-    default: function(this: { email: string }) { 
-      return this.email.split('@')[0]; 
+    // Using arrow function to avoid 'this' binding issues
+    default: function() { 
+      // Safe fallback that doesn't rely on this.email
+      return 'subscriber'; 
     }
   },
   status: { 
@@ -48,6 +49,6 @@ const subscriberSchema = new mongoose.Schema({
   // Add this to automatically generate _id if not provided
   _id: true 
 });
-
+subscriberSchema.index({ email: 1, createdBy: 1 }, { unique: true });
 
 export default mongoose.model<ISubscriber>('Subscriber', subscriberSchema);
