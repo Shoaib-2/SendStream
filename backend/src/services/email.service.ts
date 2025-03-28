@@ -68,11 +68,22 @@ export class EmailService {
         logger.info(`Processing batch ${Math.floor(i/batchSize) + 1} of ${Math.ceil(uniqueSubscribers.length/batchSize)}`);
         
         const emailPromises = batch.map(subscriber => {
+          // Properly format the from field with name and sender email
+          let fromName = userSettings?.email?.fromName || 'Newsletter';
+          let senderEmail = userSettings?.email?.senderEmail || process.env.EMAIL_USER;
+          
+          // Format the from field properly to include both name and email
+          const fromField = `"${fromName}" <${senderEmail}>`;
+          
+          // Log the formatted sender info for debugging
+          logger.info(`Sending with from field: ${fromField}`);
+          
+          // Ensure replyTo is properly set
+          const replyToField = userSettings?.email?.replyTo || senderEmail;
+          
           return this.transporter.sendMail({
-            from: userSettings?.email?.fromName 
-              ? `"${userSettings.email.fromName}" <${process.env.EMAIL_USER}>`
-              : process.env.EMAIL_USER,
-            replyTo: userSettings?.email?.replyTo || process.env.EMAIL_USER,
+            from: fromField,
+            replyTo: replyToField,
             to: subscriber.email,
             subject: newsletter.subject,
             html: this.generateNewsletterHTML(newsletter, subscriber)
@@ -104,12 +115,14 @@ export class EmailService {
 
   private generateNewsletterHTML(newsletter: any, subscriber: any): string {
     const unsubscribeToken = Buffer.from(subscriber._id.toString()).toString('base64');
-    const serverUrl = process.env.SERVER_URL || 'http://localhost:5000';
-    const unsubscribeUrl = `${serverUrl}/api/subscribers/unsubscribe/${unsubscribeToken}`;
+    
+    // Use the frontend URL for unsubscribe (this is important for the fix)
+    const frontendUrl = process.env.FRONTEND_URL || process.env.CLIENT_URL || 'http://localhost:3000';
+    const unsubscribeUrl = `${frontendUrl}/unsubscribe?token=${encodeURIComponent(unsubscribeToken)}`;
     logger.info('Unsubscribe URL:', unsubscribeUrl);
     
+    const serverUrl = process.env.SERVER_URL || 'http://localhost:5000';
     const trackingPixelUrl = `${serverUrl}/api/analytics/track-open/${newsletter._id.toString()}/${subscriber._id.toString()}`;
-    
     return `
     <!DOCTYPE html>
     <html lang="en">
@@ -179,6 +192,43 @@ export class EmailService {
           .content a:hover {
             border-color: #2563eb;
           }
+          /* Style for emoji icons */
+          .emoji {
+            font-size: 1.2em;
+            margin-right: 4px;
+            vertical-align: middle;
+          }
+          /* Style for important points */
+          .highlight {
+            background-color: #f0f9ff;
+            border-left: 4px solid #3b82f6;
+            padding: 16px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+          }
+          /* Section separators */
+          .divider {
+            height: 1px;
+            background-color: #e2e8f0;
+            margin: 24px 0;
+          }
+          /* Better blockquotes */
+          blockquote {
+            background-color: #f8fafc;
+            border-left: 4px solid #94a3b8;
+            padding: 16px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+            font-style: italic;
+          }
+          /* List styling */
+          ul, ol {
+            padding-left: 24px;
+            margin-bottom: 20px;
+          }
+          li {
+            margin-bottom: 8px;
+          }
           .footer {
             background-color: #f8fafc;
             padding: 32px 24px;
@@ -204,6 +254,17 @@ export class EmailService {
             background-color: #f8fafc;
             border-color: #cbd5e1;
             color: #475569;
+          }
+          /* Added spacing and better formatting for headings within content */
+          .content h2 {
+            margin-top: 32px;
+            margin-bottom: 16px;
+            color: #1e293b;
+          }
+          .content h3 {
+            margin-top: 24px;
+            margin-bottom: 12px;
+            color: #334155;
           }
           @media only screen and (max-width: 480px) {
             .wrapper {
@@ -248,7 +309,7 @@ export class EmailService {
       </body>
     </html>
   `;
-}
+  }
 }
 
 export const emailService = new EmailService();

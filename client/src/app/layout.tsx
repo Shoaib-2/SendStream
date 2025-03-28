@@ -29,7 +29,6 @@ export default function RootLayout({
           <ToastProvider>
           <SubscriptionErrorHandler />
           <EmailProvider />
-          {/* <EmailPrompt /> */}
             <DataProvider> 
             {children}
             </DataProvider>

@@ -317,7 +317,7 @@ async send(req: Request, res: Response, next: NextFunction) {
       await Analytics.create({
         newsletterId: newsletter._id,
         createdBy: req.user._id,
-        bounces: { count: 0, details: [] },
+        // bounces: { count: 0, details: [] },
         unsubscribes: { count: 0, details: [] }
       });
 

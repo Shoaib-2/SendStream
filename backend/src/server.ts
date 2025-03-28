@@ -82,7 +82,7 @@ wss.on('headers', (headers) => {
 
 
 app.use(express.json());
-app.use(cookieParser()); // Add cookie-parser middleware
+app.use(cookieParser()); // Added cookie-parser middleware
 
 app.use('/api', protect as RequestHandler); // Apply auth middleware to all API routes
 app.use('/api', checkSubscription as RequestHandler); // Apply subscription check after auth
