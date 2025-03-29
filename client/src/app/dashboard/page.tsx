@@ -1,12 +1,14 @@
 "use client";
 import React, { useEffect, useState } from 'react';
-import { Users, Mail, Star, BookOpen} from 'lucide-react';
+import { Users, Mail, Star, BookOpen, Send } from 'lucide-react';
 import { useData } from '@/context/dataContext';
 import { newsletterAPI } from '@/services/api';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import type { Newsletter } from '@/types';
 import ExpiredSubscription from '@/components/subscription/ExpiredSubscription';
 import { useRouter } from 'next/navigation';
+import axios from 'axios';
+import { emailAPI } from '@/services/api';
 
 const COLORS = ['#3B82F6', '#10B981', '#EF4444', '#F59E0B'];
 
@@ -15,6 +17,13 @@ interface QualityMetrics {
   researchBased: boolean;
   actionableInsights: boolean;
   comprehensiveAnalysis: boolean;
+}
+
+interface EmailUsage {
+  emailsSent: number;
+  dailyLimit: number;
+  remainingEmails: number;
+  percentUsed: number;
 }
 
 export default function DashboardPage() {
@@ -27,6 +36,12 @@ export default function DashboardPage() {
   const [subscriptionExpired, setSubscriptionExpired] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [shouldRedirectToLogin, setShouldRedirectToLogin] = useState(false);
+  const [emailUsage, setEmailUsage] = useState<EmailUsage>({
+    emailsSent: 0,
+    dailyLimit: 100,
+    remainingEmails: 100,
+    percentUsed: 0
+  });
 
   // Handle authentication redirect - always declare hooks at the top level
   useEffect(() => {
@@ -34,6 +49,46 @@ export default function DashboardPage() {
       router.push('/login');
     }
   }, [shouldRedirectToLogin, router]);
+
+  // Fetch email usage stats
+  useEffect(() => {
+    const fetchEmailUsage = async () => {
+      try {
+        if (!isAuthenticated) return;
+        
+        const data = await emailAPI.getUsage();
+        
+        if (data) {
+          const { emailsSent, dailyLimit } = data;
+          const remainingEmails = Math.max(0, dailyLimit - emailsSent);
+          const percentUsed = (emailsSent / dailyLimit) * 100;
+          
+          setEmailUsage({
+            emailsSent,
+            dailyLimit,
+            remainingEmails,
+            percentUsed
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching email usage stats:', error);
+        // Default values if API fails
+        setEmailUsage({
+          emailsSent: 0,
+          dailyLimit: 100,
+          remainingEmails: 100,
+          percentUsed: 0
+        });
+      }
+    };
+    
+    fetchEmailUsage();
+    
+    // Set interval to refresh stats every minute
+    const intervalId = setInterval(fetchEmailUsage, 60000);
+    
+    return () => clearInterval(intervalId);
+  }, [isAuthenticated]);
 
   // Check authentication and subscription status
   useEffect(() => {
@@ -223,6 +278,43 @@ export default function DashboardPage() {
           <h1 className="text-3xl md:text-4xl font-bold font-inter mb-8 bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
             Content Quality Dashboard
           </h1>
+          
+          {/* Email Sending Limits Card */}
+          <div className="mb-8 bg-gray-800/50 backdrop-blur-sm p-6 rounded-2xl border border-gray-800 hover:border-blue-500/50 transition-all duration-300">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-4">
+              <div className="flex items-center mb-4 md:mb-0">
+                <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center mr-4">
+                  <Send className="w-6 h-6 text-blue-500" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold mb-1">Email Sending Limits</h2>
+                  <p className="text-gray-400 text-sm">
+                    {emailUsage.remainingEmails} of {emailUsage.dailyLimit} emails remaining today
+                  </p>
+                </div>
+              </div>
+              
+              <div className="px-4 py-2 bg-blue-500/10 text-blue-400 rounded-lg border border-blue-500/30 text-sm">
+                Resets at midnight
+              </div>
+            </div>
+            
+            <div className="w-full bg-gray-700/50 rounded-full h-3">
+              <div 
+                className={`h-3 rounded-full ${
+                  emailUsage.percentUsed > 80 ? 'bg-red-500' : 
+                  emailUsage.percentUsed > 50 ? 'bg-yellow-500' : 
+                  'bg-green-500'
+                }`} 
+                style={{ width: `${emailUsage.percentUsed}%` }}
+              ></div>
+            </div>
+            
+            <div className="flex justify-between mt-2 text-xs text-gray-400">
+              <span>{emailUsage.emailsSent} used</span>
+              <span>{emailUsage.remainingEmails} remaining</span>
+            </div>
+          </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             {metrics.map((metric, index) => (

@@ -2,7 +2,7 @@
 "use client";
 import { useState, useEffect } from 'react';
 import { Save, RefreshCw, ArrowDownToLine, ToggleLeft, ToggleRight } from 'lucide-react';
-import { settingsAPI, subscriberAPI } from '@/services/api';
+import { settingsAPI} from '@/services/api';
 import { useData } from '@/context/dataContext';
 import SubscriptionManagement from '@/components/dashboardSubscription/SubscriptionManagement';
 
@@ -23,7 +23,6 @@ interface LocalSettings {
 }
 
 export default function SettingsPage() {
-  const { addSubscriber } = useData();
   const [settings, setSettings] = useState<LocalSettings>({
     email: {
       fromName: '',

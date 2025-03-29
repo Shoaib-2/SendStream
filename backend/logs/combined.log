@@ -4450,3 +4450,159 @@
 2025-03-28T15:52:33.490Z [[32minfo[39m]: Unsubscribe URL:
 2025-03-28T15:52:34.189Z [[32minfo[39m]: Batch results: 1/1 emails sent
 2025-03-28T15:52:34.190Z [[32minfo[39m]: Newsletter sent successfully to 1/1 subscribers
+2025-03-29T13:53:02.872Z [[32minfo[39m]: Gmail transporter created
+2025-03-29T13:53:24.185Z [[32minfo[39m]: Successfully validated initialize list response
+2025-03-29T13:53:24.186Z [[32minfo[39m]: Starting subscriber sync with Mailchimp
+2025-03-29T13:53:24.499Z [[32minfo[39m]: Successfully validated sync subscribers response
+2025-03-29T13:53:24.501Z [[32minfo[39m]: Synced 2 subscribers from Mailchimp
+2025-03-29T13:53:24.502Z [[32minfo[39m]: Status breakdown - Active: 0, Unsubscribed: 2
+2025-03-29T13:53:25.537Z [[32minfo[39m]: Successfully validated initialize list response
+2025-03-29T13:53:25.537Z [[32minfo[39m]: Starting subscriber sync with Mailchimp
+2025-03-29T13:53:25.844Z [[32minfo[39m]: Successfully validated sync subscribers response
+2025-03-29T13:53:25.845Z [[32minfo[39m]: Synced 2 subscribers from Mailchimp
+2025-03-29T13:53:25.846Z [[32minfo[39m]: Status breakdown - Active: 0, Unsubscribed: 2
+2025-03-29T13:53:31.889Z [[32minfo[39m]: Successfully validated initialize list response
+2025-03-29T13:53:31.890Z [[32minfo[39m]: Starting subscriber sync with Mailchimp
+2025-03-29T13:53:32.251Z [[32minfo[39m]: Successfully validated sync subscribers response
+2025-03-29T13:53:32.252Z [[32minfo[39m]: Synced 2 subscribers from Mailchimp
+2025-03-29T13:53:32.252Z [[32minfo[39m]: Status breakdown - Active: 0, Unsubscribed: 2
+2025-03-29T14:11:41.586Z [[32minfo[39m]: Gmail transporter created
+2025-03-29T14:11:59.947Z [[32minfo[39m]: Successfully validated initialize list response
+2025-03-29T14:11:59.948Z [[32minfo[39m]: Starting subscriber sync with Mailchimp
+2025-03-29T14:12:00.282Z [[32minfo[39m]: Successfully validated sync subscribers response
+2025-03-29T14:12:00.283Z [[32minfo[39m]: Synced 2 subscribers from Mailchimp
+2025-03-29T14:12:00.284Z [[32minfo[39m]: Status breakdown - Active: 0, Unsubscribed: 2
+2025-03-29T14:12:01.323Z [[32minfo[39m]: Successfully validated initialize list response
+2025-03-29T14:12:01.324Z [[32minfo[39m]: Starting subscriber sync with Mailchimp
+2025-03-29T14:12:01.661Z [[32minfo[39m]: Successfully validated sync subscribers response
+2025-03-29T14:12:01.662Z [[32minfo[39m]: Synced 2 subscribers from Mailchimp
+2025-03-29T14:12:01.663Z [[32minfo[39m]: Status breakdown - Active: 0, Unsubscribed: 2
+2025-03-29T14:12:47.792Z [[32minfo[39m]: Gmail transporter created
+2025-03-29T14:33:35.950Z [[32minfo[39m]: Gmail transporter created
+2025-03-29T14:33:42.619Z [[32minfo[39m]: Gmail transporter created
+2025-03-29T14:45:13.595Z [[32minfo[39m]: SendGrid API initialized
+2025-03-29T14:45:13.598Z [[32minfo[39m]: SendGrid email service created
+2025-03-29T14:45:24.477Z [[32minfo[39m]: Successfully validated initialize list response
+2025-03-29T14:45:24.477Z [[32minfo[39m]: Starting subscriber sync with Mailchimp
+2025-03-29T14:45:24.803Z [[32minfo[39m]: Successfully validated sync subscribers response
+2025-03-29T14:45:24.804Z [[32minfo[39m]: Synced 2 subscribers from Mailchimp
+2025-03-29T14:45:24.804Z [[32minfo[39m]: Status breakdown - Active: 0, Unsubscribed: 2
+2025-03-29T14:46:00.268Z [[32minfo[39m]: Sending newsletter to 1 unique subscribers
+2025-03-29T14:46:00.304Z [[32minfo[39m]: Preparing to send newsletter to 1 subscribers
+2025-03-29T14:46:00.305Z [[32minfo[39m]: Processing batch 1 of 1
+2025-03-29T14:46:00.306Z [[32minfo[39m]: Sending with from: Into the Abyss – The Fascinating World of Black Holes <shoaibkkhn50665@gmail.com>, replyTo: shoaib.ep96@gmail.com
+2025-03-29T14:46:00.307Z [[32minfo[39m]: Unsubscribe URL:
+2025-03-29T14:46:00.898Z [[32minfo[39m]: Batch results: 0/1 emails sent
+2025-03-29T14:46:00.900Z [[31merror[39m]: Failed to send newsletter:
+2025-03-29T14:46:00.901Z [[31merror[39m]: Failed to send newsletter
+2025-03-29T14:46:00.903Z [[31merror[39m]: Send newsletter error: Failed to send newsletter: Failed to send newsletter: Failed to send newsletter to any recipients
+2025-03-29T14:47:41.279Z [[32minfo[39m]: SendGrid API initialized
+2025-03-29T14:47:41.282Z [[32minfo[39m]: SendGrid email service created
+2025-03-29T14:47:54.138Z [[32minfo[39m]: Gmail transporter created
+2025-03-29T14:47:54.549Z [[32minfo[39m]: SendGrid API initialized
+2025-03-29T14:47:54.550Z [[32minfo[39m]: SendGrid email service created
+2025-03-29T14:48:03.086Z [[32minfo[39m]: Gmail transporter created
+2025-03-29T14:48:03.496Z [[32minfo[39m]: SendGrid API initialized
+2025-03-29T14:48:03.497Z [[32minfo[39m]: SendGrid email service created
+2025-03-29T14:48:11.988Z [[32minfo[39m]: Successfully validated initialize list response
+2025-03-29T14:48:11.989Z [[32minfo[39m]: Starting subscriber sync with Mailchimp
+2025-03-29T14:48:12.334Z [[32minfo[39m]: Successfully validated sync subscribers response
+2025-03-29T14:48:12.335Z [[32minfo[39m]: Synced 2 subscribers from Mailchimp
+2025-03-29T14:48:12.336Z [[32minfo[39m]: Status breakdown - Active: 0, Unsubscribed: 2
+2025-03-29T14:48:13.568Z [[32minfo[39m]: Successfully validated initialize list response
+2025-03-29T14:48:13.569Z [[32minfo[39m]: Starting subscriber sync with Mailchimp
+2025-03-29T14:48:14.015Z [[32minfo[39m]: Successfully validated sync subscribers response
+2025-03-29T14:48:14.016Z [[32minfo[39m]: Synced 2 subscribers from Mailchimp
+2025-03-29T14:48:14.016Z [[32minfo[39m]: Status breakdown - Active: 0, Unsubscribed: 2
+2025-03-29T14:48:17.050Z [[32minfo[39m]: Sending newsletter to 1 unique subscribers
+2025-03-29T14:48:17.076Z [[32minfo[39m]: Preparing to send newsletter to 1 subscribers
+2025-03-29T14:48:17.077Z [[32minfo[39m]: Processing batch 1 of 1
+2025-03-29T14:48:17.078Z [[32minfo[39m]: Sending with from: Into the Abyss – The Fascinating World of Black Holes <shoaibkkhn50665@gmail.com>, replyTo: shoaib.ep96@gmail.com
+2025-03-29T14:48:17.078Z [[32minfo[39m]: Unsubscribe URL:
+2025-03-29T14:48:17.498Z [[32minfo[39m]: Batch results: 0/1 emails sent
+2025-03-29T14:48:17.499Z [[31merror[39m]: Failed to send newsletter:
+2025-03-29T14:48:17.500Z [[31merror[39m]: Failed to send newsletter
+2025-03-29T14:48:17.500Z [[31merror[39m]: Send newsletter error: Failed to send newsletter: Failed to send newsletter: Failed to send newsletter to any recipients
+2025-03-29T14:51:20.144Z [[32minfo[39m]: Gmail transporter created
+2025-03-29T14:51:27.232Z [[32minfo[39m]: Successfully validated initialize list response
+2025-03-29T14:51:27.233Z [[32minfo[39m]: Starting subscriber sync with Mailchimp
+2025-03-29T14:51:27.623Z [[32minfo[39m]: Successfully validated sync subscribers response
+2025-03-29T14:51:27.624Z [[32minfo[39m]: Synced 2 subscribers from Mailchimp
+2025-03-29T14:51:27.625Z [[32minfo[39m]: Status breakdown - Active: 0, Unsubscribed: 2
+2025-03-29T14:51:28.609Z [[32minfo[39m]: Successfully validated initialize list response
+2025-03-29T14:51:28.610Z [[32minfo[39m]: Starting subscriber sync with Mailchimp
+2025-03-29T14:51:28.961Z [[32minfo[39m]: Successfully validated sync subscribers response
+2025-03-29T14:51:28.962Z [[32minfo[39m]: Synced 2 subscribers from Mailchimp
+2025-03-29T14:51:28.962Z [[32minfo[39m]: Status breakdown - Active: 0, Unsubscribed: 2
+2025-03-29T14:51:59.600Z [[32minfo[39m]: Sending newsletter to 1 unique subscribers
+2025-03-29T14:51:59.630Z [[32minfo[39m]: Sending newsletter to 1 unique subscribers
+2025-03-29T14:51:59.631Z [[32minfo[39m]: Processing batch 1 of 1
+2025-03-29T14:51:59.631Z [[32minfo[39m]: Sending with from field: "Into the Abyss – The Fascinating World of Black Holes" <shoaibkkhn50665@gmail.com>
+2025-03-29T14:51:59.632Z [[32minfo[39m]: Unsubscribe URL:
+2025-03-29T14:52:00.831Z [[32minfo[39m]: Batch results: 1/1 emails sent
+2025-03-29T14:52:00.832Z [[32minfo[39m]: Newsletter sent successfully to 1/1 subscribers
+2025-03-29T14:53:03.329Z [[32minfo[39m]: Gmail transporter created
+2025-03-29T15:18:22.680Z [[32minfo[39m]: Gmail transporter created
+2025-03-29T15:18:29.625Z [[32minfo[39m]: Gmail transporter created
+2025-03-29T15:19:45.699Z [[32minfo[39m]: Gmail transporter created
+2025-03-29T15:19:59.845Z [[32minfo[39m]: Gmail transporter created
+2025-03-29T15:20:09.999Z [[32minfo[39m]: Successfully validated initialize list response
+2025-03-29T15:20:10.000Z [[32minfo[39m]: Starting subscriber sync with Mailchimp
+2025-03-29T15:20:10.341Z [[32minfo[39m]: Successfully validated sync subscribers response
+2025-03-29T15:20:10.342Z [[32minfo[39m]: Synced 2 subscribers from Mailchimp
+2025-03-29T15:20:10.342Z [[32minfo[39m]: Status breakdown - Active: 0, Unsubscribed: 2
+2025-03-29T15:20:21.439Z [[32minfo[39m]: Sending newsletter to 1 unique subscribers
+2025-03-29T15:20:21.467Z [[32minfo[39m]: Sending newsletter to 1 unique subscribers
+2025-03-29T15:20:21.494Z [[32minfo[39m]: Processing batch 1 of 1
+2025-03-29T15:20:21.495Z [[32minfo[39m]: Sending with from: "Into the Abyss – The Fascinating World of Black Holes" <developershoaib96@gmail.com>, replyTo: shoaib.ep96@gmail.com
+2025-03-29T15:20:21.495Z [[32minfo[39m]: Unsubscribe URL:
+2025-03-29T15:20:22.346Z [[32minfo[39m]: Batch results: 1/1 emails sent
+2025-03-29T15:20:22.380Z [[32minfo[39m]: Updated email usage for user 67e5699ef5e1f79fbafdfea8: 1/100
+2025-03-29T15:20:22.381Z [[32minfo[39m]: Newsletter sent successfully to 1/1 subscribers
+2025-03-29T15:32:05.101Z [[32minfo[39m]: Successfully validated initialize list response
+2025-03-29T15:32:05.102Z [[32minfo[39m]: Starting subscriber sync with Mailchimp
+2025-03-29T15:32:05.449Z [[32minfo[39m]: Successfully validated sync subscribers response
+2025-03-29T15:32:05.450Z [[32minfo[39m]: Synced 2 subscribers from Mailchimp
+2025-03-29T15:32:05.450Z [[32minfo[39m]: Status breakdown - Active: 0, Unsubscribed: 2
+2025-03-29T15:32:06.507Z [[32minfo[39m]: Successfully validated initialize list response
+2025-03-29T15:32:06.508Z [[32minfo[39m]: Starting subscriber sync with Mailchimp
+2025-03-29T15:32:06.881Z [[32minfo[39m]: Successfully validated sync subscribers response
+2025-03-29T15:32:06.882Z [[32minfo[39m]: Synced 2 subscribers from Mailchimp
+2025-03-29T15:32:06.882Z [[32minfo[39m]: Status breakdown - Active: 0, Unsubscribed: 2
+2025-03-29T15:33:11.622Z [[32minfo[39m]: Successfully validated initialize list response
+2025-03-29T15:33:11.623Z [[32minfo[39m]: Starting subscriber sync with Mailchimp
+2025-03-29T15:33:11.980Z [[32minfo[39m]: Successfully validated sync subscribers response
+2025-03-29T15:33:11.981Z [[32minfo[39m]: Synced 2 subscribers from Mailchimp
+2025-03-29T15:33:11.982Z [[32minfo[39m]: Status breakdown - Active: 0, Unsubscribed: 2
+2025-03-29T15:33:12.961Z [[32minfo[39m]: Successfully validated initialize list response
+2025-03-29T15:33:12.961Z [[32minfo[39m]: Starting subscriber sync with Mailchimp
+2025-03-29T15:33:13.319Z [[32minfo[39m]: Successfully validated sync subscribers response
+2025-03-29T15:33:13.319Z [[32minfo[39m]: Synced 2 subscribers from Mailchimp
+2025-03-29T15:33:13.320Z [[32minfo[39m]: Status breakdown - Active: 0, Unsubscribed: 2
+2025-03-29T15:39:40.743Z [[32minfo[39m]: Gmail transporter created
+2025-03-29T15:40:21.400Z [[32minfo[39m]: Gmail transporter created
+2025-03-29T15:40:30.923Z [[32minfo[39m]: Successfully validated initialize list response
+2025-03-29T15:40:30.924Z [[32minfo[39m]: Starting subscriber sync with Mailchimp
+2025-03-29T15:40:31.272Z [[32minfo[39m]: Successfully validated sync subscribers response
+2025-03-29T15:40:31.273Z [[32minfo[39m]: Synced 2 subscribers from Mailchimp
+2025-03-29T15:40:31.274Z [[32minfo[39m]: Status breakdown - Active: 0, Unsubscribed: 2
+2025-03-29T15:40:32.492Z [[32minfo[39m]: Successfully validated initialize list response
+2025-03-29T15:40:32.493Z [[32minfo[39m]: Starting subscriber sync with Mailchimp
+2025-03-29T15:40:32.825Z [[32minfo[39m]: Successfully validated sync subscribers response
+2025-03-29T15:40:32.826Z [[32minfo[39m]: Synced 2 subscribers from Mailchimp
+2025-03-29T15:40:32.827Z [[32minfo[39m]: Status breakdown - Active: 0, Unsubscribed: 2
+2025-03-29T15:44:03.481Z [[32minfo[39m]: Gmail transporter created
+2025-03-29T15:44:09.883Z [[31merror[39m]: Error in getUsage: EmailUsage.findOne is not a function
+2025-03-29T15:44:12.525Z [[32minfo[39m]: Successfully validated initialize list response
+2025-03-29T15:44:12.526Z [[32minfo[39m]: Starting subscriber sync with Mailchimp
+2025-03-29T15:44:12.869Z [[32minfo[39m]: Successfully validated sync subscribers response
+2025-03-29T15:44:12.870Z [[32minfo[39m]: Synced 2 subscribers from Mailchimp
+2025-03-29T15:44:12.871Z [[32minfo[39m]: Status breakdown - Active: 0, Unsubscribed: 2
+2025-03-29T15:44:13.871Z [[32minfo[39m]: Successfully validated initialize list response
+2025-03-29T15:44:13.872Z [[32minfo[39m]: Starting subscriber sync with Mailchimp
+2025-03-29T15:44:14.251Z [[32minfo[39m]: Successfully validated sync subscribers response
+2025-03-29T15:44:14.252Z [[32minfo[39m]: Synced 2 subscribers from Mailchimp
+2025-03-29T15:44:14.252Z [[32minfo[39m]: Status breakdown - Active: 0, Unsubscribed: 2
+2025-03-29T15:45:10.466Z [[31merror[39m]: Error in getUsage: EmailUsage.findOne is not a function
+2025-03-29T15:46:10.483Z [[31merror[39m]: Error in getUsage: EmailUsage.findOne is not a function
+2025-03-29T15:46:17.864Z [[32minfo[39m]: Gmail transporter created

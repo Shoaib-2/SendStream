@@ -17,6 +17,7 @@ import jwt from 'jsonwebtoken';
 import subscriptionRoutes from './routes/subscription.routes';
 import { protect } from '../src/middleware/auth/auth.middleware'; // Make sure this exists
 import { checkSubscription } from '../src/middleware/susbcription.middleware';
+import emailRoutes from './routes/email.routes';
 
 dotenv.config();
 
@@ -93,6 +94,7 @@ app.use('/api', checkSubscription as RequestHandler); // Apply subscription chec
 // });
 
 app.use('/api/auth', authRoutes);
+app.use('/api', emailRoutes);
 app.use('/api/newsletters', newsletterRoutes);
 app.use('/api/subscribers', subscriberRoutes);
 app.use('/api/analytics', analyticsRoutes);

@@ -2,6 +2,8 @@ import nodemailer from 'nodemailer';
 import { logger } from '../utils/logger';
 import { APIError } from '../utils/errors';
 import dotenv from 'dotenv';
+import EmailUsageModel from '../models/EmailUsage';
+import mongoose from 'mongoose';
 dotenv.config();
 
 interface MailOptions {
@@ -14,6 +16,7 @@ interface MailOptions {
 
 export class EmailService {
   private transporter: nodemailer.Transporter;
+  private DEFAULT_DAILY_LIMIT = 100; // Default sending limit per day
 
   constructor() {
     // Configure Gmail transporter
@@ -39,6 +42,71 @@ export class EmailService {
     }
   }
 
+  // Check if a user has reached their email sending limit
+  async checkEmailLimit(userId: string, count: number): Promise<boolean> {
+    if (!userId) {
+      logger.warn('No userId provided for email limit check');
+      return true; // Allow sending without tracking if no user ID
+    }
+    
+    try {
+      // Get today's date (midnight)
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      // Find or create usage record for today
+      let usage = await EmailUsageModel.findOne({
+        userId: new mongoose.Types.ObjectId(userId),
+        date: today
+      });
+      
+      if (!usage) {
+        // No record for today, create one
+        usage = new EmailUsageModel({
+          userId: new mongoose.Types.ObjectId(userId),
+          date: today,
+          emailsSent: 0,
+          lastUpdated: new Date()
+        });
+      }
+      
+      // Check if sending these emails would exceed the limit
+      if (usage.emailsSent + count > this.DEFAULT_DAILY_LIMIT) {
+        logger.warn(`Email limit reached for user ${userId}: ${usage.emailsSent}/${this.DEFAULT_DAILY_LIMIT}`);
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      logger.error('Error checking email limit:', error);
+      return true; // Allow sending if the check fails
+    }
+  }
+
+  // Update email usage after successful sending
+  async updateEmailUsage(userId: string, count: number): Promise<void> {
+    if (!userId) {
+      logger.warn('No userId provided for email usage update');
+      return;
+    }
+    
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      // Use findOneAndUpdate with upsert to create if not exists
+      const result = await EmailUsageModel.findOneAndUpdate(
+        { userId: new mongoose.Types.ObjectId(userId), date: today },
+        { $inc: { emailsSent: count }, $set: { lastUpdated: new Date() } },
+        { upsert: true, new: true }
+      );
+      
+      logger.info(`Updated email usage for user ${userId}: ${result.emailsSent}/${this.DEFAULT_DAILY_LIMIT}`);
+    } catch (error) {
+      logger.error('Error updating email usage:', error);
+    }
+  }
+
   // Add a method to send custom emails
   async sendEmail(mailOptions: MailOptions): Promise<void> {
     try {
@@ -58,6 +126,15 @@ export class EmailService {
         new Map(subscribers.map(s => [s.email, s])).values()
       );
       logger.info(`Sending newsletter to ${uniqueSubscribers.length} unique subscribers`);
+      
+      // Get user ID from newsletter or settings
+      const userId = newsletter.createdBy?.toString() || userSettings?.userId?.toString();
+      
+      // Check if within daily sending limit
+      const withinLimit = await this.checkEmailLimit(userId, uniqueSubscribers.length);
+      if (!withinLimit) {
+        throw new APIError(429, `Daily email sending limit reached (${this.DEFAULT_DAILY_LIMIT}). Please try again tomorrow.`);
+      }
     
       // Process in batches
       const batchSize = 5;
@@ -68,22 +145,20 @@ export class EmailService {
         logger.info(`Processing batch ${Math.floor(i/batchSize) + 1} of ${Math.ceil(uniqueSubscribers.length/batchSize)}`);
         
         const emailPromises = batch.map(subscriber => {
-          // Properly format the from field with name and sender email
-          let fromName = userSettings?.email?.fromName || 'Newsletter';
-          let senderEmail = userSettings?.email?.senderEmail || process.env.EMAIL_USER;
+          // Get sender information from settings
+          const fromName = userSettings?.email?.fromName || 'Newsletter';
           
-          // Format the from field properly to include both name and email
-          const fromField = `"${fromName}" <${senderEmail}>`;
-          
-          // Log the formatted sender info for debugging
-          logger.info(`Sending with from field: ${fromField}`);
+          // Format the from field with proper name and email
+          const fromField = `"${fromName}" <${process.env.EMAIL_USER}>`;
           
           // Ensure replyTo is properly set
-          const replyToField = userSettings?.email?.replyTo || senderEmail;
+          const replyTo = userSettings?.email?.replyTo || process.env.EMAIL_USER;
+          
+          logger.info(`Sending with from: ${fromField}, replyTo: ${replyTo}`);
           
           return this.transporter.sendMail({
             from: fromField,
-            replyTo: replyToField,
+            replyTo: replyTo,
             to: subscriber.email,
             subject: newsletter.subject,
             html: this.generateNewsletterHTML(newsletter, subscriber)
@@ -105,6 +180,11 @@ export class EmailService {
         throw new Error('Failed to send newsletter to any recipients');
       }
       
+      // Update usage tracking if emails were sent
+      if (sentCount > 0 && userId) {
+        await this.updateEmailUsage(userId, sentCount);
+      }
+      
       logger.info(`Newsletter sent successfully to ${sentCount}/${uniqueSubscribers.length} subscribers`);
       return newsletter._id;
     } catch (error: any) {
@@ -116,13 +196,14 @@ export class EmailService {
   private generateNewsletterHTML(newsletter: any, subscriber: any): string {
     const unsubscribeToken = Buffer.from(subscriber._id.toString()).toString('base64');
     
-    // Use the frontend URL for unsubscribe (this is important for the fix)
+    // Use the frontend URL for unsubscribe
     const frontendUrl = process.env.FRONTEND_URL || process.env.CLIENT_URL || 'http://localhost:3000';
     const unsubscribeUrl = `${frontendUrl}/unsubscribe?token=${encodeURIComponent(unsubscribeToken)}`;
     logger.info('Unsubscribe URL:', unsubscribeUrl);
     
     const serverUrl = process.env.SERVER_URL || 'http://localhost:5000';
     const trackingPixelUrl = `${serverUrl}/api/analytics/track-open/${newsletter._id.toString()}/${subscriber._id.toString()}`;
+    
     return `
     <!DOCTYPE html>
     <html lang="en">

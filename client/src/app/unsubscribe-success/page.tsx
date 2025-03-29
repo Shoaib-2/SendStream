@@ -1,10 +1,6 @@
 "use client";
 // src/app/unsubscribe-success/page.tsx
-import { useSearchParams } from 'next/navigation';
-
 export default function UnsubscribeSuccessPage() {
-  const searchParams = useSearchParams();
-  const token = searchParams?.get('token');
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-900 via-gray-900 to-gray-900/50 p-4">

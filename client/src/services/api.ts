@@ -1359,3 +1359,21 @@ export const updateSubscriptionRenewal = async (
     throw error;
   }
 };
+
+export const emailAPI = {
+  // Get email usage stats for the current day
+  getUsage: async () => {
+    try {
+      const response = await api.get('/email-usage');
+      return response.data.data;
+    } catch (error) {
+      console.error('Error fetching email usage:', error);
+      // Return default values if the API fails
+      return {
+        emailsSent: 0,
+        dailyLimit: 100,
+        lastUpdated: new Date().toISOString()
+      };
+    }
+  }
+};

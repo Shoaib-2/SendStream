@@ -5,6 +5,12 @@ import { protect } from '../middleware/auth/auth.middleware';
 
 const router = express.Router();
 
+router.get(
+  '/email-usage',
+  protect as RequestHandler,
+  emailController.getUsage
+);
+
 router.post(
   '/newsletter/:newsletterId/send',
   protect as RequestHandler,
