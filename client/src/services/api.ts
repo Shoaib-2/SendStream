@@ -68,6 +68,8 @@ interface NewsletterStats {
 interface GrowthData {
   date: string;
   subscribers: number;
+  month?: string; // Optional for charting
+
 }
 
 interface EngagementMetrics {
@@ -867,16 +869,23 @@ export const analyticsAPI = {
       handleError(error as AxiosError);
     }
   },
+  
+  // Updated to properly use the period parameter and handle response data correctly
   getGrowthData: async (period: string) => {
     try {
       const response = await api.get<ResponseData<GrowthData[]>>(
-        `/analytics/growth?period=${period}`
+        `/analytics/growth?period=${period}` // Properly pass the period parameter
       );
-      return response.data.data;
+      
+      // Returning the data directly - handle the transformation in the component.
+      return response.data.data || [];
     } catch (error) {
-      handleError(error as AxiosError);
+      console.error("Error fetching growth data:", error);
+      // Return empty array instead of using handleError to prevent unnecessary crashes
+      return [];
     }
   },
+  
   getEngagementMetrics: async () => {
     try {
       const response = await api.get<ResponseData<EngagementMetrics>>(

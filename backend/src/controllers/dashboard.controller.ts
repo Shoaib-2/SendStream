@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import Newsletter from "../models/Newsletter";
 import Subscriber from "../models/Subscriber";
-import { logger } from "../utils/logger";
 
 interface MonthlyData {
   [key: string]: number;

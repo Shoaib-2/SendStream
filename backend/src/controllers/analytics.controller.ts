@@ -31,25 +31,52 @@ export class AnalyticsController {
 
   async getGrowthData(req: Request, res: Response, next: NextFunction) {
     try {
-      const sixMonthsAgo = new Date();
-      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-      
-      const subscribers = await Subscriber.find({
+      // Get ALL subscribers, not just from the last 6 months
+      const allSubscribers = await Subscriber.find({
         createdBy: req.user?._id,
-        subscribed: { $gte: sixMonthsAgo }
       }).sort('subscribed').lean();
-
-      const monthlyData: { [key: string]: number } = {};
-      subscribers.forEach(sub => {
-        const month = new Date(sub.subscribed).toLocaleString('default', { month: 'short' });
-        monthlyData[month] = (monthlyData[month] || 0) + 1;
+  
+      // Create a map to store monthly subscriber counts
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const currentMonth = new Date().getMonth();
+      const currentYear = new Date().getFullYear();
+      
+      // Create ordered array of the last 6 months with year info for accurate comparison
+      const lastSixMonths = [];
+      for (let i = 5; i >= 0; i--) {
+        const monthIndex = (currentMonth - i + 12) % 12;
+        const yearOffset = (currentMonth - i < 0) ? -1 : 0;
+        const year = currentYear + yearOffset;
+        lastSixMonths.push({
+          monthIndex,
+          monthName: months[monthIndex],
+          year
+        });
+      }
+      
+      // Calculate cumulative subscriber count for each month
+      const growthData = lastSixMonths.map((monthInfo, index) => {
+        // For each month, count subscribers who joined on or before this month
+        const count = allSubscribers.filter(sub => {
+          const subDate = new Date(sub.subscribed);
+          const subMonth = subDate.getMonth();
+          const subYear = subDate.getFullYear();
+          
+          // Include if the subscription is from an earlier year
+          if (subYear < monthInfo.year) return true;
+          
+          // Or if it's the same year and earlier/same month
+          if (subYear === monthInfo.year && subMonth <= monthInfo.monthIndex) return true;
+          
+          return false;
+        }).length;
+        
+        return {
+          month: monthInfo.monthName,
+          subscribers: count
+        };
       });
-
-      const growthData = Object.entries(monthlyData).map(([month, subscribers]) => ({
-        month,
-        subscribers
-      }));
-
+  
       res.json({
         status: 'success',
         data: growthData

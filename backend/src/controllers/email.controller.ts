@@ -57,7 +57,7 @@ export class EmailController {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
-      // Import the EmailUsage model properly
+      // Import the EmailUsage 
       const EmailUsageModel = require("../models/EmailUsage").default;
 
       // Find email usage for today or return default values
