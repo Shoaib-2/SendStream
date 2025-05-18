@@ -18,11 +18,11 @@ const SubscriptionErrorHandler = () => {
     try {
       const token = localStorage.getItem('token');
       if (!token) {
-        console.log('Not authenticated, skipping subscription check');
+        // console.log('Not authenticated, skipping subscription check');
         return;
       }
 
-      console.log('Fetching subscription status with token');
+      // console.log('Fetching subscription status with token');
       const response = await fetch('/api/stripe/status', {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -31,7 +31,7 @@ const SubscriptionErrorHandler = () => {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('Raw subscription API response:', data);
+        // console.log('Raw subscription API response:', data);
 
         // Properly extract the nested subscription data
         return {
@@ -50,7 +50,7 @@ const SubscriptionErrorHandler = () => {
   // Update the determineAccessStatus function
   const determineAccessStatus = (subData: any) => {
     if (!subData || !subData.subscription) {
-      console.log('No valid subscription data found');
+      // console.log('No valid subscription data found');
       return false;
     }
 
@@ -70,12 +70,12 @@ const SubscriptionErrorHandler = () => {
 
     // Important: A canceled subscription with future end date is still ACTIVE
     // Add detailed logging
-    console.log('Detailed subscription check:', {
-      status,
-      currentPeriodEnd: currentPeriodEnd?.toISOString(),
-      now: now.toISOString(),
-      isBeforeEnd: currentPeriodEnd && now < currentPeriodEnd
-    });
+    // console.log('Detailed subscription check:', {
+    //   status,
+    //   currentPeriodEnd: currentPeriodEnd?.toISOString(),
+    //   now: now.toISOString(),
+    //   isBeforeEnd: currentPeriodEnd && now < currentPeriodEnd
+    // });
 
     const hasActiveSubscription = status === 'active';
     const hasActiveTrialPeriod = status === 'trialing' && trialEndsAt && trialEndsAt > now;
@@ -107,7 +107,7 @@ const SubscriptionErrorHandler = () => {
       const token = localStorage.getItem('token');
       if (!token) return null;
 
-      console.log('Fetching subscription status with token');
+      // console.log('Fetching subscription status with token');
       // Skip if currently redirecting
       if (sessionStorage.getItem('redirecting_for_renewal')) {
         return;
@@ -117,7 +117,7 @@ const SubscriptionErrorHandler = () => {
       const hasAccess = determineAccessStatus(subscriptionData);
 
       if (!hasAccess) {
-        console.log('Subscription access check failed, triggering renewal flow');
+        // console.log('Subscription access check failed, triggering renewal flow');
 
         // Remove active access flag
         localStorage.removeItem('has_active_access');
@@ -152,7 +152,7 @@ const SubscriptionErrorHandler = () => {
       if (checkedSubscription) return;
       const token = localStorage.getItem('token');
       if (!token) {
-        console.log('Not authenticated, skipping initial subscription check');
+        // console.log('Not authenticated, skipping initial subscription check');
         return;
       }
 
@@ -162,11 +162,11 @@ const SubscriptionErrorHandler = () => {
       // Set local storage based on real subscription data
       if (hasAccess) {
         localStorage.setItem('has_active_access', 'true');
-        console.log('User has active subscription access');
+        // console.log('User has active subscription access');
       } else {
         // Clear access flag if no active access
         localStorage.removeItem('has_active_access');
-        console.log('User does not have active subscription access');
+        // console.log('User does not have active subscription access');
 
         // Trigger renewal flow immediately if needed
         // and not already on the renewal page
@@ -202,7 +202,7 @@ const SubscriptionErrorHandler = () => {
 
           // Redirect to dashboard if on home page
           if (window.location.pathname === '/') {
-            console.log('User has active access, redirecting to dashboard');
+            // console.log('User has active access, redirecting to dashboard');
             router.push('/dashboard');
           }
         }
@@ -221,7 +221,7 @@ const SubscriptionErrorHandler = () => {
     const handleErrors = (event: ErrorEvent) => {
       // Skip if user has active access
       if (localStorage.getItem('has_active_access') === 'true') {
-        console.log('Ignoring subscription error - user has active access');
+        // console.log('Ignoring subscription error - user has active access');
         event.preventDefault();
         event.stopPropagation();
         return;
@@ -236,7 +236,7 @@ const SubscriptionErrorHandler = () => {
           const hasAccess = determineAccessStatus(data);
 
           if (hasAccess) {
-            console.log('Verified active subscription, preventing redirect');
+            // console.log('Verified active subscription, preventing redirect');
             localStorage.setItem('has_active_access', 'true');
             event.preventDefault();
             event.stopPropagation();
@@ -244,7 +244,7 @@ const SubscriptionErrorHandler = () => {
           }
 
           // No active access, trigger renewal flow
-          console.log('Subscription verification confirmed no active access, redirecting to renewal');
+          // console.log('Subscription verification confirmed no active access, redirecting to renewal');
           checkForExpiredSubscription();
         });
       }
@@ -269,13 +269,13 @@ const SubscriptionErrorHandler = () => {
 
           // Notify components
           window.dispatchEvent(new Event('subscription-changed'));
-          console.log('Forced expired simulation active');
+          // console.log('Forced expired simulation active');
         },
         checkStatus: async () => {
           const data = await checkSubscriptionStatus();
-          console.log("Current subscription data (RAW):", data);
+          // console.log("Current subscription data (RAW):", data);
           const hasAccess = determineAccessStatus(data);
-          console.log("Has access:", hasAccess);
+          // console.log("Has access:", hasAccess);
           return { data, hasAccess };
         },
         logApiCall: async () => {

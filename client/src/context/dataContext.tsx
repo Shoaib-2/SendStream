@@ -32,18 +32,18 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
     const connectWebSocket = () => {
       if (!token) {
-        console.log('No authentication token found for WebSocket connection');
+        // console.log('No authentication token found for WebSocket connection');
         return;
       }
 
       try {
         const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:5000/ws';
-        console.log('Attempting WebSocket connection to:', wsUrl);
+        // console.log('Attempting WebSocket connection to:', wsUrl);
 
         const socket = new WebSocket(`${wsUrl}?token=${token}`);
 
         socket.onopen = () => {
-          console.log('WebSocket connected successfully');
+          // console.log('WebSocket connected successfully');
         };
 
         socket.onmessage = (event: WebSocketEventMap['message']) => {
@@ -55,7 +55,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
               ));
             } else if (data.type === 'subscriber_update') {
               // Update subscribers from WebSocket event
-              console.log('WebSocket subscriber update:', data.data);
+              // console.log('WebSocket subscriber update:', data.data);
               setSubscribers(prev => prev.map(sub =>
                 sub.id === data.data.id ? { ...sub, status: data.data.status } : sub
               ));
@@ -69,7 +69,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           console.log('WebSocket disconnected:', event.code, event.reason);
           // Only attempt to reconnect if it wasn't closed due to auth failure and we have a token
           if (event.code !== 1008 && localStorage.getItem('token')) {
-            console.log('Attempting to reconnect WebSocket in 3 seconds...');
+            // console.log('Attempting to reconnect WebSocket in 3 seconds...');
             setTimeout(connectWebSocket, 3000);
           }
         };
@@ -79,7 +79,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           // Check if token might be invalid
           const currentToken = localStorage.getItem('token');
           if (currentToken !== token) {
-            console.log('Token changed, closing current socket');
+            // console.log('Token changed, closing current socket');
             socket.close();
           }
         };
@@ -94,13 +94,13 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     if (token) {
       connectWebSocket();
     } else {
-      console.log('No token available for WebSocket connection');
+      // console.log('No token available for WebSocket connection');
     }
 
     // Cleanup WebSocket connection on unmount or token change
     return () => {
       if (ws) {
-        console.log('Cleaning up WebSocket connection');
+        // console.log('Cleaning up WebSocket connection');
         ws.close();
         setWs(null);
       }
@@ -134,7 +134,7 @@ useEffect(() => {
     // Check for token before attempting to fetch data
     const token = localStorage.getItem('token');
     if (!token) {
-      console.log('No token available, skipping data fetch');
+      // console.log('No token available, skipping data fetch');
       setSubscribers([]);
       setNewsletters([]);
       setIsLoading(false);
@@ -151,7 +151,7 @@ useEffect(() => {
     try {
       setIsLoading(true);
       if (!isInitialLoad) {
-        console.log(`Fetching data (attempt ${fetchAttempts + 1})...`);
+        // console.log(`Fetching data (attempt ${fetchAttempts + 1})...`);
       }
   
       // Check subscription status first before fetching data
@@ -161,15 +161,15 @@ useEffect(() => {
         const subscriptionStatus = await getSubscriptionStatus();
         if (!subscriptionStatus.data?.hasSubscription) {
           subscriptionActive = false;
-          console.log('No active subscription found');
+          // console.log('No active subscription found');
         } else if (subscriptionStatus.data?.subscription?.status !== 'active' && 
                    subscriptionStatus.data?.subscription?.status !== 'trialing') {
           subscriptionActive = false;
-          console.log(`Subscription status: ${subscriptionStatus.data?.subscription?.status}`);
+          // console.log(`Subscription status: ${subscriptionStatus.data?.subscription?.status}`);
         }
       } catch (subError) {
         // Continue even if subscription check fails
-        console.log('Subscription check error:', subError);
+        // console.log('Subscription check error:', subError);
       }
       
       // Define properly typed variables with default empty arrays
@@ -180,7 +180,7 @@ useEffect(() => {
         const response = await subscriberAPI.getAll();
         if (response) subscribersData = response;
         if (!isInitialLoad) {
-          console.log('Subscribers fetched successfully');
+          // console.log('Subscribers fetched successfully');
         }
       } catch (err) {
         if ((err as any).status === 403 && (err as any).message?.includes('Subscription expired')) {
@@ -196,7 +196,7 @@ useEffect(() => {
         const response = await newsletterAPI.getAll();
         if (response) newslettersData = response;
         if (!isInitialLoad) {
-          console.log('Newsletters fetched successfully');
+          // console.log('Newsletters fetched successfully');
         }
       } catch (err) {
         if ((err as any).status === 403 && (err as any).message?.includes('Subscription expired')) {
@@ -239,7 +239,7 @@ useEffect(() => {
                                new Date(subscriptionData?.data?.subscription?.currentPeriodEnd) > new Date();
                                
         if (canceledButPaid) {
-          console.log('Subscription is canceled but still in paid period, allowing access');
+          // console.log('Subscription is canceled but still in paid period, allowing access');
           subscriptionActive = true; // Override to allow access
         } else {
           redirecting = true;
@@ -267,7 +267,7 @@ useEffect(() => {
       if ((error as any).status === 401 && !redirecting) {
         redirecting = true;
         if (!isInitialLoad) {
-          console.log('Authentication error during data fetch, clearing token');
+          // console.log('Authentication error during data fetch, clearing token');
         }
         localStorage.removeItem('token');
         setSubscribers([]);
@@ -345,13 +345,13 @@ useEffect(() => {
         console.warn(`Subscriber with ID ${cleanId} not found in local state`);
       }
 
-      console.log(`Removing subscriber ${cleanId}, current status: ${subscriber?.status}`);
+      // console.log(`Removing subscriber ${cleanId}, current status: ${subscriber?.status}`);
 
       // Use updateStatus instead of delete to ensure mailchimp sync
       const updatedSubscriber = await subscriberAPI.updateStatus(cleanId, 'unsubscribed');
 
       if (updatedSubscriber) {
-        console.log('Subscriber status updated successfully:', updatedSubscriber.status);
+        // console.log('Subscriber status updated successfully:', updatedSubscriber.status);
 
         // Update the local state with the new status
         setSubscribers(prev => prev.map(sub =>
@@ -360,7 +360,7 @@ useEffect(() => {
 
         // Force sync with mailchimp to ensure consistency
         try {
-          console.log('Syncing with Mailchimp after status update');
+          // console.log('Syncing with Mailchimp after status update');
           await subscriberAPI.syncMailchimp();
         } catch (syncError) {
           console.error('Mailchimp sync error after status update:', syncError);

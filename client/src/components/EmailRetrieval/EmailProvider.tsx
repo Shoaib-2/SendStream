@@ -45,7 +45,7 @@ const EmailProvider: React.FC = () => {
         // Create a global variable for direct access
         window.checkoutEmail = email;
         
-        console.log('EmailProvider: Set checkout email', { email });
+        // console.log('EmailProvider: Set checkout email', { email });
       } catch (e) {
         console.error('Error setting checkout email:', e);
       }

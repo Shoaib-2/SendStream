@@ -7,7 +7,6 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recha
 import type { Newsletter } from '@/types';
 import ExpiredSubscription from '@/components/subscription/ExpiredSubscription';
 import { useRouter } from 'next/navigation';
-import axios from 'axios';
 import { emailAPI } from '@/services/api';
 
 const COLORS = ['#3B82F6', '#10B981', '#EF4444', '#F59E0B'];
@@ -32,7 +31,6 @@ export default function DashboardPage() {
   const [newsletters, setNewsletters] = useState<Newsletter[]>([]);
   const [qualityMetrics, setQualityMetrics] = useState<QualityMetrics[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<any>(null);
   const [subscriptionExpired, setSubscriptionExpired] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [shouldRedirectToLogin, setShouldRedirectToLogin] = useState(false);
@@ -98,7 +96,7 @@ export default function DashboardPage() {
       
       if (token) {
         const hasAccess = localStorage.getItem('has_active_access') === 'true';
-        console.log('Dashboard - subscription check:', hasAccess);
+        // console.log('Dashboard - subscription check:', hasAccess);
         setSubscriptionExpired(!hasAccess);
       } else {
         setShouldRedirectToLogin(true);
@@ -130,7 +128,7 @@ export default function DashboardPage() {
       try {
         // Only fetch if authenticated and subscription not expired
         if (!isAuthenticated) {
-          console.log('Not authenticated, skipping newsletter fetch');
+          // console.log('Not authenticated, skipping newsletter fetch');
           setLoading(false);
           return;
         }
@@ -142,7 +140,7 @@ export default function DashboardPage() {
         }
         
         setLoading(true);
-        console.log('Fetching newsletters');
+        // console.log('Fetching newsletters');
         const data = await newsletterAPI.getAll();
         
         if (data) {

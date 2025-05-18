@@ -122,7 +122,7 @@ interface ForgotPasswordResponse {
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
-console.log("API URL:", API_URL); // Debug log
+// console.log("API URL:", API_URL); // Debug log
 
 export class APIError extends Error {
   constructor(public status: number, message: string, public data?: any) {
@@ -235,7 +235,7 @@ api.interceptors.response.use(
       ) {
         // Set a flag that this user has valid access
         localStorage.setItem("has_active_access", "true");
-        console.log("Setting active access flag based on subscription status");
+        // console.log("Setting active access flag based on subscription status");
       } else if (
         response.data?.data?.subscription?.status === "canceled" &&
         new Date(response.data?.data?.subscription?.currentPeriodEnd) <=
@@ -409,10 +409,10 @@ api.interceptors.request.use(
         config.url.includes("/auth/check-trial-eligibility"))
     ) {
       delete config.headers.Authorization;
-      console.log(
-        "Skipping auth token for auth requests and Checing trial eligibility:",
-        config.url
-      );
+      // console.log(
+      //   "Skipping auth token for auth requests and Checing trial eligibility:",
+      //   config.url
+      // );
       return config;
     }
 
@@ -420,7 +420,7 @@ api.interceptors.request.use(
     const token = localStorage.getItem("token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-      console.log("Adding auth token to request:", config.url);
+      // console.log("Adding auth token to request:", config.url);
     } else {
       console.log("No auth token available for request:", config.url);
     }
@@ -851,7 +851,7 @@ export const analyticsAPI = {
   getSummary: async () => {
     try {
       const response = await api.get<ResponseData<any>>("/analytics/summary");
-      console.log("Analytics response:", response.data); // Debug log
+      // console.log("Analytics response:", response.data); // Debug log
       return response.data;
     } catch (error) {
       console.error("Detailed API Error:", error);
@@ -904,12 +904,12 @@ export const authAPI = {
       // Check if token exists before making the request
       const token = localStorage.getItem("token");
       if (!token) {
-        console.log("No token found, skipping auth check");
+        // console.log("No token found, skipping auth check");
         return { status: "error", authenticated: false };
       }
 
       const response = await api.get("/auth/me");
-      console.log("Auth check response:", response.data);
+      // console.log("Auth check response:", response.data);
       return { ...response.data, status: "success", authenticated: true };
     } catch (error) {
       console.error("Auth check failed:", error);
@@ -933,7 +933,7 @@ export const authAPI = {
       const response = await api.post("/auth/login", credentials, {
         timeout: 10000, // 10 second timeout
       });
-      console.log("Login response:", response.data);
+      // console.log("Login response:", response.data);
       return response.data.data;
     } catch (error) {
       console.error("Login error:", error);

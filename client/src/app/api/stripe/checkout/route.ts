@@ -12,7 +12,6 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
 const connectDB = async () => {
   if (mongoose.connection.readyState !== 1) {
     await mongoose.connect(process.env.MONGODB_URI!, {
-      // Add your connection options here
     });
   }
 };
@@ -38,7 +37,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Price ID is required' }, { status: 400 });
     }
 
-    // IMPROVED: Single robust query for user - no secondary lookup needed
     // This avoids the "User not found by ID lookup" error
     let existingUser = null;
     if (email && email.includes('@')) {

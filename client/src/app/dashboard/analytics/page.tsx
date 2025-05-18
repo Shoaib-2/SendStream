@@ -51,7 +51,7 @@ export default function AnalyticsDashboard() {
         
         // Simplified growth data fetching with proper error handling
         try {
-          console.log('Fetching growth data...');
+          // console.log('Fetching growth data...');
           // Fetch growth data for 6 months
           const growthResponse = await analyticsAPI.getGrowthData('6month');
           
@@ -72,7 +72,7 @@ export default function AnalyticsDashboard() {
                 };
               });
               
-              console.log('Formatted growth data:', formattedData);
+              // console.log('Formatted growth data:', formattedData);
               setGrowthData(formattedData);
               return; // Exit early after setting growth data
             }
@@ -89,8 +89,6 @@ export default function AnalyticsDashboard() {
                 subscribers: Number(item.subscribers || 0)
               };
             });
-            
-            console.log('Formatted growth data:', formattedData);
             setGrowthData(formattedData);
           } else {
             // Only use mock data if no data was returned at all

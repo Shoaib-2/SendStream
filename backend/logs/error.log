@@ -113,3 +113,4 @@
 2025-04-22T17:03:41.606Z [[31merror[39m]: Error details: Request failed with status code 400
 2025-04-22T17:03:43.321Z [[31merror[39m]: Error details: Request failed with status code 400
 2025-04-22T17:03:46.091Z [[31merror[39m]: Failed to update Mailchimp for div@example.com: Operation failed after 3 attempts. Last error: Request failed with status code 400
+2025-05-09T14:26:56.735Z [[31merror[39m]: Error updating settings: Validation failed: email.fromName: Path `email.fromName` is required.
