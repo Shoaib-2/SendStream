@@ -303,7 +303,7 @@ api.interceptors.response.use(
         error.response?.data?.message?.includes("Subscription expired") ||
         error.response?.data?.message?.includes("Subscription required"))
     ) {
-      console.log("Handling subscription expired error more aggressively");
+      // console.log("Handling subscription expired error more aggressively");
 
       // Force clear any problematic cache
       localStorage.removeItem("has_active_access");
@@ -332,20 +332,20 @@ api.interceptors.response.use(
 
       // For API calls during page load, resolve with null
       if (silentMode) {
-        console.log("Silencing subscription expired error during initial load");
+        // console.log("Silencing subscription expired error during initial load");
         return Promise.resolve({ data: null });
       }
     }
 
     // Handle 403 errors silently during initial load
     if (error.response?.status === 403 && silentMode) {
-      console.log("Silencing 403 error during subscription check");
+      // console.log("Silencing 403 error during subscription check");
       return Promise.resolve({ data: null });
     }
 
     // Only handle auth errors loudly if not on auth pages
     if (error.response?.status === 401 && !isOnAuthPage && !silentMode) {
-      console.log("Authentication error:", error.config?.url);
+      // console.log("Authentication error:", error.config?.url);
 
       // Track which endpoint is failing
       if (lastFailedEndpoint === error.config?.url) {
@@ -372,9 +372,9 @@ api.interceptors.response.use(
             typeof window !== "undefined" &&
             !window.location.pathname.includes("/login")
           ) {
-            console.log(
-              "Redirecting to login page after too many failed requests"
-            );
+            // console.log(
+            //   "Redirecting to login page after too many failed requests"
+            // );
             window.location.href = "/login";
           }
         }
@@ -422,7 +422,7 @@ api.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
       // console.log("Adding auth token to request:", config.url);
     } else {
-      console.log("No auth token available for request:", config.url);
+      // console.log("No auth token available for request:", config.url);
     }
 
     // Add pagination support to optimize database queries
@@ -1159,11 +1159,11 @@ export const createCheckoutSession = async (
     const user = JSON.parse(localStorage.getItem("user") || "{}");
     const email = user.email || options.email || "";
 
-    console.log("Checkout Session Email Debug:", {
-      userFromStorage: user,
-      optionsEmail: options.email,
-      finalEmail: email,
-    });
+    // console.log("Checkout Session Email Debug:", {
+    //   userFromStorage: user,
+    //   optionsEmail: options.email,
+    //   finalEmail: email,
+    // });
 
     if (!priceId) {
       throw new Error("Price ID is required");
@@ -1178,14 +1178,14 @@ export const createCheckoutSession = async (
     const cancelUrl =
       typeof window !== "undefined" ? window.location.origin : "";
 
-    console.log("Creating checkout session with:", {
-      priceId,
-      successUrl: finalSuccessUrl,
-      cancelUrl,
-      skipTrial: options.skipTrial,
-      hasEmail: !!email,
-      email: email?.substring(0, 3) + "...", // Log just first few chars for privacy
-    });
+    // console.log("Creating checkout session with:", {
+    //   priceId,
+    //   successUrl: finalSuccessUrl,
+    //   cancelUrl,
+    //   skipTrial: options.skipTrial,
+    //   hasEmail: !!email,
+    //   email: email?.substring(0, 3) + "...", // Log just first few chars for privacy
+    // });
 
     const response = await fetch("/api/stripe/checkout", {
       method: "POST",
@@ -1242,7 +1242,7 @@ export const createCheckoutSession = async (
 export const startFreeTrial = async (plan: PricingPlan, userEmail?: string) => {
   if (typeof window === 'undefined') return;
   
-  console.log('Starting trial checkout process...');
+  // console.log('Starting trial checkout process...');
   
   const isRenewal = window.location.search.includes('renew=true');
   const successUrl = `${window.location.origin}/?session_id={CHECKOUT_SESSION_ID}`;
@@ -1250,7 +1250,7 @@ export const startFreeTrial = async (plan: PricingPlan, userEmail?: string) => {
   // Get email (should already be found by components, this is a fallback)
   const email = userEmail || '';
   
-  console.log('Email for checkout:', { email });
+  // console.log('Email for checkout:', { email });
   
   // Check if this email is eligible for trial
   let forceSkipTrial = isRenewal;
@@ -1261,7 +1261,7 @@ export const startFreeTrial = async (plan: PricingPlan, userEmail?: string) => {
       const isEligible = await checkTrialEligibility(email);
       
       if (!isEligible) {
-        console.log('User not eligible for trial, forcing renewal flow');
+        // console.log('User not eligible for trial, forcing renewal flow');
         forceSkipTrial = true;
       }
     } catch (error) {
@@ -1270,7 +1270,7 @@ export const startFreeTrial = async (plan: PricingPlan, userEmail?: string) => {
   }
   
   // Final logging before checkout
-  console.log(`Proceeding to checkout (skipTrial: ${forceSkipTrial})`);
+  // console.log(`Proceeding to checkout (skipTrial: ${forceSkipTrial})`);
   
   // Create checkout session with or without trial
   try {

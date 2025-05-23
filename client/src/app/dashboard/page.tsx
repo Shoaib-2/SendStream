@@ -109,7 +109,7 @@ export default function DashboardPage() {
     
     // Listen for our custom event
     const handleSubscriptionChange = () => {
-      console.log('Dashboard detected subscription change');
+      // console.log('Dashboard detected subscription change');
       checkAuthAndSubscription();
     };
     
@@ -134,7 +134,7 @@ export default function DashboardPage() {
         }
         
         if (subscriptionExpired) {
-          console.log('Subscription expired, skipping newsletter fetch');
+          // console.log('Subscription expired, skipping newsletter fetch');
           setLoading(false);
           return;
         }

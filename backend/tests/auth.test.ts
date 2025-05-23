@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 import express, { Request, Response, NextFunction } from 'express';
 import User from '../src/models/User';
 import authRoutes from '../src/routes/auth.routes';
-import { jest, describe, beforeAll, afterAll, beforeEach, it, expect } from '@jest/globals';
+import { describe, beforeAll, afterAll, beforeEach, it, expect } from '@jest/globals';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import { errorHandler } from '../src/middleware/error.middleware';

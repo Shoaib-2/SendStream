@@ -47,7 +47,7 @@ export class NewsletterController {
     try {
       const newsletters = await Newsletter.find({
         createdBy: req.user._id
-      }).sort({ createdAt: -1 });
+      }).sort({ createdAt: -1 }).lean();
   
       const qualityStats: {
         averageScore: number,

@@ -14,7 +14,7 @@ const Hero: React.FC<HeroProps> = ({ isRenewal = false }) => {
     const email = findUserEmail();
     recordTrialAttempt(email);
     
-    console.log('Hero - Email for checkout:', { email });
+    // console.log('Hero - Email for checkout:', { email });
     await startFreeTrial(pricingPlans[0], email);
   };
 

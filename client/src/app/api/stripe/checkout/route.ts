@@ -25,13 +25,13 @@ export async function POST(request: NextRequest) {
     let { priceId, successUrl, cancelUrl, skipTrial = false, email = '' } = body;
     
     // More thorough logging for debugging
-    console.log('DETAILED CHECKOUT REQUEST:', {
-      email,
-      hasEmail: !!email && email.includes('@'),
-      emailLength: email?.length,
-      skipTrial,
-      fullBody: body
-    });
+    // console.log('DETAILED CHECKOUT REQUEST:', {
+    //   email,
+    //   hasEmail: !!email && email.includes('@'),
+    //   emailLength: email?.length,
+    //   skipTrial,
+    //   fullBody: body
+    // });
 
     if (!priceId) {
       return NextResponse.json({ error: 'Price ID is required' }, { status: 400 });
@@ -44,14 +44,14 @@ export async function POST(request: NextRequest) {
         existingUser = await User.findOne({ email }).lean() as any;
         
         if (existingUser) {
-          console.log('User found:', {
-            _id: existingUser._id,
-            email: existingUser.email,
-            trialEndsAt: existingUser.trialEndsAt,
-            trialUsed: existingUser.trialUsed,
-            subscriptionStatus: existingUser.subscriptionStatus,
-            hasStripeSubscription: !!existingUser.stripeSubscriptionId
-          });
+          // console.log('User found:', {
+          //   _id: existingUser._id,
+          //   email: existingUser.email,
+          //   trialEndsAt: existingUser.trialEndsAt,
+          //   trialUsed: existingUser.trialUsed,
+          //   subscriptionStatus: existingUser.subscriptionStatus,
+          //   hasStripeSubscription: !!existingUser.stripeSubscriptionId
+          // });
         } else {
           console.log('No existing user found with email:', email);
         }
@@ -60,14 +60,14 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    console.log('Checkout trial check:', {
-      email,
-      emailProvided: !!email,
-      emailValid: email?.includes('@'),
-      userExists: !!existingUser,
-      trialUsed: existingUser?.trialUsed,
-      skipTrial
-    });
+    // console.log('Checkout trial check:', {
+    //   email,
+    //   emailProvided: !!email,
+    //   emailValid: email?.includes('@'),
+    //   userExists: !!existingUser,
+    //   trialUsed: existingUser?.trialUsed,
+    //   skipTrial
+    // });
 
     // IMPROVED: Better detection of used trials
     // This handles cases where:
@@ -85,17 +85,17 @@ export async function POST(request: NextRequest) {
                         hasExpiredTrial || 
                         (!!existingUser?.stripeSubscriptionId && !hasActiveTrialWithCanceledStatus);
                         
-    console.log('Enhanced trial eligibility check:', {
-      email,
-      trialUsed: existingUser?.trialUsed,
-      trialEndsAt: existingUser?.trialEndsAt,
-      hasExpiredTrial,
-      hasActiveTrialWithCanceledStatus,
-      hasStripeSubscription: !!existingUser?.stripeSubscriptionId,
-      subscriptionStatus: existingUser?.subscriptionStatus,
-      finalHasUsedTrial: hasUsedTrial,
-      skipTrial
-    });
+    // console.log('Enhanced trial eligibility check:', {
+    //   email,
+    //   trialUsed: existingUser?.trialUsed,
+    //   trialEndsAt: existingUser?.trialEndsAt,
+    //   hasExpiredTrial,
+    //   hasActiveTrialWithCanceledStatus,
+    //   hasStripeSubscription: !!existingUser?.stripeSubscriptionId,
+    //   subscriptionStatus: existingUser?.subscriptionStatus,
+    //   finalHasUsedTrial: hasUsedTrial,
+    //   skipTrial
+    // });
 
     // Block free trial for users who have used theirs, unless explicitly skipping trial
     if (email && email.includes('@') && existingUser && hasUsedTrial && !skipTrial) {
@@ -141,17 +141,17 @@ export async function POST(request: NextRequest) {
           );
           
           if (subscriptions.data.length > 0) {
-            console.log('Found subscription history in Stripe:', {
-              customerId,
-              subscriptionCount: subscriptions.data.length,
-              hasActiveSubscription,
-              hasCanceledButActiveSubscription,
-              hasPastSubscription
-            });
+            // console.log('Found subscription history in Stripe:', {
+            //   customerId,
+            //   subscriptionCount: subscriptions.data.length,
+            //   hasActiveSubscription,
+            //   hasCanceledButActiveSubscription,
+            //   hasPastSubscription
+            // });
             
             // Skip trial for past subscribers, but respect active trials
             if (hasPastSubscription && !hasActiveSubscription && !hasCanceledButActiveSubscription) {
-              console.log('User had past subscriptions, forcing renewal without trial');
+              // console.log('User had past subscriptions, forcing renewal without trial');
               skipTrial = true;
             }
           }
@@ -206,11 +206,11 @@ export async function POST(request: NextRequest) {
         // If user has an active trial that's been canceled, respect that status
         // and don't give them a new trial
         if (hasActiveTrialWithCanceledStatus && !skipTrial) {
-          console.log('User has active but canceled trial, redirecting to existing subscription');
+          // console.log('User has active but canceled trial, redirecting to existing subscription');
           skipTrial = true;
         }
         
-        console.log('User update data:', updateData);
+        // console.log('User update data:', updateData);
         
         // IMPROVED: Reliable user update with error handling
         const user = await User.findOneAndUpdate(
@@ -222,12 +222,12 @@ export async function POST(request: NextRequest) {
         if (!user) {
           console.error('Failed to create/update user record');
         } else {
-          console.log('User updated for checkout:', {
-            email,
-            userId: user._id,
-            trialUsed: user.trialUsed,
-            skipTrial
-          });
+          // console.log('User updated for checkout:', {
+          //   email,
+          //   userId: user._id,
+          //   trialUsed: user.trialUsed,
+          //   skipTrial
+          // });
           
           // Create or update subscriber if we have a valid user
           try {
@@ -248,22 +248,22 @@ export async function POST(request: NextRequest) {
         console.error('Error creating/updating user/subscriber:', error);
       }
     } else {
-      console.log('No valid email provided for checkout, Stripe will collect it');
+      // console.log('No valid email provided for checkout, Stripe will collect it');
     }
 
     // IMPROVED: Trial period logic based on all the gathered data
     if (!skipTrial) {
       if (hasUsedTrial || hasExpiredTrial) {
-        console.log('User previously used trial, removing trial period');
+        // console.log('User previously used trial, removing trial period');
         // Don't add trial period
       } else {
-        console.log('Adding trial period for eligible user');
+        // console.log('Adding trial period for eligible user');
         sessionParams.subscription_data = {
           trial_period_days: 14,
         };
       }
     } else {
-      console.log('Trial skipped as requested');
+      // console.log('Trial skipped as requested');
     }
 
     try {

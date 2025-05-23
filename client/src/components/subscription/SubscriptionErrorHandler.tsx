@@ -84,7 +84,7 @@ const SubscriptionErrorHandler = () => {
     const hasAccess = hasActiveSubscription || hasActiveTrialPeriod || hasCanceledButActiveAccess;
 
     if (hasCanceledButActiveAccess) {
-      console.log('Subscription is canceled but still active until', currentPeriodEnd?.toISOString());
+      // console.log('Subscription is canceled but still active until', currentPeriodEnd?.toISOString());
     }
 
     return hasAccess;
@@ -93,7 +93,7 @@ const SubscriptionErrorHandler = () => {
   // Actively check for expired subscriptions and trigger renewal flow
   const checkForExpiredSubscription = async () => {
     if (localStorage.getItem('force_expired_simulation') === 'true') {
-      console.log('Returning forced expired subscription for simulation');
+      // console.log('Returning forced expired subscription for simulation');
       return {
         data: { status: 'success' },
         subscription: {
