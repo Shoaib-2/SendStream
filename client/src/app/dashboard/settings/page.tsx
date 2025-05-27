@@ -426,39 +426,43 @@ export default function SettingsPage() {
 
             {connectionStatus.mailchimp.connected && (
               <div className="mt-4 sm:mt-6 space-y-4 border-t border-gray-700 pt-4 sm:pt-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
-                  <div>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex-1 min-w-0">
                     <h3 className="font-medium text-sm sm:text-base">Enable Mailchimp Integration</h3>
-                    <p className="text-xs sm:text-sm text-gray-400">Connect your newsletter with Mailchimp</p>
+                    <p className="text-xs sm:text-sm text-gray-400 truncate">Connect your newsletter with Mailchimp</p>
                   </div>
-                  <button
-                    onClick={() => toggleIntegration('mailchimp', !settings.mailchimp.enabled)}
-                    className="text-gray-300 hover:text-blue-400 self-end sm:self-center"
-                  >
-                    {settings.mailchimp.enabled ? (
-                      <ToggleRight className="w-8 h-8 sm:w-10 sm:h-10 text-blue-500" />
-                    ) : (
-                      <ToggleLeft className="w-8 h-8 sm:w-10 sm:h-10" />
-                    )}
-                  </button>
+                  <div className="flex-shrink-0">
+                    <button
+                      onClick={() => toggleIntegration('mailchimp', !settings.mailchimp.enabled)}
+                      className="text-gray-300 hover:text-blue-400 p-1"
+                    >
+                      {settings.mailchimp.enabled ? (
+                        <ToggleRight className="w-8 h-8 sm:w-10 sm:h-10 text-blue-500" />
+                      ) : (
+                        <ToggleLeft className="w-8 h-8 sm:w-10 sm:h-10" />
+                      )}
+                    </button>
+                  </div>
                 </div>
 
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
-                  <div>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex-1 min-w-0">
                     <h3 className="font-medium text-sm sm:text-base">Auto-Sync on Login</h3>
-                    <p className="text-xs sm:text-sm text-gray-400">Automatically sync with Mailchimp when loading subscribers</p>
+                    <p className="text-xs sm:text-sm text-gray-400 truncate">Automatically sync with Mailchimp when loading subscribers</p>
                   </div>
-                  <button
-                    onClick={() => toggleAutoSync(!settings.mailchimp.autoSync)}
-                    className="text-gray-300 hover:text-blue-400 self-end sm:self-center"
-                    disabled={!settings.mailchimp.enabled}
-                  >
-                    {settings.mailchimp.autoSync ? (
-                      <ToggleRight className="w-8 h-8 sm:w-10 sm:h-10 text-blue-500" />
-                    ) : (
-                      <ToggleLeft className="w-8 h-8 sm:w-10 sm:h-10" />
-                    )}
-                  </button>
+                  <div className="flex-shrink-0">
+                    <button
+                      onClick={() => toggleAutoSync(!settings.mailchimp.autoSync)}
+                      className="text-gray-300 hover:text-blue-400 p-1"
+                      disabled={!settings.mailchimp.enabled}
+                    >
+                      {settings.mailchimp.autoSync ? (
+                        <ToggleRight className="w-8 h-8 sm:w-10 sm:h-10 text-blue-500" />
+                      ) : (
+                        <ToggleLeft className="w-8 h-8 sm:w-10 sm:h-10" />
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
