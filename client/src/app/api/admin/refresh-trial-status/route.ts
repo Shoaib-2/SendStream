@@ -1,24 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import mongoose from 'mongoose';
 import User from '../../../../utils/lib/models/User';
 import Stripe from 'stripe';
+import { connectMongoose } from '@/utils/lib/mongodb';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2025-02-24.acacia',
 });
 
-// Ensure MongoDB connection before processing
-const connectDB = async () => {
-  if (mongoose.connection.readyState !== 1) {
-    await mongoose.connect(process.env.MONGODB_URI!, {
-      // Add your connection options here
-    });
-  }
-};
-
 export async function POST(request: NextRequest) {
   try {
-    await connectDB();
+    // Use the standardized connection
+    await connectMongoose();
+
     const body = await request.json();
     const { email } = body;
     

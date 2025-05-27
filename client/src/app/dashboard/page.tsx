@@ -342,17 +342,17 @@ export default function DashboardPage() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-gray-800/50 backdrop-blur-sm p-6 rounded-2xl">
-              <h2 className="text-xl font-semibold mb-6">Content Quality Distribution</h2>
-              <div className="h-64">
+            <div className="bg-gray-800/50 backdrop-blur-sm p-4 sm:p-6 rounded-2xl">
+              <h2 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-6">Content Quality Distribution</h2>
+              <div className="relative h-64 sm:h-80 md:h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
                       data={newsletterData}
                       cx="50%"
                       cy="50%"
-                      innerRadius={60}
-                      outerRadius={80}
+                      innerRadius={40}
+                      outerRadius={60}
                       paddingAngle={5}
                       dataKey="value"
                     >
@@ -362,17 +362,22 @@ export default function DashboardPage() {
                     </Pie>
                     <Tooltip content={<CustomTooltip />} />
                     <Legend 
-                      layout="vertical" 
-                      align="right" 
-                      verticalAlign="middle"
-                      formatter={(value) => <span className="text-gray-400">{value}</span>}
+                      layout="horizontal"
+                      align="center"
+                      verticalAlign="bottom"
+                      wrapperStyle={{
+                        paddingTop: '20px'
+                      }}
+                      formatter={(value) => (
+                        <span className="text-xs sm:text-sm text-gray-400">{value}</span>
+                      )}
                     />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
             </div>
 
-            <div className="bg-gray-800/50 backdrop-blur-sm p-6 rounded-2xl">
+            <div className="bg-gray-800/50 backdrop-blur-sm p-4 sm:p-6 rounded-2xl">
               <h2 className="text-xl font-semibold mb-4">Latest Newsletter Insights</h2>
               <div className="space-y-4">
                 {newsletters.slice(0, 3).map((newsletter, idx) => (

@@ -1,8 +1,8 @@
 // server.ts
 import express, { RequestHandler } from 'express';
 import cors from 'cors';
-import mongoose from 'mongoose';
 import dotenv from 'dotenv';
+import { connectDB } from './config/database';
 import authRoutes from './routes/auth.routes';
 import cookieParser from 'cookie-parser'; // Add cookie-parser
 import { Request, Response, NextFunction } from "express";
@@ -18,6 +18,7 @@ import subscriptionRoutes from './routes/subscription.routes';
 import { protect } from '../src/middleware/auth/auth.middleware'; // Make sure this exists
 import { checkSubscription } from '../src/middleware/susbcription.middleware';
 import emailRoutes from './routes/email.routes';
+import mongoose from 'mongoose';
 
 dotenv.config();
 
@@ -102,7 +103,6 @@ app.use('/api/settings', settingsRoutes);
 app.use('/api/subscription', subscriptionRoutes); 
 
 
-
 app.use((req: Request, res: Response) => {
  console.log(`404 - Not Found: ${req.method} ${req.originalUrl}`);
  res.status(404).json({
@@ -116,22 +116,22 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
 });
 
 const PORT = process.env.PORT || 5000;
-const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/newsletter';
 
-mongoose
- .connect(mongoUri)
- .then(() => {
-   console.log('MongoDB connected successfully');
-   server.listen(PORT, () => {
-     console.log(`Server running on port ${PORT}`);
-     console.log('WebSocket server initialized on port', PORT);
-     console.log('Available routes:');
-     console.log(' - /api/auth');
-     console.log(' - /api/subscribers');
-     console.log(' - /api/newsletters');
-     console.log(' - /api/subscription'); 
-   });
- });
+// Initialize database connection before starting server
+connectDB().then(() => {
+  server.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+    console.log('WebSocket server initialized on port', PORT);
+    console.log('Available routes:');
+    console.log(' - /api/auth');
+    console.log(' - /api/subscribers');
+    console.log(' - /api/newsletters');
+    console.log(' - /api/subscription'); 
+  });
+}).catch(err => {
+  console.error('Failed to connect to MongoDB:', err);
+  process.exit(1);
+});
 
 mongoose.connection.on('error', (err) => {
  console.error('MongoDB connection error:', err);

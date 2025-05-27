@@ -2,10 +2,46 @@
 import mongoose from 'mongoose';
 import { logger } from '../utils/logger';
 
+// Connection ready state
+let isConnected = false;
+
 export const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(process.env.MONGODB_URI!);
+    if (isConnected) {
+      logger.info('Using existing database connection');
+      return;
+    }
+
+    const conn = await mongoose.connect(process.env.MONGODB_URI!, {
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+    });
+
+    isConnected = true;
     logger.info(`MongoDB Connected: ${conn.connection.host}`);
+
+    // Handle connection errors
+    mongoose.connection.on('error', (err) => {
+      logger.error('MongoDB connection error:', err);
+      isConnected = false;
+    });
+
+    mongoose.connection.on('disconnected', () => {
+      logger.warn('MongoDB disconnected');
+      isConnected = false;
+    });
+
+    // Graceful shutdown
+    process.on('SIGINT', async () => {
+      try {
+        await mongoose.connection.close();
+        logger.info('MongoDB connection closed through app termination');
+        process.exit(0);
+      } catch (err) {
+        logger.error('Error closing MongoDB connection:', err);
+        process.exit(1);
+      }
+    });
 
     // Add indexes
     await createIndexes();

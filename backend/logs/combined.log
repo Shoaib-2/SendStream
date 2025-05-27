@@ -5767,3 +5767,98 @@
 2025-05-23T14:39:15.485Z [[32minfo[39m]: Gmail transporter created
 2025-05-23T14:40:49.070Z [[32minfo[39m]: Gmail transporter created
 2025-05-23T14:47:29.796Z [[32minfo[39m]: Gmail transporter created
+2025-05-27T16:36:36.325Z [[32minfo[39m]: Gmail transporter created
+2025-05-27T16:36:57.487Z [[32minfo[39m]: Successfully validated initialize list response
+2025-05-27T16:36:57.489Z [[32minfo[39m]: Starting subscriber sync with Mailchimp
+2025-05-27T16:36:57.923Z [[32minfo[39m]: Successfully validated sync subscribers response
+2025-05-27T16:36:57.924Z [[32minfo[39m]: Synced 3 subscribers from Mailchimp
+2025-05-27T16:36:57.925Z [[32minfo[39m]: Status breakdown - Active: 0, Unsubscribed: 3
+2025-05-27T16:36:59.017Z [[32minfo[39m]: Successfully validated initialize list response
+2025-05-27T16:36:59.017Z [[32minfo[39m]: Starting subscriber sync with Mailchimp
+2025-05-27T16:36:59.349Z [[32minfo[39m]: Successfully validated sync subscribers response
+2025-05-27T16:36:59.350Z [[32minfo[39m]: Synced 3 subscribers from Mailchimp
+2025-05-27T16:36:59.350Z [[32minfo[39m]: Status breakdown - Active: 0, Unsubscribed: 3
+2025-05-27T16:37:06.029Z [[32minfo[39m]: Successfully validated initialize list response
+2025-05-27T16:37:06.030Z [[32minfo[39m]: Starting subscriber sync with Mailchimp
+2025-05-27T16:37:06.359Z [[32minfo[39m]: Successfully validated sync subscribers response
+2025-05-27T16:37:06.360Z [[32minfo[39m]: Synced 3 subscribers from Mailchimp
+2025-05-27T16:37:06.361Z [[32minfo[39m]: Status breakdown - Active: 0, Unsubscribed: 3
+2025-05-27T16:56:32.213Z [[32minfo[39m]: Gmail transporter created
+2025-05-27T16:59:54.627Z [[32minfo[39m]: Gmail transporter created
+2025-05-27T16:59:55.873Z [[32minfo[39m]: MongoDB Connected: ac-mjvxksg-shard-00-02.h06439j.mongodb.net
+2025-05-27T16:59:56.469Z [[32minfo[39m]: Database indexes created successfully
+2025-05-27T17:01:22.473Z [[32minfo[39m]: Successfully validated initialize list response
+2025-05-27T17:01:22.474Z [[32minfo[39m]: Starting subscriber sync with Mailchimp
+2025-05-27T17:01:22.819Z [[32minfo[39m]: Successfully validated sync subscribers response
+2025-05-27T17:01:22.820Z [[32minfo[39m]: Synced 3 subscribers from Mailchimp
+2025-05-27T17:01:22.820Z [[32minfo[39m]: Status breakdown - Active: 0, Unsubscribed: 3
+2025-05-27T17:01:23.987Z [[32minfo[39m]: Successfully validated initialize list response
+2025-05-27T17:01:23.987Z [[32minfo[39m]: Starting subscriber sync with Mailchimp
+2025-05-27T17:01:24.335Z [[32minfo[39m]: Successfully validated sync subscribers response
+2025-05-27T17:01:24.335Z [[32minfo[39m]: Synced 3 subscribers from Mailchimp
+2025-05-27T17:01:24.336Z [[32minfo[39m]: Status breakdown - Active: 0, Unsubscribed: 3
+2025-05-27T17:04:54.583Z [[32minfo[39m]: Successfully validated initialize list response
+2025-05-27T17:04:54.584Z [[32minfo[39m]: Starting subscriber sync with Mailchimp
+2025-05-27T17:04:54.940Z [[32minfo[39m]: Successfully validated sync subscribers response
+2025-05-27T17:04:54.940Z [[32minfo[39m]: Synced 3 subscribers from Mailchimp
+2025-05-27T17:04:54.940Z [[32minfo[39m]: Status breakdown - Active: 0, Unsubscribed: 3
+2025-05-27T17:04:55.933Z [[32minfo[39m]: Successfully validated initialize list response
+2025-05-27T17:04:55.933Z [[32minfo[39m]: Starting subscriber sync with Mailchimp
+2025-05-27T17:04:56.262Z [[32minfo[39m]: Successfully validated sync subscribers response
+2025-05-27T17:04:56.262Z [[32minfo[39m]: Synced 3 subscribers from Mailchimp
+2025-05-27T17:04:56.262Z [[32minfo[39m]: Status breakdown - Active: 0, Unsubscribed: 3
+2025-05-27T17:04:57.277Z [[32minfo[39m]: Successfully validated initialize list response
+2025-05-27T17:04:57.278Z [[32minfo[39m]: Starting subscriber sync with Mailchimp
+2025-05-27T17:04:57.607Z [[32minfo[39m]: Successfully validated sync subscribers response
+2025-05-27T17:04:57.608Z [[32minfo[39m]: Synced 3 subscribers from Mailchimp
+2025-05-27T17:04:57.608Z [[32minfo[39m]: Status breakdown - Active: 0, Unsubscribed: 3
+2025-05-27T17:10:18.687Z [[32minfo[39m]: Successfully validated initialize list response
+2025-05-27T17:10:18.688Z [[32minfo[39m]: Starting subscriber sync with Mailchimp
+2025-05-27T17:10:19.012Z [[32minfo[39m]: Successfully validated sync subscribers response
+2025-05-27T17:10:19.013Z [[32minfo[39m]: Synced 3 subscribers from Mailchimp
+2025-05-27T17:10:19.013Z [[32minfo[39m]: Status breakdown - Active: 0, Unsubscribed: 3
+2025-05-27T17:10:19.978Z [[32minfo[39m]: Successfully validated initialize list response
+2025-05-27T17:10:19.979Z [[32minfo[39m]: Starting subscriber sync with Mailchimp
+2025-05-27T17:10:20.311Z [[32minfo[39m]: Successfully validated sync subscribers response
+2025-05-27T17:10:20.311Z [[32minfo[39m]: Synced 3 subscribers from Mailchimp
+2025-05-27T17:10:20.311Z [[32minfo[39m]: Status breakdown - Active: 0, Unsubscribed: 3
+2025-05-27T17:10:32.828Z [[32minfo[39m]: Successfully validated initialize list response
+2025-05-27T17:10:32.829Z [[32minfo[39m]: Starting subscriber sync with Mailchimp
+2025-05-27T17:10:33.164Z [[32minfo[39m]: Successfully validated sync subscribers response
+2025-05-27T17:10:33.164Z [[32minfo[39m]: Synced 3 subscribers from Mailchimp
+2025-05-27T17:10:33.164Z [[32minfo[39m]: Status breakdown - Active: 0, Unsubscribed: 3
+2025-05-27T17:10:34.151Z [[32minfo[39m]: Successfully validated initialize list response
+2025-05-27T17:10:34.152Z [[32minfo[39m]: Starting subscriber sync with Mailchimp
+2025-05-27T17:10:34.479Z [[32minfo[39m]: Successfully validated sync subscribers response
+2025-05-27T17:10:34.479Z [[32minfo[39m]: Synced 3 subscribers from Mailchimp
+2025-05-27T17:10:34.479Z [[32minfo[39m]: Status breakdown - Active: 0, Unsubscribed: 3
+2025-05-27T17:14:46.018Z [[32minfo[39m]: Successfully validated initialize list response
+2025-05-27T17:14:46.018Z [[32minfo[39m]: Starting subscriber sync with Mailchimp
+2025-05-27T17:14:46.321Z [[32minfo[39m]: Successfully validated sync subscribers response
+2025-05-27T17:14:46.322Z [[32minfo[39m]: Synced 3 subscribers from Mailchimp
+2025-05-27T17:14:46.322Z [[32minfo[39m]: Status breakdown - Active: 0, Unsubscribed: 3
+2025-05-27T17:14:47.347Z [[32minfo[39m]: Successfully validated initialize list response
+2025-05-27T17:14:47.348Z [[32minfo[39m]: Starting subscriber sync with Mailchimp
+2025-05-27T17:14:47.655Z [[32minfo[39m]: Successfully validated sync subscribers response
+2025-05-27T17:14:47.656Z [[32minfo[39m]: Synced 3 subscribers from Mailchimp
+2025-05-27T17:14:47.656Z [[32minfo[39m]: Status breakdown - Active: 0, Unsubscribed: 3
+2025-05-27T17:34:44.939Z [[32minfo[39m]: Successfully validated initialize list response
+2025-05-27T17:34:44.940Z [[32minfo[39m]: Starting subscriber sync with Mailchimp
+2025-05-27T17:34:45.250Z [[32minfo[39m]: Successfully validated sync subscribers response
+2025-05-27T17:34:45.250Z [[32minfo[39m]: Synced 3 subscribers from Mailchimp
+2025-05-27T17:34:45.250Z [[32minfo[39m]: Status breakdown - Active: 0, Unsubscribed: 3
+2025-05-27T17:34:46.257Z [[32minfo[39m]: Successfully validated initialize list response
+2025-05-27T17:34:46.257Z [[32minfo[39m]: Starting subscriber sync with Mailchimp
+2025-05-27T17:34:46.584Z [[32minfo[39m]: Successfully validated sync subscribers response
+2025-05-27T17:34:46.584Z [[32minfo[39m]: Synced 3 subscribers from Mailchimp
+2025-05-27T17:34:46.585Z [[32minfo[39m]: Status breakdown - Active: 0, Unsubscribed: 3
+2025-05-27T17:41:00.386Z [[32minfo[39m]: Successfully validated initialize list response
+2025-05-27T17:41:00.387Z [[32minfo[39m]: Starting subscriber sync with Mailchimp
+2025-05-27T17:41:00.718Z [[32minfo[39m]: Successfully validated sync subscribers response
+2025-05-27T17:41:00.719Z [[32minfo[39m]: Synced 3 subscribers from Mailchimp
+2025-05-27T17:41:00.719Z [[32minfo[39m]: Status breakdown - Active: 0, Unsubscribed: 3
+2025-05-27T17:41:01.759Z [[32minfo[39m]: Successfully validated initialize list response
+2025-05-27T17:41:01.759Z [[32minfo[39m]: Starting subscriber sync with Mailchimp
+2025-05-27T17:41:02.082Z [[32minfo[39m]: Successfully validated sync subscribers response
+2025-05-27T17:41:02.082Z [[32minfo[39m]: Synced 3 subscribers from Mailchimp
+2025-05-27T17:41:02.082Z [[32minfo[39m]: Status breakdown - Active: 0, Unsubscribed: 3
