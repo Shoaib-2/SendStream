@@ -13,11 +13,9 @@ export default function UnsubscribePage() {
   useEffect(() => {
     const processUnsubscribe = async () => {
       if (token) {
-        try {
-          // Make API call to backend to process the unsubscribe request
-          // Use the API_URL from the api.ts file - should be the same as NEXT_PUBLIC_API_URL
-          const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-          const response = await fetch(`${apiUrl}/subscribers/unsubscribe/${token}`, {
+        // Make API call to backend to process the unsubscribe request
+        try {          
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/subscribers/unsubscribe/${token}`, {
             method: 'GET',
             headers: {
               'Accept': 'application/json',
@@ -25,7 +23,12 @@ export default function UnsubscribePage() {
             },
           });
           
-          // After processing unsubscribe, redirect to success page
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Failed to unsubscribe');
+          }
+
+          // After successful unsubscribe, redirect to success page
           router.push(`/unsubscribe-success?token=${token}`);
         } catch (error) {
           console.error('Error unsubscribing:', error);

@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
           }
           break;
  
-        case 'customer.subscription.created':
+        
         case 'customer.subscription.updated':
           // Handle subscription updates
           const subscription = event.data.object as Stripe.Subscription;
@@ -81,13 +81,13 @@ export async function POST(request: NextRequest) {
           const isCanceled = subscription.cancel_at_period_end;
           const canceled = isCanceled ? 'canceled' : subscription.status;
           
-          console.log('Subscription event:', {
-            event: event.type,
-            status: subscription.status,
-            isCanceled,
-            isTrialing,
-            trialEnd
-          });
+          // console.log('Subscription event:', {
+          //   event: event.type,
+          //   status: subscription.status,
+          //   isCanceled,
+          //   isTrialing,
+          //   trialEnd
+          // });
           
           // Update user record
           await User.findOneAndUpdate(
@@ -147,7 +147,7 @@ export async function POST(request: NextRequest) {
               }
             );
           } else {
-            console.log('No user found for deleted subscription:', customerId3);
+            // console.log('No user found for deleted subscription:', customerId3);
           }
           break;
           

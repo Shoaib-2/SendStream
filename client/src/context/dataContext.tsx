@@ -37,7 +37,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       }
 
       try {
-        const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:5000/ws';
+        const wsUrl = process.env.NEXT_PUBLIC_WS_URL;
         // console.log('Attempting WebSocket connection to:', wsUrl);
 
         const socket = new WebSocket(`${wsUrl}?token=${token}`);

@@ -14,9 +14,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     
     // Forward the request to your backend API
-    try {
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-      const response = await axios.post(`${backendUrl}/subscription/cancel`, body, {
+    try {      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/subscription/cancel`, body, {
         headers: {
           'Authorization': authHeader,
           'Content-Type': 'application/json'

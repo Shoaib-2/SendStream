@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     
     // Find all users
     const users = await User.find({});
-    console.log(`Found ${users.length} users to check`);
+    // console.log(`Found ${users.length} users to check`);
     
     const results = {
       total: users.length,
@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
                 }
                 
                 needsUpdate = true;
-                console.log(`Found Stripe history for ${user.email}`);
+                // console.log(`Found Stripe history for ${user.email}`);
               }
             }
           } catch (stripeError) {

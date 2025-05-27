@@ -194,10 +194,8 @@ export const forgotPassword = async (req: Request, res: Response, next: NextFunc
       .digest('hex');
     
     user.passwordResetExpires = resetTokenExpires;
-    await user.save({ validateBeforeSave: false });
-
-    // Create reset URL
-    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password/${resetToken}`;
+    await user.save({ validateBeforeSave: false });    // Create reset URL
+    const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
 
     // Send email
     try {

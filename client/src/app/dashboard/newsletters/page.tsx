@@ -62,18 +62,27 @@ const NewsletterDashboard = () => {
     }
   }, []);
 
-  React.useEffect(() => {
+React.useEffect(() => {
     fetchNewsletterStats();
+
+    const ws = new WebSocket(`${process.env.NEXT_PUBLIC_WS_URL}`);
     
-    const ws = new WebSocket('ws://localhost:5000/ws');
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      if (data.type === 'newsletter_update') {
-        fetchNewsletterStats();
+    // Only set up the message listener after the connection is open
+    ws.onopen = () => {
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        if (data.type === 'newsletter_update') {
+          fetchNewsletterStats();
+        }
+      };
+    };
+
+    // Close the WebSocket only if it's in a connected state
+    return () => {
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.close();
       }
     };
-  
-    return () => ws.close();
   }, [fetchNewsletterStats]);
 
   const metrics = [

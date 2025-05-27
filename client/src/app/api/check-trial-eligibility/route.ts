@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     }
     
     // First check with backend
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
     const backendResponse = await fetch(
       `${apiUrl}/auth/check-trial-eligibility?email=${encodeURIComponent(email)}&includeSubscription=true&includeTrialData=true`,
       {

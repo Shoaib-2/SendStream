@@ -197,11 +197,11 @@ export class EmailService {
     const unsubscribeToken = Buffer.from(subscriber._id.toString()).toString('base64');
     
     // Use the frontend URL for unsubscribe
-    const frontendUrl = process.env.FRONTEND_URL || process.env.CLIENT_URL || 'http://localhost:3000';
+    const frontendUrl = process.env.FRONTEND_URL || process.env.CLIENT_URL;
     const unsubscribeUrl = `${frontendUrl}/unsubscribe?token=${encodeURIComponent(unsubscribeToken)}`;
     logger.info('Unsubscribe URL:', unsubscribeUrl);
     
-    const serverUrl = process.env.SERVER_URL || 'http://localhost:5000';
+    const serverUrl = process.env.SERVER_URL;
     const trackingPixelUrl = `${serverUrl}/api/analytics/track-open/${newsletter._id.toString()}/${subscriber._id.toString()}`;
     
     return `

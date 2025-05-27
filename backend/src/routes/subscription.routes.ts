@@ -12,11 +12,11 @@ const router = express.Router();
 // Check if the API key exists before initializing Stripe
 const stripeApiKey = process.env.STRIPE_SECRET_KEY;
 if (!stripeApiKey) {
-  console.error('STRIPE_SECRET_KEY not found in environment variables!');
+  throw new Error('STRIPE_SECRET_KEY environment variable is required but not configured');
 }
 
-// Initialize Stripe with a fallback empty string if key is missing
-const stripe = new Stripe(stripeApiKey || 'dummy_key_for_initialization', {
+// Initialize Stripe
+const stripe = new Stripe(stripeApiKey, {
   apiVersion: '2025-02-24.acacia',
 });
 

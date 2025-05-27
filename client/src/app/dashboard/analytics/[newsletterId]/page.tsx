@@ -121,7 +121,7 @@ export default function AnalyticsDashboard() {
   ];
 
   // Debug to check if data is present
-  console.log('Growth data:', growthData);
+  // console.log('Growth data:', growthData);
 
   return (
     <div className="p-6 min-h-screen bg-gradient-to-b from-gray-900 via-gray-900 to-gray-900/50">

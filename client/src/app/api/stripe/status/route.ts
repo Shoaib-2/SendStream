@@ -11,9 +11,8 @@ export async function GET(request: NextRequest) {
     }
     
     // Forward the request to your backend API
-    try {
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-      const response = await axios.get(`${backendUrl}/subscription/status`, {
+    try {      
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/subscription/status`, {
         headers: {
           'Authorization': authHeader
         }

@@ -68,7 +68,7 @@ const broadcastSubscriberUpdate = (subscriberId: string, status: string) => {
 
 // Configure CORS for both HTTP and WebSocket
 const corsOptions = {
-  origin: process.env.CLIENT_URL || 'http://localhost:3000',
+  origin: process.env.CLIENT_URL,
   credentials: true,  // Important for cookies
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -77,8 +77,12 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // Apply CORS verification to WebSocket upgrade requests
-wss.on('headers', (headers) => {
-  headers.push('Access-Control-Allow-Origin: ' + (process.env.CLIENT_URL || 'http://localhost:3000'));
+wss.on('headers', (headers) => {  const clientUrl = process.env.CLIENT_URL;
+  if (!clientUrl) {
+    console.error('CLIENT_URL environment variable is not configured');
+    return;
+  }
+  headers.push('Access-Control-Allow-Origin: ' + clientUrl);
   headers.push('Access-Control-Allow-Credentials: true'); // Add for cookies
 });
 
