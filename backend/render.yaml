@@ -34,8 +34,7 @@ services:
     startCommand: cd ../client && npm start
     envVars:
       - key: NODE_ENV
-        value: production
-      - key: NEXT_PUBLIC_API_URL
+        value: production      - key: NEXT_PUBLIC_API_URL
         value: https://backend-9h3q.onrender.com/api
       - key: NEXT_PUBLIC_WS_URL
         value: wss://backend-9h3q.onrender.com/ws
@@ -47,11 +46,4 @@ services:
         value: price_1QzeqbGfclTFWug124uFjz1g
       - key: PORT
         value: 3000
-      - key: NEXT_PUBLIC_WS_URL
-        fromService:
-          name: newsletter-automation-backend
-          type: web
-          property: url
-          envVarKey: NEXT_PUBLIC_WS_URL
-          format: wss://$${value}/ws
     autoDeploy: true
