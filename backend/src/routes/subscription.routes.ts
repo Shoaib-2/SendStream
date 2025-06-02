@@ -38,6 +38,15 @@ const createTrialSession: RequestHandler = async (req, res, next): Promise<void>
     if (!email) {
       res.status(400).json({ error: 'Email is required' });
       return;
+    }    // Check if price ID exists
+    const stripePriceId = process.env.STRIPE_PRICE_ID;
+    if (!stripePriceId) {
+      console.error('STRIPE_PRICE_ID environment variable is not configured');
+      res.status(500).json({
+        status: 'error',
+        message: 'Stripe configuration error'
+      });
+      return;
     }
 
     // Create a checkout session for trial
@@ -51,7 +60,7 @@ const createTrialSession: RequestHandler = async (req, res, next): Promise<void>
         trial_period_days: 14,
       },
       line_items: [{
-        price: process.env.STRIPE_PRICE_ID,
+        price: stripePriceId,
         quantity: 1,
       }],
     });
