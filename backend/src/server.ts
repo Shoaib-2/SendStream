@@ -108,6 +108,7 @@ app.use(cookieParser()); // Added cookie-parser middleware
 // Add non-protected routes first
 app.use('/api/auth', authRoutes);
 app.use('/api/health', healthRoutes);
+app.use('/api/subscription', subscriptionRoutes); // Add subscription routes before protection
 
 // Apply protection middleware to all other routes
 const protectedRouter = express.Router();
@@ -119,7 +120,6 @@ protectedRouter.use('/newsletters', newsletterRoutes);
 protectedRouter.use('/subscribers', subscriberRoutes);
 protectedRouter.use('/analytics', analyticsRoutes);
 protectedRouter.use('/settings', settingsRoutes);
-protectedRouter.use('/subscription', subscriptionRoutes);
 protectedRouter.use('/email', emailRoutes);
 
 // Mount the protected router under /api

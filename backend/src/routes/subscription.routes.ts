@@ -1,4 +1,4 @@
-import express, { RequestHandler } from 'express';
+import express, { Request, Response, NextFunction, RequestHandler } from 'express';
 import { protect } from '../middleware/auth/auth.middleware';
 import Stripe from 'stripe';
 import User from '../models/User';
@@ -20,11 +20,58 @@ const stripe = new Stripe(stripeApiKey, {
   apiVersion: '2025-02-24.acacia',
 });
 
-// Apply auth middleware to all routes
-router.use(protect as RequestHandler);
+// Define interfaces for request bodies
+interface TrialSessionRequest {
+  email: string;
+}
 
-// Get subscription status
-router.get('/status', async function(req, res) {
+interface UpdateRenewalRequest {
+  subscriptionId: string;
+  cancelAtPeriodEnd: boolean;
+}
+
+// Public routes (no auth required)
+const createTrialSession: RequestHandler = async (req, res, next): Promise<void> => {
+  try {
+    const { email } = req.body as TrialSessionRequest;
+    
+    if (!email) {
+      res.status(400).json({ error: 'Email is required' });
+      return;
+    }
+
+    // Create a checkout session for trial
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      mode: 'subscription',
+      customer_email: email,
+      success_url: `${process.env.CLIENT_URL}/auth/signup?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.CLIENT_URL}`,
+      subscription_data: {
+        trial_period_days: 14,
+      },
+      line_items: [{
+        price: process.env.STRIPE_PRICE_ID,
+        quantity: 1,
+      }],
+    });
+
+    res.status(200).json({
+      status: 'success',
+      sessionId: session.id,
+      url: session.url
+    });
+  } catch (error) {
+    console.error('Error creating trial session:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to create trial session'
+    });
+  }
+};
+
+// Protected routes handlers
+const getSubscriptionStatus: RequestHandler = async (req, res, next): Promise<void> => {
   // Check if user exists in request
   if (!req.user || !req.user.id) {
     res.status(401).json({
@@ -95,10 +142,9 @@ router.get('/status', async function(req, res) {
       message: 'Failed to get subscription status'
     });
   }
-});
+};
 
-// Cancel subscription
-router.post('/cancel', async function(req, res) {
+const cancelSubscription: RequestHandler = async (req, res, next): Promise<void> => {
   // Check if user exists in request
   if (!req.user || !req.user.id) {
     res.status(401).json({
@@ -206,10 +252,9 @@ router.post('/cancel', async function(req, res) {
       message: 'Failed to cancel subscription'
     });
   }
-});
+};
 
-// Update subscription auto-renewal settings
-router.post('/update-renewal', async function(req, res) {
+const updateRenewal: RequestHandler = async (req, res, next): Promise<void> => {
   // Check if user exists in request
   if (!req.user || !req.user.id) {
     res.status(401).json({
@@ -220,7 +265,7 @@ router.post('/update-renewal', async function(req, res) {
     return;
   }
   
-  const { subscriptionId, cancelAtPeriodEnd } = req.body;
+  const { subscriptionId, cancelAtPeriodEnd } = req.body as UpdateRenewalRequest;
   
   if (!subscriptionId) {
     res.status(400).json({
@@ -316,6 +361,15 @@ router.post('/update-renewal', async function(req, res) {
       message: 'Failed to update subscription renewal settings'
     });
   }
-});
+};
+
+// Route definitions
+router.post('/create-trial-session', createTrialSession as RequestHandler);
+
+// Protected routes - explicit type casting for middleware
+router.use(protect as RequestHandler);
+router.get('/status', getSubscriptionStatus as RequestHandler);
+router.post('/cancel', cancelSubscription as RequestHandler);
+router.post('/update-renewal', updateRenewal as RequestHandler);
 
 export default router;
