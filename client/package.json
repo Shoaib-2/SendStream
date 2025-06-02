@@ -1,7 +1,8 @@
 {
   "name": "newsletter-automation",
   "version": "0.1.0",
-  "private": true,  "scripts": {
+  "private": true,
+  "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start -p ${PORT:-3000}",
@@ -21,9 +22,9 @@
     "newsletter-automation": "file:",
     "next": "14.1.3",
     "papaparse": "^5.5.2",
-    "react": "^19.0.0",
+    "react": "^18.2.0",
     "react-datetime-picker": "^6.0.1",
-    "react-dom": "^19.0.0",
+    "react-dom": "^18.2.0",
     "react-hot-toast": "^2.5.1",
     "recharts": "^2.15.1",
     "stripe": "^17.7.0"
@@ -32,8 +33,8 @@
     "@eslint/eslintrc": "^3",
     "@types/node": "^20",
     "@types/papaparse": "^5.3.15",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
     "eslint": "^9",
     "eslint-config-next": "15.1.6",
     "postcss": "^8",
