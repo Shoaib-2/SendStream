@@ -5,7 +5,7 @@ import Newsletter from '../src/models/Newsletter';
 import User from '../src/models/User';
 import newsletterRoutes from '../src/routes/newsletter.routes';
 import authRoutes from '../src/routes/auth.routes';
-import subscriberRoutes from '../src/routes/subscribers';
+import subscriberRoutes from '../src/routes/subscribers.route';
 import analyticsRoutes from '../src/routes/analytics.routes';
 import settingsRoutes from '../src/routes/settings.routes';
 import { jest, describe, beforeAll, afterAll, beforeEach, it, expect } from '@jest/globals';

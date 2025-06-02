@@ -13,6 +13,7 @@ import { WebSocketServer } from 'ws';
 import { createServer } from 'http';
 import analyticsRoutes from './routes/analytics.routes';
 import settingsRoutes from './routes/settings.routes';
+import healthRoutes from './routes/health.routes';
 import jwt from 'jsonwebtoken';
 import subscriptionRoutes from './routes/subscription.routes';
 import { protect } from '../src/middleware/auth/auth.middleware'; // Make sure this exists
@@ -98,13 +99,15 @@ app.use('/api', checkSubscription as RequestHandler); // Apply subscription chec
 //  next();
 // });
 
+// Add routes
 app.use('/api/auth', authRoutes);
-app.use('/api', emailRoutes);
 app.use('/api/newsletters', newsletterRoutes);
 app.use('/api/subscribers', subscriberRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/settings', settingsRoutes);
-app.use('/api/subscription', subscriptionRoutes); 
+app.use('/api/subscription', subscriptionRoutes);
+app.use('/api/email', emailRoutes);
+app.use('/api/health', healthRoutes);
 
 
 app.use((req: Request, res: Response) => {
