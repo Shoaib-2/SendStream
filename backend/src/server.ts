@@ -16,8 +16,8 @@ import settingsRoutes from './routes/settings.routes';
 import healthRoutes from './routes/health.routes';
 import jwt from 'jsonwebtoken';
 import subscriptionRoutes from './routes/subscription.routes';
-import { protect } from '../src/middleware/auth/auth.middleware'; // Make sure this exists
-import { checkSubscription } from '../src/middleware/susbcription.middleware';
+import { protect } from './middleware/auth/auth.middleware';
+import { checkSubscription } from './middleware/susbcription.middleware';
 import emailRoutes from './routes/email.routes';
 import mongoose from 'mongoose';
 
