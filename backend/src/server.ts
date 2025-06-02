@@ -105,23 +105,25 @@ wss.on('headers', (headers) => {  const clientUrl = process.env.CLIENT_URL;
 app.use(express.json());
 app.use(cookieParser()); // Added cookie-parser middleware
 
-app.use('/api', protect as RequestHandler); // Apply auth middleware to all API routes
-app.use('/api', checkSubscription as RequestHandler); // Apply subscription check after auth
-
-// app.use((req, _res, next) => {
-//  console.log(`${req.method} ${req.path}`);
-//  next();
-// });
-
-// Add routes
+// Add non-protected routes first
 app.use('/api/auth', authRoutes);
-app.use('/api/newsletters', newsletterRoutes);
-app.use('/api/subscribers', subscriberRoutes);
-app.use('/api/analytics', analyticsRoutes);
-app.use('/api/settings', settingsRoutes);
-app.use('/api/subscription', subscriptionRoutes);
-app.use('/api/email', emailRoutes);
 app.use('/api/health', healthRoutes);
+
+// Apply protection middleware to all other routes
+const protectedRouter = express.Router();
+protectedRouter.use(protect as RequestHandler);
+protectedRouter.use(checkSubscription as RequestHandler);
+
+// Add protected routes
+protectedRouter.use('/newsletters', newsletterRoutes);
+protectedRouter.use('/subscribers', subscriberRoutes);
+protectedRouter.use('/analytics', analyticsRoutes);
+protectedRouter.use('/settings', settingsRoutes);
+protectedRouter.use('/subscription', subscriptionRoutes);
+protectedRouter.use('/email', emailRoutes);
+
+// Mount the protected router under /api
+app.use('/api', protectedRouter);
 
 
 app.use((req: Request, res: Response) => {

@@ -19,11 +19,18 @@ export const errorHandler = (
       data: err.data
     });
   }
+  // Log the full error in production
+  console.error('Detailed error:', {
+    message: err.message,
+    stack: err.stack,
+    name: err.name
+  });
 
   // Default error response
   res.status(500).json({
     status: 'error',
-    message: 'Internal server error'
+    message: 'Internal server error',
+    details: process.env.NODE_ENV === 'development' ? err.message : undefined
   });
 };
 
