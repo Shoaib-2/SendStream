@@ -4,11 +4,9 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { authAPI } from '@/services/api';
 
 
-interface User {
-  email: string;
-  name?: string;
-  role?: string;
-}
+import { IUser } from '@/types/user';
+
+type User = IUser;
 
 interface ForgotPasswordResponse {
   status: 'success' | 'error';
