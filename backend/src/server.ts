@@ -24,6 +24,20 @@ import mongoose from 'mongoose';
 dotenv.config();
 
 const app = express();
+
+// Configure CORS
+app.use(cors({
+  origin: '*', // Allow all origins during testing
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+}));
+
+// Add body parsing middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+
 const server = createServer(app);
 const wss = new WebSocketServer({ server });
 
