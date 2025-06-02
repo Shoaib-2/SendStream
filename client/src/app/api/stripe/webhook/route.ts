@@ -7,11 +7,9 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-02-24.acacia',
 });
 
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
+export const runtime = 'nodejs'; // 'edge' or 'nodejs'
+export const dynamic = 'force-dynamic';
+export const bodyParser = false;
 
 export async function POST(request: NextRequest) {
   try {
