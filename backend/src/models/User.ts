@@ -1,5 +1,5 @@
 // backend/src/models/User.ts
-import mongoose, { Document, Model } from 'mongoose';
+import mongoose, { Document } from 'mongoose';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { config } from 'dotenv';
