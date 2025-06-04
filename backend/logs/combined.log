@@ -6185,3 +6185,4 @@
 2025-06-04T14:58:08.071Z [[32minfo[39m]: Gmail transporter created
 2025-06-04T14:58:11.334Z [[32minfo[39m]: MongoDB Connected: ac-mjvxksg-shard-00-02.h06439j.mongodb.net
 2025-06-04T14:58:11.711Z [[32minfo[39m]: Database indexes created successfully
+2025-06-04T15:42:39.087Z [[33mwarn[39m]: MongoDB disconnected
