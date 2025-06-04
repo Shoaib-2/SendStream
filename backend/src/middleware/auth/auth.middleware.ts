@@ -19,31 +19,38 @@ declare global {
 
 
 export const protect = async (req: Request, res: Response, next: NextFunction) => {
-  // Explicit routes bypass
+  // Define routes that bypass authentication
   const publicRoutes = [
-    '/auth/login', 
-    '/auth/register', 
-    '/auth/check-trial-eligibility'
+    '/auth/login',
+    '/auth/register',
+    '/auth/check-trial-eligibility',
+    '/auth/forgot-password',
+    '/auth/reset-password',
+    '/auth/me'
   ];
 
   if (publicRoutes.includes(req.path)) {
     return next();
   }
+
   try {
-    // Skip auth check for login and register routes
-    if (req.path === '/auth/login' || req.path === '/auth/register' ||  req.path === '/auth/check-trial-eligibility') {
-      return next();
-    }
+    // Try to get token from cookie first
+    const cookieToken = req.cookies?.jwt;
     
-    // Get token from HTTP-only cookie instead of header
-    const token = req.cookies?.jwt;
-    
-    // Fallback to header for backwards compatibility during transition
+    // Then try Authorization header as fallback
     const authHeader = req.headers.authorization;
     const headerToken = authHeader?.startsWith('Bearer ') ? authHeader.replace('Bearer ', '') : null;
     
-    // Use cookie token or fallback to header token
-    const authToken = token || headerToken;
+    // Use cookie token first, fallback to header token
+    const authToken = cookieToken || headerToken;
+    
+    // If no token found in either place, ask client to log in
+    if (!authToken) {
+      return res.status(401).json({
+        status: 'error',
+        message: 'Please log in to access this resource'
+      });
+    }
     
     if (!authToken) {
       // Return 401 error response directly instead of throwing

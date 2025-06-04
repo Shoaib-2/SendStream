@@ -26,11 +26,13 @@ dotenv.config();
 const app = express();
 
 // Configure CORS with specific origins
-app.use(cors({
-  origin: (origin, callback) => {
+const corsConfig = {
+  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
     const allowedOrigins = [
       'http://localhost:3000',
-      'https://client-3ye4.onrender.com'
+      'http://localhost:3001',
+      'https://client-3ye4.onrender.com',
+      'https://backend-9h3q.onrender.com'
     ];
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin || allowedOrigins.indexOf(origin) !== -1) {
@@ -40,9 +42,13 @@ app.use(cors({
     }
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true
-}));
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'X-XSRF-TOKEN'],
+  exposedHeaders: ['Set-Cookie'],
+  credentials: true,
+  maxAge: 86400 // 24 hours
+};
+
+app.use(cors(corsConfig));
 
 // Add body parsing middleware
 app.use(express.json());
@@ -92,24 +98,24 @@ const broadcastSubscriberUpdate = (subscriberId: string, status: string) => {
   });
 };
 
-// Configure CORS for both HTTP and WebSocket
-const corsOptions = {
-  origin: ['http://localhost:3000', 'https://newsletter-automation.vercel.app'],
-  credentials: true,  // Important for cookies
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-};
-
-app.use(cors(corsOptions));
+// Apply CORS config for WebSocket as well
 
 // Apply CORS verification to WebSocket upgrade requests
-wss.on('headers', (headers) => {  const clientUrl = process.env.CLIENT_URL;
-  if (!clientUrl) {
-    console.error('CLIENT_URL environment variable is not configured');
-    return;
+wss.on('headers', (headers) => {
+  const allowedOrigins = [
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'https://client-3ye4.onrender.com',
+    'https://backend-9h3q.onrender.com'
+  ];
+  const origin = headers.find(h => h.toLowerCase().startsWith('origin:'))?.split(': ')[1];
+  if (origin && allowedOrigins.includes(origin)) {
+    headers.push('Access-Control-Allow-Origin: ' + origin);
+    headers.push('Access-Control-Allow-Credentials: true');
+    headers.push('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, PATCH, OPTIONS');
+    headers.push('Access-Control-Allow-Headers: Content-Type, Authorization, Cookie, X-XSRF-TOKEN');
+    headers.push('Access-Control-Expose-Headers: Set-Cookie');
   }
-  headers.push('Access-Control-Allow-Origin: ' + clientUrl);
-  headers.push('Access-Control-Allow-Credentials: true'); // Add for cookies
 });
 
 

@@ -198,9 +198,10 @@ const api = axios.create({
     "Content-Type": "application/json",
   },
   withCredentials: true, // This ensures cookies are sent with requests
-  // Add CORS related headers
   xsrfCookieName: 'XSRF-TOKEN',
   xsrfHeaderName: 'X-XSRF-TOKEN',
+  timeout: 20000, // 20 seconds timeout
+  validateStatus: (status) => status < 500 // Don't reject on 4xx errors
 });
 // Add this to track failed requests to prevent loops
 const inSilentMode = () => {

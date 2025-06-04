@@ -17,37 +17,52 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 const cookieOptions = {
   httpOnly: true,             // Prevents JavaScript access
   secure: process.env.NODE_ENV === 'production', // HTTPS only in production
-  sameSite: 'strict' as const,// Prevents CSRF
-  maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  sameSite: process.env.NODE_ENV === 'production' ? 'none' as const : 'lax' as const, // Allow cross-site in production
+  maxAge: 24 * 60 * 60 * 1000, // 24 hours
+  domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : undefined // Allow sharing between subdomains in production
 };
 
 // Helper to create and send JWT token
 const createSendToken = (user: any, statusCode: number, res: Response) => {
-    // Create JWT payload
-    const payload = { id: user._id, role: user.role };
+    // Create JWT payload with user ID and essential info
+    const payload = { 
+      id: user._id, 
+      role: user.role,
+      email: user.email
+    };
     
-    // Get secret key from environment
-    const secret = process.env.JWT_SECRET as string;
+    // Get secret key from environment with fallback (for development only)
+    const secret = process.env.JWT_SECRET || 'fallback-secret-for-dev';
     
-    // Simple signing with minimal options
-    const token = jwt.sign(payload, secret);
+    // Sign token with expiration
+    const token = jwt.sign(payload, secret, {
+      expiresIn: '24h' // Match cookie expiration
+    });
   
-    // Remove password from output
+    // Remove sensitive data from output
     user.password = undefined;
-  
-    // Set HTTP-only cookie
-    res.cookie('jwt', token, cookieOptions);
+    
+    // Set HTTP-only cookie with path
+    res.cookie('jwt', token, {
+      ...cookieOptions,
+      path: '/' // Ensure cookie is available on all paths
+    });
+    
+    // Set authorization header for API clients
+    res.setHeader('Authorization', `Bearer ${token}`);
   
     // Send response with token (for backwards compatibility)
     res.status(statusCode).json({
       status: 'success',
       data: {
-        token,
+        token, // Include token for backwards compatibility
         user: {
           _id: user._id,
           email: user.email,
           name: user.name,
-          role: user.role
+          role: user.role,
+          hasActiveSubscription: !!(user as any).stripeSubscriptionId,
+          trialEndsAt: (user as any).trialEndsAt
         }
       }
     });
@@ -155,13 +170,22 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
 };
 
 export const logout = (req: Request, res: Response) => {
-  // Clear JWT cookie by setting it to expired
+  // Clear JWT cookie
   res.cookie('jwt', 'loggedout', {
     ...cookieOptions,
-    maxAge: 1 // Expire immediately
+    maxAge: 1, // Expire immediately
+    path: '/', // Ensure cookie is cleared from all paths
   });
   
-  res.status(200).json({ status: 'success' });
+  // Clear Authorization header
+  res.setHeader('Authorization', '');
+  
+  // Send success response with clear instructions for client
+  res.status(200).json({ 
+    status: 'success',
+    message: 'Successfully logged out',
+    clearAuth: true // Signal to client to clear local storage
+  });
 };
 
 export const forgotPassword = async (req: Request, res: Response, next: NextFunction) => {
