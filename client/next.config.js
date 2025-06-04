@@ -18,6 +18,32 @@ const nextConfig = {
         module: false,
       };
     }
+    
+    // Add support for mjs files
+    config.module.rules.push({
+      test: /\.m?js$/,
+      type: 'javascript/auto',
+      resolve: {
+        fullySpecified: false
+      }
+    });
+
+    // Add support for recharts
+    config.externals = config.externals || [];
+    if (!isServer) {
+      config.externals.push({
+        canvas: 'canvas',
+      });
+    }
+
+    // Resolve .js extensions for TypeScript files
+    config.resolve.extensionAlias = {
+      '.js': ['.js', '.ts', '.tsx']
+    };
+
+    // Optimize module resolution
+    config.resolve.modules = ['node_modules', ...config.resolve.modules];
+
     return config;
   }
 };

@@ -1,18 +1,16 @@
 "use client";
 import React from 'react';
 import { Users, Mail } from 'lucide-react';
-import { 
-  ResponsiveContainer, 
-  LineChart, 
-  Line, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Area, 
-  AreaChart,
-  ReferenceLine
-} from 'recharts';
+import { ResponsiveContainer } from 'recharts/es6/component/ResponsiveContainer';
+import { LineChart } from 'recharts/es6/chart/LineChart';
+import { Line } from 'recharts/es6/cartesian/Line';
+import { XAxis } from 'recharts/es6/cartesian/XAxis';
+import { YAxis } from 'recharts/es6/cartesian/YAxis';
+import { CartesianGrid } from 'recharts/es6/cartesian/CartesianGrid';
+import { Tooltip } from 'recharts/es6/component/Tooltip';
+import { Area } from 'recharts/es6/cartesian/Area';
+import { AreaChart } from 'recharts/es6/chart/AreaChart';
+import { ReferenceLine } from 'recharts/es6/cartesian/ReferenceLine';
 
 import { analyticsAPI } from '../../../services/api';
 import { useData } from '../../../context/dataContext';
