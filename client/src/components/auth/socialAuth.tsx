@@ -5,14 +5,13 @@
  * This component handles OAuth authentication flows for multiple providers
  */
 import React from 'react';
-import { Mail } from 'lucide-react';
+import { EnvelopeIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '@/context/authContext';
 import { useToast } from '@/context/toastContext';
 
 interface SocialAuthProps {
   isLoading: boolean;
 }
-
 
 const SocialAuth: React.FC<SocialAuthProps> = ({ isLoading }) => {
   const { loginWithProvider } = useAuth();
@@ -50,7 +49,7 @@ const SocialAuth: React.FC<SocialAuthProps> = ({ isLoading }) => {
           disabled={isLoading}
           className="flex items-center justify-center gap-2 rounded-lg border border-gray-700 px-4 py-2 hover:bg-gray-700 transition-colors"
         >
-          <Mail className="w-5 h-5" />
+          <EnvelopeIcon className="w-5 h-5" />
           <span>Google</span>
         </button>
       </div>

@@ -83,7 +83,7 @@ const broadcastSubscriberUpdate = (subscriberId: string, status: string) => {
 
 // Configure CORS for both HTTP and WebSocket
 const corsOptions = {
-  origin: process.env.CLIENT_URL,
+  origin: ['http://localhost:3000', 'https://newsletter-automation.vercel.app'],
   credentials: true,  // Important for cookies
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']

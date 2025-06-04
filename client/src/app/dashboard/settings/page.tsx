@@ -1,8 +1,13 @@
-// src/app/dashboard/settings/page.tsx
 "use client";
 import { useState, useEffect } from 'react';
-import { Save, RefreshCw, ArrowDownToLine, ToggleLeft, ToggleRight } from 'lucide-react';
-import { settingsAPI} from '@/services/api';
+import { 
+  ArrowDownIcon, 
+  ArrowPathIcon,
+  DocumentCheckIcon,
+  CheckIcon,
+  XMarkIcon
+} from '@heroicons/react/24/outline';
+import { settingsAPI } from '@/services/api';
 import { useData } from '@/context/dataContext';
 import SubscriptionManagement from '@/components/dashboardSubscription/SubscriptionManagement';
 
@@ -54,7 +59,7 @@ export default function SettingsPage() {
   // Specify what we expect from the API
   // interface ApiTestResponse {
   //   success: boolean;
-  //   message: string;
+  //   message: boolean;
   //   listId?: string;
   // }
 
@@ -268,12 +273,10 @@ export default function SettingsPage() {
           </h1>
           <button
             onClick={handleSave}
-            disabled={saving}
-            className="w-full sm:w-auto bg-blue-500 hover:bg-blue-600 px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-medium
+            disabled={saving}            className="w-full sm:w-auto bg-blue-500 hover:bg-blue-600 px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-medium
               transform transition-all duration-300 hover:scale-105 disabled:opacity-50
-              disabled:hover:scale-100 flex items-center justify-center gap-2 text-sm sm:text-base"
-          >
-            <Save className="w-4 h-4" />
+              disabled:hover:scale-100 flex items-center justify-center gap-2 text-sm sm:text-base"          >            
+            <DocumentCheckIcon className="w-4 h-4" />
             {saving ? 'Saving...' : 'Save Changes'}
           </button>
         </div>
@@ -357,8 +360,7 @@ export default function SettingsPage() {
                   className="flex-1 sm:flex-none bg-gray-700/50 hover:bg-gray-600/50 px-3 sm:px-4 py-2 rounded-lg
                     flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed
                     border border-gray-600 hover:border-blue-500/50 transition-all duration-300 text-sm sm:text-base"
-                >
-                  <RefreshCw className={`w-4 h-4 ${testing ? 'animate-spin' : ''}`} />
+                >                  <ArrowPathIcon className={`w-4 h-4 ${testing ? 'animate-spin' : ''}`} />
                   {testing ? 'Testing...' : 'Test Connection'}
                 </button>
 
@@ -369,8 +371,7 @@ export default function SettingsPage() {
                     className="flex-1 sm:flex-none bg-green-500/20 hover:bg-green-500/30 px-3 sm:px-4 py-2 rounded-lg
                       flex items-center justify-center gap-2 text-green-400 border border-green-500/30
                       hover:border-green-500/50 transition-all duration-300 text-sm sm:text-base"
-                  >
-                    <ArrowDownToLine className="w-4 h-4" />
+                  >                    <ArrowDownIcon className="w-4 h-4" />
                     {syncing ? 'Importing...' : 'Import Subscribers'}
                   </button>
                 )}
@@ -435,11 +436,10 @@ export default function SettingsPage() {
                     <button
                       onClick={() => toggleIntegration('mailchimp', !settings.mailchimp.enabled)}
                       className="text-gray-300 hover:text-blue-400 p-1"
-                    >
-                      {settings.mailchimp.enabled ? (
-                        <ToggleRight className="w-8 h-8 sm:w-10 sm:h-10 text-blue-500" />
+                    >                      {settings.mailchimp.enabled ? (
+                        <CheckIcon className="w-8 h-8 sm:w-10 sm:h-10 text-blue-500" />
                       ) : (
-                        <ToggleLeft className="w-8 h-8 sm:w-10 sm:h-10" />
+                        <XMarkIcon className="w-8 h-8 sm:w-10 sm:h-10" />
                       )}
                     </button>
                   </div>
@@ -455,11 +455,10 @@ export default function SettingsPage() {
                       onClick={() => toggleAutoSync(!settings.mailchimp.autoSync)}
                       className="text-gray-300 hover:text-blue-400 p-1"
                       disabled={!settings.mailchimp.enabled}
-                    >
-                      {settings.mailchimp.autoSync ? (
-                        <ToggleRight className="w-8 h-8 sm:w-10 sm:h-10 text-blue-500" />
+                    >                      {settings.mailchimp.autoSync ? (
+                        <CheckIcon className="w-8 h-8 sm:w-10 sm:h-10 text-blue-500" />
                       ) : (
-                        <ToggleLeft className="w-8 h-8 sm:w-10 sm:h-10" />
+                        <XMarkIcon className="w-8 h-8 sm:w-10 sm:h-10" />
                       )}
                     </button>
                   </div>

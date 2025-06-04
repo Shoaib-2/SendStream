@@ -1,6 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { getSubscriptionStatus, cancelSubscription } from '../../services/api';
-import { Loader, AlertCircle, XCircle, CheckCircle, ToggleLeft, ToggleRight } from 'lucide-react';
+import { 
+  ArrowPathIcon, 
+  ExclamationCircleIcon,
+  XCircleIcon,
+  CheckCircleIcon,
+  MinusIcon,
+  PlusIcon
+} from '@heroicons/react/24/outline';
 import { useRouter } from 'next/navigation';
 
 
@@ -19,7 +26,7 @@ const CancelModal: React.FC<CancelModalProps> = ({ isOpen, onClose, onConfirm, i
       <div className="bg-gray-800/80 backdrop-blur-sm p-6 rounded-xl w-full max-w-md
         border border-gray-700 shadow-lg">
         <div className="flex items-center gap-3 mb-4 text-red-400">
-          <AlertCircle className="w-6 h-6" />
+          <ExclamationCircleIcon className="w-6 h-6" />
           <h3 className="text-xl font-bold">Cancel Subscription</h3>
         </div>
         
@@ -45,12 +52,12 @@ const CancelModal: React.FC<CancelModalProps> = ({ isOpen, onClose, onConfirm, i
           >
             {isLoading ? (
               <>
-                <Loader className="w-4 h-4 animate-spin" />
+                <ArrowPathIcon className="w-4 h-4 animate-spin" />
                 Canceling...
               </>
             ) : (
               <>
-                <XCircle className="w-4 h-4" />
+                <XCircleIcon className="w-4 h-4" />
                 Cancel Subscription
               </>
             )}
@@ -210,7 +217,7 @@ const SubscriptionManagement = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center p-6">
-        <Loader className="w-6 h-6 animate-spin text-blue-500" />
+        <ArrowPathIcon className="w-6 h-6 animate-spin text-blue-500" />
       </div>
     );
   }
@@ -258,7 +265,7 @@ const SubscriptionManagement = () => {
       {error && (
         <div className="bg-red-500/10 border border-red-500/50 text-red-400 
           px-4 py-3 rounded-lg mb-4 flex items-start gap-2">
-          <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
+          <ExclamationCircleIcon className="w-5 h-5 mt-0.5 flex-shrink-0" />
           <span>{error}</span>
         </div>
       )}
@@ -266,7 +273,7 @@ const SubscriptionManagement = () => {
       {successMessage && (
         <div className="bg-green-500/10 border border-green-500/50 text-green-400 
           px-4 py-3 rounded-lg mb-4 flex items-start gap-2">
-          <CheckCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
+          <CheckCircleIcon className="w-5 h-5 mt-0.5 flex-shrink-0" />
           <span>{successMessage}</span>
         </div>
       )}
@@ -319,11 +326,11 @@ const SubscriptionManagement = () => {
               aria-label={subscription.cancelAtPeriodEnd ? "Enable auto-renewal" : "Disable auto-renewal"}
             >
               {updatingAutoRenew ? (
-                <Loader className="w-5 h-5 animate-spin" />
+                <ArrowPathIcon className="w-5 h-5 animate-spin" />
               ) : subscription.cancelAtPeriodEnd ? (
-                <ToggleLeft className="w-8 h-8" />
+                <MinusIcon className="w-8 h-8" />
               ) : (
-                <ToggleRight className="w-8 h-8 text-blue-500" />
+                <PlusIcon className="w-8 h-8 text-blue-500" />
               )}
             </button>
           </div>
@@ -338,14 +345,14 @@ const SubscriptionManagement = () => {
             border border-red-500/50 px-4 py-2 rounded-lg transition-colors
             flex items-center justify-center gap-2"
         >
-          <XCircle className="w-4 h-4" />
+          <XCircleIcon className="w-4 h-4" />
           Cancel Subscription
         </button>
       )}
       
       {subscription.cancelAtPeriodEnd && !isExpired && (
         <div className="text-gray-400 text-sm flex items-start gap-2">
-          <CheckCircle className="w-4 h-4 mt-0.5 text-amber-400 flex-shrink-0" />
+          <CheckCircleIcon className="w-4 h-4 mt-0.5 text-amber-400 flex-shrink-0" />
           <span>
             Your subscription has been cancelled and will end on {formatDate(subscription.currentPeriodEnd)}.
             You'll continue to have full access until this date.

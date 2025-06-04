@@ -198,6 +198,9 @@ const api = axios.create({
     "Content-Type": "application/json",
   },
   withCredentials: true, // This ensures cookies are sent with requests
+  // Add CORS related headers
+  xsrfCookieName: 'XSRF-TOKEN',
+  xsrfHeaderName: 'X-XSRF-TOKEN',
 });
 // Add this to track failed requests to prevent loops
 const inSilentMode = () => {
@@ -958,6 +961,30 @@ export const authAPI = {
       }
 
       // For other errors, let handleError function format them
+      handleError(error as AxiosError);
+    }
+  },
+
+  loginWithProvider: async (provider: 'google') => {
+    try {
+      const response = await api.post(`/auth/${provider}`, {}, {
+        timeout: 10000
+      });
+      return response.data.data;
+    } catch (error) {
+      console.error(`${provider} login error:`, error);
+      if ((error as AxiosError).response?.status === 404) {
+        return {
+          status: 'error',
+          message: `${provider} login endpoint not available. Is the API server running?`
+        };
+      }
+      if ((error as AxiosError).code === 'ECONNREFUSED' || (error as AxiosError).message?.includes('Network Error')) {
+        return {
+          status: 'error',
+          message: 'Cannot connect to authentication server. Please try again later.'
+        };
+      }
       handleError(error as AxiosError);
     }
   },

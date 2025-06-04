@@ -21,7 +21,7 @@ interface AuthContextType {
   logout: () => void;
   forgotPassword: (email: string) => Promise<ForgotPasswordResponse>;
   resetPassword: (token: string, password: string) => Promise<any>;
-  // loginWithProvider: (provider: 'google') => Promise<void>;
+  loginWithProvider: (provider: 'google') => Promise<void>;
 }
 
 // We still use localStorage for token/user during the transition
@@ -210,6 +210,27 @@ const logout = async () => {
   }
 };
 
+const loginWithProvider = async (provider: 'google') => {
+  try {
+    const response = await authAPI.loginWithProvider(provider);
+    if (response?.user) {
+      setUser(response.user);
+      if (response.token) {
+        setToken(response.token);
+        localStorage.setItem('token', response.token);
+        localStorage.setItem('user', JSON.stringify(response.user));
+        localStorage.setItem('has_active_access', 'true');
+        sessionStorage.removeItem('redirecting_for_renewal');
+      }
+    } else {
+      throw new Error('Invalid provider login response - user data missing');
+    }
+  } catch (error) {
+    console.error('Provider login error:', error);
+    throw error;
+  }
+};
+
   if (isLoading) {
     return null;
   }
@@ -222,7 +243,8 @@ const logout = async () => {
       signup, 
       logout,
       forgotPassword,
-      resetPassword 
+      resetPassword,
+      loginWithProvider 
     }}>
       {children}
     </AuthContext.Provider>

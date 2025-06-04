@@ -14,6 +14,21 @@ const SubscriptionErrorHandler = () => {
   const [checkedSubscription, setCheckedSubscription] = useState(false);
 
   // Function to check actual subscription status from API
+  
+  useEffect(() => {
+    // Subscription check logic here
+    checkSubscriptionStatus().then((data) => {
+      if (data) {
+        const hasAccess = determineAccessStatus(data);
+        if (!hasAccess) {
+          router.push('/?renew=true');
+        }
+      }
+      setCheckedSubscription(true);
+    });
+  }, [router]);
+
+  
   const checkSubscriptionStatus = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -336,6 +351,8 @@ const SubscriptionErrorHandler = () => {
       window.removeEventListener('popstate', checkUrl);
     };
   }, [router, checkedSubscription]);
+  // Return null since this is just a subscription checker
+  return null;
 };
 // Add TS interface for debug functions
 declare global {
