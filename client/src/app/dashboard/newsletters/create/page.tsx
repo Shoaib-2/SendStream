@@ -104,8 +104,8 @@ const CreateNewsletter: React.FC = () => {
       const scheduledTime = new Date(date);
       const now = new Date();
       const timezoneOffset = scheduledTime.getTimezoneOffset() * 60000;
-      console.log('Timezone Offset:', timezoneOffset);
-      console.log('Scheduled Time:', scheduledTime);
+      // console.log('Timezone Offset:', timezoneOffset);
+      // console.log('Scheduled Time:', scheduledTime);
       const utcTimestamp = scheduledTime.getTime() + timezoneOffset;
       
       if (utcTimestamp <= now.getTime()) {

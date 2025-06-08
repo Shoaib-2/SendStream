@@ -8,7 +8,6 @@ import {
   XMarkIcon
 } from '@heroicons/react/24/outline';
 import { settingsAPI } from '@/services/api';
-import { useData } from '@/context/dataContext';
 import SubscriptionManagement from '@/components/dashboardSubscription/SubscriptionManagement';
 
 // Custom local interface for Settings that enforces required fields

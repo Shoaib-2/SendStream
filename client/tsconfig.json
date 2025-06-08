@@ -8,7 +8,7 @@
     "noEmit": true,
     "esModuleInterop": true,
     "module": "ESNext",
-    "moduleResolution": "bundler",
+    "moduleResolution": "node",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "preserve",
@@ -24,17 +24,13 @@
     "typeRoots": [
       "./node_modules/@types",
       "./src/types"
-    ],
-    "types": [
-      "node",
-      "react",
-      "react-dom",
-      "json-schema",
-      "jsonwebtoken",
-      "ms",
-      "papaparse"
     ]
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "../backend/src/services/Integrations/stripe.ts"],
+  "include": [
+    "next-env.d.ts", 
+    "**/*.ts", 
+    "**/*.tsx", 
+    ".next/types/**/*.ts"
+  ],
   "exclude": ["node_modules"]
 }

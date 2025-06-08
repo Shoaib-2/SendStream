@@ -671,7 +671,7 @@ export const newsletterAPI = {
   },
   send: async (id: string) => {
     try {
-      console.log(`Attempting to send newsletter ${id}...`);
+      // console.log(`Attempting to send newsletter ${id}...`);
 
       // Add timeout to prevent hanging requests
       const response = await api.post<ResponseData<Newsletter>>(
@@ -680,7 +680,7 @@ export const newsletterAPI = {
         { timeout: 30000 } // 30 second timeout for newsletter sending
       );
 
-      console.log(`Newsletter sent successfully:`, response.data);
+      // console.log(`Newsletter sent successfully:`, response.data);
       return response.data.data;
     } catch (error) {
       console.error("Newsletter send error:", error);
