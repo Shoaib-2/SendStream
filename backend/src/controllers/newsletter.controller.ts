@@ -255,17 +255,36 @@ export class NewsletterController {
 
 async send(req: Request, res: Response, next: NextFunction) {
   try {
+    logger.info('=== NEWSLETTER SEND DEBUG START ===');
+    logger.info('User ID:', req.user._id);
+    logger.info('Newsletter ID:', req.params.id);
+
     const newsletter = await Newsletter.findOne({
       _id: req.params.id,
       createdBy: req.user._id
     });
 
-    if (!newsletter) throw new APIError(404, "Newsletter not found");
+    if (!newsletter) {
+      logger.error('Newsletter not found');
+      throw new APIError(404, "Newsletter not found");
+    }
 
-    // Get subscribers
+    logger.info('Newsletter found:', {
+      id: newsletter._id,
+      title: newsletter.title,
+      status: newsletter.status
+    });
+
+    // Get subscribers with detailed logging
     const subscribers = await Subscriber.find({
       status: "active",
       createdBy: req.user._id,
+    });
+
+    logger.info('Subscriber query results:', {
+      count: subscribers.length,
+      userID: req.user._id,
+      subscriberEmails: subscribers.map(s => ({ email: s.email, status: s.status }))
     });
 
     if (!subscribers || subscribers.length === 0) {
@@ -273,12 +292,16 @@ async send(req: Request, res: Response, next: NextFunction) {
       throw new APIError(400, "No active subscribers to send newsletter to");
     }
 
-    logger.info(`Sending newsletter to ${subscribers.length} unique subscribers`);
+    logger.info(`Found ${subscribers.length} active subscribers`);
 
-    // Get or create user settings
+    // Get or create user settings with detailed logging
     let userSettings = await Settings.findOne({ userId: req.user._id });
     
-    // If settings don't exist, create default settings
+    logger.info('User settings lookup:', {
+      found: !!userSettings,
+      userId: req.user._id
+    });
+
     if (!userSettings) {
       logger.info('Creating default settings for user');
       userSettings = await Settings.create({
@@ -295,7 +318,17 @@ async send(req: Request, res: Response, next: NextFunction) {
           autoSync: false
         }
       });
+      logger.info('Default settings created');
     }
+
+    // Log settings details (without sensitive info)
+    logger.info('Settings configuration:', {
+      hasEmail: !!userSettings.email,
+      fromName: userSettings.email?.fromName,
+      replyTo: userSettings.email?.replyTo,
+      senderEmail: userSettings.email?.senderEmail,
+      hasMailchimp: !!userSettings.mailchimp
+    });
 
     // Validate settings
     if (!userSettings.email || !userSettings.email.fromName) {
@@ -303,9 +336,21 @@ async send(req: Request, res: Response, next: NextFunction) {
       throw new APIError(400, "Email settings not properly configured. Please configure 'From Name' in settings.");
     }
 
+    logger.info('About to call emailService.sendNewsletter');
+    logger.info('Email service environment check:', {
+      hasSmtpHost: !!process.env.EMAIL_HOST,
+      hasSmtpPort: !!process.env.EMAIL_PORT,
+      hasSmtpUser: !!process.env.EMAIL_USER,
+      hasSmtpPass: !!process.env.EMAIL_PASSWORD,
+      smtpHost: process.env.EMAIL_HOST, // Log this to see the actual value
+      smtpPort: process.env.EMAIL_PORT
+    });
+
     try {
       // Try to send the newsletter
       await emailService.sendNewsletter(newsletter, subscribers, userSettings);
+      
+      logger.info('Email service completed successfully');
       
       // Update newsletter status after successful send
       newsletter.status = "sent";
@@ -313,13 +358,16 @@ async send(req: Request, res: Response, next: NextFunction) {
       newsletter.sentTo = subscribers.length;
       await newsletter.save();
 
+      logger.info('Newsletter status updated to sent');
+
       // Create analytics record
       await Analytics.create({
         newsletterId: newsletter._id,
         createdBy: req.user._id,
-        // bounces: { count: 0, details: [] },
         unsubscribes: { count: 0, details: [] }
       });
+
+      logger.info('Analytics record created');
 
       // Delete draft version if exists
       await Newsletter.deleteOne({
@@ -329,19 +377,38 @@ async send(req: Request, res: Response, next: NextFunction) {
         _id: { $ne: newsletter._id }
       });
 
+      logger.info('Draft cleanup completed');
+      logger.info('=== NEWSLETTER SEND DEBUG END - SUCCESS ===');
+
       return res.json({ 
         status: "success", 
         data: newsletter 
       });
-    } catch (sendError: any) {
-      logger.error("Failed to send newsletter", { 
-        error: sendError.message, 
+    } catch (sendError: unknown) {
+      const errorMessage = sendError instanceof Error ? sendError.message : 'Unknown error occurred';
+      const errorStack = sendError instanceof Error ? sendError.stack : undefined;
+      const errorName = sendError instanceof Error ? sendError.name : 'UnknownError';
+      
+      logger.error("Email service failed:", { 
+        error: errorMessage,
+        stack: errorStack,
+        name: errorName,
         newsletter: newsletter._id 
       });
-      throw new APIError(500, `Failed to send newsletter: ${sendError.message}`);
+      logger.info('=== NEWSLETTER SEND DEBUG END - EMAIL SERVICE ERROR ===');
+      throw new APIError(500, `Failed to send newsletter: ${errorMessage}`);
     }
-  } catch (error) {
-    logger.error("Send newsletter error:", error);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    const errorName = error instanceof Error ? error.name : 'UnknownError';
+    
+    logger.error("Send newsletter error:", {
+      message: errorMessage,
+      stack: errorStack,
+      name: errorName
+    });
+    logger.info('=== NEWSLETTER SEND DEBUG END - ERROR ===');
     next(error);
   }
 }
