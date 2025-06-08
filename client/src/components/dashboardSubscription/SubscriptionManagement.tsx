@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getSubscriptionStatus, cancelSubscription } from '../../services/api';
-import { 
-  ArrowPathIcon, 
+import {
+  ArrowPathIcon,
   ExclamationCircleIcon,
   XCircleIcon,
   CheckCircleIcon,
@@ -29,11 +29,11 @@ const CancelModal: React.FC<CancelModalProps> = ({ isOpen, onClose, onConfirm, i
           <ExclamationCircleIcon className="w-6 h-6" />
           <h3 className="text-xl font-bold">Cancel Subscription</h3>
         </div>
-        
+
         <p className="text-gray-300 mb-6">
           Are you sure you want to cancel your subscription? You'll still have access until the end of your current billing period.
         </p>
-        
+
         <div className="flex gap-3 justify-end">
           <button
             onClick={onClose}
@@ -43,7 +43,7 @@ const CancelModal: React.FC<CancelModalProps> = ({ isOpen, onClose, onConfirm, i
           >
             Keep Subscription
           </button>
-          
+
           <button
             onClick={onConfirm}
             className="px-4 py-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400
@@ -88,26 +88,26 @@ const SubscriptionManagement = () => {
       setLoading(true);
       setError(null);
       setAuthError(false);
-      
+
       // Check if token exists
       const token = localStorage.getItem('token');
       if (!token) {
         setAuthError(true);
         return;
       }
-      
+
       const response = await getSubscriptionStatus();
       setSubscription(response.data?.subscription);
     } catch (err: any) {
       console.error("Error fetching subscription status:", err);
-      
+
       // Check if this is an authentication error
-      if (err.message?.includes('Not authenticated') || 
-          err.response?.status === 401 ||
-          err.message?.includes('User no longer exists') ||
-          err.message?.includes('Failed to fetch subscription status')) {
+      if (err.message?.includes('Not authenticated') ||
+        err.response?.status === 401 ||
+        err.message?.includes('User no longer exists') ||
+        err.message?.includes('Failed to fetch subscription status')) {
         setAuthError(true);
-        
+
         // Clear localStorage as tokens may be invalid
         localStorage.removeItem('token');
         localStorage.removeItem('user');
@@ -133,26 +133,26 @@ const SubscriptionManagement = () => {
       setShowCancelModal(false);
       return;
     }
-    
+
     try {
       setCancelling(true);
       setError(null);
       setSuccessMessage(null);
-      
+
       const response = await cancelSubscription(subscription.id);
       setSuccessMessage(response.data?.message || 'Your subscription has been cancelled successfully');
-      
+
       // Refresh subscription status
       await fetchSubscriptionStatus();
     } catch (err: any) {
       console.error("Error canceling subscription:", err);
-      
+
       // Check if this is an authentication error
-      if (err.message?.includes('Not authenticated') || 
-          err.response?.status === 401 ||
-          err.message?.includes('User no longer exists')) {
+      if (err.message?.includes('Not authenticated') ||
+        err.response?.status === 401 ||
+        err.message?.includes('User no longer exists')) {
         setAuthError(true);
-        
+
         // Clear localStorage as tokens may be invalid
         localStorage.removeItem('token');
         localStorage.removeItem('user');
@@ -164,40 +164,40 @@ const SubscriptionManagement = () => {
       setShowCancelModal(false);
     }
   };
-  
+
   // Handle toggling auto-renewal
   const toggleAutoRenew = async () => {
     if (!subscription?.id) {
       setError('No subscription ID found');
       return;
     }
-    
+
     try {
       setUpdatingAutoRenew(true);
       setError(null);
-      
+
       // Current value determines what we want to set it to
       const currentAutoRenew = !subscription.cancelAtPeriodEnd;
       const newAutoRenew = !currentAutoRenew;
-      
+
       // Import the function from api.ts
       const { updateSubscriptionRenewal } = await import('../../services/api');
-      
+
       // Call the new API function
       const response = await updateSubscriptionRenewal(
-        subscription.id, 
+        subscription.id,
         newAutoRenew // pass the desired auto-renew state
       );
-      
+
       if (response?.status === 'success') {
         // Update the local subscription object
         setSubscription({
           ...subscription,
           cancelAtPeriodEnd: !newAutoRenew
         });
-        
-        setSuccessMessage(newAutoRenew ? 
-          'Auto-renewal enabled successfully' : 
+
+        setSuccessMessage(newAutoRenew ?
+          'Auto-renewal enabled successfully' :
           'Auto-renewal disabled successfully');
       }
     } catch (err: any) {
@@ -208,7 +208,7 @@ const SubscriptionManagement = () => {
     }
   };
 
-  
+
   // Handle login redirect for auth errors
   const handleLogin = () => {
     router.push('/login');
@@ -221,13 +221,13 @@ const SubscriptionManagement = () => {
       </div>
     );
   }
-  
+
   if (authError) {
     return (
       <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700">
         <h3 className="text-xl font-bold mb-2">Subscription</h3>
         <p className="text-gray-400 mb-4">You need to log in to view your subscription details</p>
-        <button 
+        <button
           onClick={handleLogin}
           className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg"
         >
@@ -255,13 +255,13 @@ const SubscriptionManagement = () => {
   };
 
   // Check if subscription is expired
-  const isExpired = subscription.status === 'cancelled' && 
+  const isExpired = subscription.status === 'cancelled' &&
     new Date(subscription.currentPeriodEnd) < new Date();
 
   return (
     <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700">
       <h3 className="text-xl font-bold mb-4">Subscription Management</h3>
-      
+
       {error && (
         <div className="bg-red-500/10 border border-red-500/50 text-red-400 
           px-4 py-3 rounded-lg mb-4 flex items-start gap-2">
@@ -269,7 +269,7 @@ const SubscriptionManagement = () => {
           <span>{error}</span>
         </div>
       )}
-      
+
       {successMessage && (
         <div className="bg-green-500/10 border border-green-500/50 text-green-400 
           px-4 py-3 rounded-lg mb-4 flex items-start gap-2">
@@ -277,7 +277,7 @@ const SubscriptionManagement = () => {
           <span>{successMessage}</span>
         </div>
       )}
-      
+
       {/* Expired warning */}
       {isExpired && (
         <div className="bg-amber-500/10 border border-amber-500/50 text-amber-400 
@@ -285,23 +285,23 @@ const SubscriptionManagement = () => {
           Your subscription has expired. Please renew to continue using the service.
         </div>
       )}
-      
+
       <div className="space-y-3 mb-6">
         <div className="flex justify-between">
           <span className="text-gray-400">Status</span>
           <span className={`font-medium ${isExpired ? 'text-amber-400' : ''}`}>
-            {isExpired ? 'Expired' : 
+            {isExpired ? 'Expired' :
               subscription.status === 'trialing' ? 'Trial' : subscription.status}
           </span>
         </div>
-        
+
         {subscription.trialEnd && (
           <div className="flex justify-between">
             <span className="text-gray-400">Trial ends on</span>
             <span className="font-medium">{formatDate(subscription.trialEnd)}</span>
           </div>
         )}
-        
+
         {subscription.currentPeriodEnd && (
           <div className="flex justify-between">
             <span className="text-gray-400">
@@ -310,33 +310,40 @@ const SubscriptionManagement = () => {
             <span className="font-medium">{formatDate(subscription.currentPeriodEnd)}</span>
           </div>
         )}
-        
+
         {/* Auto-renew toggle - always show this row */}
         <div className="flex justify-between items-center">
           <span className="text-gray-400">Auto renew</span>
-          
+
           <div className="flex items-center gap-2">
             <span className="font-medium">
               {subscription.cancelAtPeriodEnd ? 'No' : 'Yes'}
             </span>
-            <button 
+
+            <button
               onClick={toggleAutoRenew}
               disabled={updatingAutoRenew || isExpired}
-              className="text-gray-300 hover:text-blue-400 disabled:opacity-50"
+              className="relative inline-flex items-center disabled:opacity-50"
               aria-label={subscription.cancelAtPeriodEnd ? "Enable auto-renewal" : "Disable auto-renewal"}
             >
               {updatingAutoRenew ? (
-                <ArrowPathIcon className="w-5 h-5 animate-spin" />
-              ) : subscription.cancelAtPeriodEnd ? (
-                <MinusIcon className="w-8 h-8" />
+                <ArrowPathIcon className="w-5 h-5 animate-spin text-gray-300" />
               ) : (
-                <PlusIcon className="w-8 h-8 text-blue-500" />
+                <div className={`w-11 h-6 rounded-full transition-colors ${subscription.cancelAtPeriodEnd
+                    ? 'bg-gray-700'
+                    : 'bg-blue-500'
+                  } relative`}>
+                  <div className={`absolute top-[2px] left-[2px] bg-white rounded-full h-5 w-5 transition-transform ${subscription.cancelAtPeriodEnd
+                      ? 'translate-x-0'
+                      : 'translate-x-full'
+                    }`}></div>
+                </div>
               )}
             </button>
           </div>
         </div>
       </div>
-      
+
       {/* Always show Cancel button if not expired and auto-renewal is on */}
       {!subscription.cancelAtPeriodEnd && !isExpired && (
         <button
@@ -349,7 +356,7 @@ const SubscriptionManagement = () => {
           Cancel Subscription
         </button>
       )}
-      
+
       {subscription.cancelAtPeriodEnd && !isExpired && (
         <div className="text-gray-400 text-sm flex items-start gap-2">
           <CheckCircleIcon className="w-4 h-4 mt-0.5 text-amber-400 flex-shrink-0" />
@@ -359,7 +366,7 @@ const SubscriptionManagement = () => {
           </span>
         </div>
       )}
-      
+
       {isExpired && (
         <button
           onClick={() => router.push('/pricing')}
@@ -370,9 +377,9 @@ const SubscriptionManagement = () => {
           Renew Subscription
         </button>
       )}
-      
+
       {/* Cancel Confirmation Modal */}
-      <CancelModal 
+      <CancelModal
         isOpen={showCancelModal}
         onClose={handleCloseModal}
         onConfirm={handleCancelSubscription}

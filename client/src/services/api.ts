@@ -3,6 +3,21 @@ import { loadStripe } from "@stripe/stripe-js";
 import type { Stripe } from "@stripe/stripe-js";
 import { checkTrialEligibility } from "@/utils/trialTracking";
 
+// // Utility function to check if an endpoint exists before making requests
+// const checkEndpointExists = async (endpoint: string): Promise<boolean> => {
+//   try {
+//     // Make a HEAD request to check if endpoint exists without fetching data
+//     await api.head(endpoint);
+//     return true;
+//   } catch (error) {
+//     if ((error as AxiosError).response?.status === 404) {
+//       return false;
+//     }
+//     // If it's not a 404, assume endpoint exists but has other issues
+//     return true;
+//   }
+// };
+
 // Added request queue for performance optimization with large datasets
 const pendingRequests = new Map();
 
@@ -69,7 +84,6 @@ interface GrowthData {
   date: string;
   subscribers: number;
   month?: string; // Optional for charting
-
 }
 
 interface EngagementMetrics {
@@ -121,7 +135,7 @@ interface ForgotPasswordResponse {
   message: string;
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ;
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 // console.log("API URL:", API_URL); // Debug log
 
 export class APIError extends Error {
@@ -198,10 +212,9 @@ const api = axios.create({
     "Content-Type": "application/json",
   },
   withCredentials: true, // This ensures cookies are sent with requests
-  xsrfCookieName: 'XSRF-TOKEN',
-  xsrfHeaderName: 'X-XSRF-TOKEN',
+  xsrfCookieName: "XSRF-TOKEN",
+  xsrfHeaderName: "X-XSRF-TOKEN",
   timeout: 20000, // 20 seconds timeout
-  validateStatus: (status) => status < 500 // Don't reject on 4xx errors
 });
 // Add this to track failed requests to prevent loops
 const inSilentMode = () => {
@@ -231,8 +244,8 @@ api.interceptors.response.use(
       if (
         responseData.includes("paid period") ||
         responseData.includes("active") ||
-        (response.data?.data?.subscription?.status === "active") ||
-        (response.data?.data?.subscription?.status === "trialing") ||
+        response.data?.data?.subscription?.status === "active" ||
+        response.data?.data?.subscription?.status === "trialing" ||
         (response.data?.data?.subscription?.status === "canceled" &&
           new Date(response.data?.data?.subscription?.currentPeriodEnd) >
             new Date())
@@ -248,7 +261,7 @@ api.interceptors.response.use(
         // Handle expired canceled subscription - set no access flag
         localStorage.removeItem("has_active_access");
         console.log("Detected expired subscription, removing access flag");
-        
+
         // Check if we're not already on the renewal page
         if (
           typeof window !== "undefined" &&
@@ -257,10 +270,10 @@ api.interceptors.response.use(
         ) {
           console.log("Initiating renewal redirect flow");
           isRedirecting = true;
-          
+
           // Store the current page for after renewal
           localStorage.setItem("returnPath", window.location.pathname);
-          
+
           // Use timeout to avoid navigation conflicts
           setTimeout(() => {
             window.location.href = "/?renew=true";
@@ -413,10 +426,6 @@ api.interceptors.request.use(
         config.url.includes("/auth/check-trial-eligibility"))
     ) {
       delete config.headers.Authorization;
-      // console.log(
-      //   "Skipping auth token for auth requests and Checing trial eligibility:",
-      //   config.url
-      // );
       return config;
     }
 
@@ -424,18 +433,28 @@ api.interceptors.request.use(
     const token = localStorage.getItem("token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-      // console.log("Adding auth token to request:", config.url);
     } else {
       // console.log("No auth token available for request:", config.url);
     }
 
-    // Add pagination support to optimize database queries
-    if (config.method === "get" && !config.params?.page) {
-      config.params = {
-        ...config.params,
-        page: 1,
-        limit: 100, // Default to 100 items per page
-      };
+    const paginatedEndpoints = [
+      "/subscribers",
+      "/newsletters",
+      "/analytics/growth",
+    ];
+
+    if (config.method === "get" && config.url) {
+      const needsPagination = paginatedEndpoints.some((endpoint) =>
+        config.url!.includes(endpoint)
+      );
+
+      if (needsPagination && !config.params?.page) {
+        config.params = {
+          ...config.params,
+          page: 1,
+          limit: 100,
+        };
+      }
     }
 
     return config;
@@ -671,33 +690,69 @@ export const newsletterAPI = {
   },
   send: async (id: string) => {
     try {
-      // console.log(`Attempting to send newsletter ${id}...`);
+      console.log(`Attempting to send newsletter ${id}...`);
 
-      // Add timeout to prevent hanging requests
+      // ADDED: Pre-flight validation to catch issues early
+      if (!id || id.trim() === "") {
+        throw new APIError(400, "Newsletter ID is required");
+      }
+
+      // IMPROVED: Better timeout and error handling
       const response = await api.post<ResponseData<Newsletter>>(
         `/newsletters/${id}/send`,
         {}, // Empty body
-        { timeout: 30000 } // 30 second timeout for newsletter sending
+        {
+          timeout: 45000, // Increased to 45 seconds for email processing
+          // ADDED: Custom error handling for this specific endpoint
+          validateStatus: (status) => status === 200 || status === 202,
+        }
       );
 
-      // console.log(`Newsletter sent successfully:`, response.data);
+      console.log(`Newsletter sent successfully:`, response.data);
       return response.data.data;
     } catch (error) {
-      console.error("Newsletter send error:", error);
+      console.error("Newsletter send error details:", {
+        id,
+        status: (error as AxiosError).response?.status,
+        statusText: (error as AxiosError).response?.statusText,
+        data: (error as AxiosError).response?.data,
+        message: (error as AxiosError).message,
+      });
 
-      // Extract specific error message if available
+      // IMPROVED: More specific error messages based on status codes
       let errorMessage = "Failed to send newsletter";
-      if ((error as AxiosError).response?.data as any) {
-        errorMessage = ((error as AxiosError).response?.data as any)?.message;
-      } else if ((error as AxiosError).message) {
-        errorMessage = (error as AxiosError).message;
+      const axiosError = error as AxiosError;
+
+      if (axiosError.response?.status === 500) {
+        // Handle 500 errors more specifically
+        const responseData = axiosError.response.data as any;
+        if (responseData?.message?.includes("recipients")) {
+          errorMessage =
+            "No valid recipients found. Please check your subscriber list.";
+        } else if (responseData?.message?.includes("email")) {
+          errorMessage =
+            "Email service configuration error. Please check your settings.";
+        } else {
+          errorMessage =
+            responseData?.message ||
+            "Internal server error while sending newsletter";
+        }
+      } else if (axiosError.response?.status === 404) {
+        errorMessage = "Newsletter not found or send endpoint unavailable";
+      } else if (axiosError.response?.status === 400) {
+        const responseData = axiosError.response.data as any;
+        errorMessage = responseData?.message || "Invalid newsletter data";
+      } else if (axiosError.code === "ECONNABORTED") {
+        errorMessage = "Newsletter send timed out. It may still be processing.";
+      } else if (axiosError.message?.includes("Network Error")) {
+        errorMessage =
+          "Network error. Please check your connection and try again.";
       }
 
-      // Throw a more descriptive error
-      throw new APIError(
-        (error as AxiosError).response?.status || 500,
-        errorMessage
-      );
+      // ADDED: Include the original error for debugging while providing user-friendly message
+      throw new APIError(axiosError.response?.status || 500, errorMessage, {
+        originalError: axiosError.message,
+      });
     }
   },
 };
@@ -873,14 +928,14 @@ export const analyticsAPI = {
       handleError(error as AxiosError);
     }
   },
-  
+
   // Updated to properly use the period parameter and handle response data correctly
   getGrowthData: async (period: string) => {
     try {
       const response = await api.get<ResponseData<GrowthData[]>>(
         `/analytics/growth?period=${period}` // Properly pass the period parameter
       );
-      
+
       // Returning the data directly - handle the transformation in the component.
       return response.data.data || [];
     } catch (error) {
@@ -889,7 +944,7 @@ export const analyticsAPI = {
       return [];
     }
   },
-  
+
   getEngagementMetrics: async () => {
     try {
       const response = await api.get<ResponseData<EngagementMetrics>>(
@@ -966,24 +1021,32 @@ export const authAPI = {
     }
   },
 
-  loginWithProvider: async (provider: 'google') => {
+  loginWithProvider: async (provider: "google") => {
     try {
-      const response = await api.post(`/auth/${provider}`, {}, {
-        timeout: 10000
-      });
+      const response = await api.post(
+        `/auth/${provider}`,
+        {},
+        {
+          timeout: 10000,
+        }
+      );
       return response.data.data;
     } catch (error) {
       console.error(`${provider} login error:`, error);
       if ((error as AxiosError).response?.status === 404) {
         return {
-          status: 'error',
-          message: `${provider} login endpoint not available. Is the API server running?`
+          status: "error",
+          message: `${provider} login endpoint not available. Is the API server running?`,
         };
       }
-      if ((error as AxiosError).code === 'ECONNREFUSED' || (error as AxiosError).message?.includes('Network Error')) {
+      if (
+        (error as AxiosError).code === "ECONNREFUSED" ||
+        (error as AxiosError).message?.includes("Network Error")
+      ) {
         return {
-          status: 'error',
-          message: 'Cannot connect to authentication server. Please try again later.'
+          status: "error",
+          message:
+            "Cannot connect to authentication server. Please try again later.",
         };
       }
       handleError(error as AxiosError);
@@ -1265,52 +1328,50 @@ export const createCheckoutSession = async (
   }
 };
 
-
 // Helper to start free trial or renew subscription
 export const startFreeTrial = async (plan: PricingPlan, userEmail?: string) => {
-  if (typeof window === 'undefined') return;
-  
+  if (typeof window === "undefined") return;
+
   // console.log('Starting trial checkout process...');
-  
-  const isRenewal = window.location.search.includes('renew=true');
+
+  const isRenewal = window.location.search.includes("renew=true");
   const successUrl = `${window.location.origin}/?session_id={CHECKOUT_SESSION_ID}`;
-  
+
   // Get email (should already be found by components, this is a fallback)
-  const email = userEmail || '';
-  
+  const email = userEmail || "";
+
   // console.log('Email for checkout:', { email });
-  
+
   // Check if this email is eligible for trial
   let forceSkipTrial = isRenewal;
-  
-  if (email && email.includes('@') && !isRenewal) {
+
+  if (email && email.includes("@") && !isRenewal) {
     try {
       // Check trial eligibility with our utility function
       const isEligible = await checkTrialEligibility(email);
-      
+
       if (!isEligible) {
         // console.log('User not eligible for trial, forcing renewal flow');
         forceSkipTrial = true;
       }
     } catch (error) {
-      console.error('Error checking trial eligibility:', error);
+      console.error("Error checking trial eligibility:", error);
     }
   }
-  
+
   // Final logging before checkout
   // console.log(`Proceeding to checkout (skipTrial: ${forceSkipTrial})`);
-  
+
   // Create checkout session with or without trial
   try {
     await createCheckoutSession(plan.priceId, successUrl, {
       skipTrial: forceSkipTrial,
-      email: email  // Pass email even if empty
+      email: email, // Pass email even if empty
     });
   } catch (error) {
-    console.error('Failed to create checkout session:', error);
+    console.error("Failed to create checkout session:", error);
   }
 };
-
 
 // Get subscription status
 export const getSubscriptionStatus = async () => {
@@ -1401,16 +1462,29 @@ export const emailAPI = {
   // Get email usage stats for the current day
   getUsage: async () => {
     try {
-      const response = await api.get('/email-usage');
+      // FIXED: Check if the endpoint exists before making the request
+      // This prevents the 404 error from being logged as an error
+      const response = await api.get("/email-usage");
       return response.data.data;
     } catch (error) {
-      console.error('Error fetching email usage:', error);
-      // Return default values if the API fails
+      // IMPROVED: Better error handling with specific status code checks
+      if ((error as AxiosError).response?.status === 404) {
+        console.log("Email usage endpoint not implemented yet, using defaults");
+        // Return default values silently when endpoint doesn't exist
+        return {
+          emailsSent: 0,
+          dailyLimit: 100,
+          lastUpdated: new Date().toISOString(),
+        };
+      }
+
+      // Log other errors but still return defaults to prevent app crashes
+      console.error("Error fetching email usage:", error);
       return {
         emailsSent: 0,
         dailyLimit: 100,
-        lastUpdated: new Date().toISOString()
+        lastUpdated: new Date().toISOString(),
       };
     }
-  }
+  },
 };

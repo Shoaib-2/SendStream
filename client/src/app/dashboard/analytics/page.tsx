@@ -3,8 +3,6 @@ import React from 'react';
 import { Users, Mail } from 'lucide-react';
 import { 
   ResponsiveContainer, 
-  LineChart, 
-  Line, 
   XAxis, 
   YAxis, 
   CartesianGrid, 

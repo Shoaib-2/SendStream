@@ -432,15 +432,18 @@ export default function SettingsPage() {
                     <p className="text-xs sm:text-sm text-gray-400 truncate">Connect your newsletter with Mailchimp</p>
                   </div>
                   <div className="flex-shrink-0">
-                    <button
-                      onClick={() => toggleIntegration('mailchimp', !settings.mailchimp.enabled)}
-                      className="text-gray-300 hover:text-blue-400 p-1"
-                    >                      {settings.mailchimp.enabled ? (
-                        <CheckIcon className="w-8 h-8 sm:w-10 sm:h-10 text-blue-500" />
-                      ) : (
-                        <XMarkIcon className="w-8 h-8 sm:w-10 sm:h-10" />
-                      )}
-                    </button>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={settings.mailchimp.enabled}
+                        onChange={(e) => toggleIntegration('mailchimp', e.target.checked)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer 
+                        peer-checked:after:translate-x-full peer-checked:after:border-white after:content-['']
+                        after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full
+                        after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+                    </label>
                   </div>
                 </div>
 
@@ -450,16 +453,19 @@ export default function SettingsPage() {
                     <p className="text-xs sm:text-sm text-gray-400 truncate">Automatically sync with Mailchimp when loading subscribers</p>
                   </div>
                   <div className="flex-shrink-0">
-                    <button
-                      onClick={() => toggleAutoSync(!settings.mailchimp.autoSync)}
-                      className="text-gray-300 hover:text-blue-400 p-1"
-                      disabled={!settings.mailchimp.enabled}
-                    >                      {settings.mailchimp.autoSync ? (
-                        <CheckIcon className="w-8 h-8 sm:w-10 sm:h-10 text-blue-500" />
-                      ) : (
-                        <XMarkIcon className="w-8 h-8 sm:w-10 sm:h-10" />
-                      )}
-                    </button>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={settings.mailchimp.autoSync}
+                        onChange={(e) => toggleAutoSync(e.target.checked)}
+                        disabled={!settings.mailchimp.enabled}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer 
+                        peer-checked:after:translate-x-full peer-checked:after:border-white after:content-['']
+                        after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full
+                        after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500 peer-disabled:opacity-50 peer-disabled:cursor-not-allowed"></div>
+                    </label>
                   </div>
                 </div>
               </div>
