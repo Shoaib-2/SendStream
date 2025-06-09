@@ -250,7 +250,7 @@ export class NewsletterController {
   /**
    * Validates email settings and SMTP configuration
    */
-  private validateEmailConfiguration(userSettings: any): { isValid: boolean; error?: string } {
+  private static validateEmailConfiguration(userSettings: any): { isValid: boolean; error?: string } {
     // Check if basic settings exist
     if (!userSettings || !userSettings.email) {
       return { isValid: false, error: "Email settings not found. Please configure your email settings." };
@@ -292,7 +292,7 @@ export class NewsletterController {
   /**
    * Creates or updates user settings with better defaults
    */
-  private async ensureUserSettings(userId: string): Promise<any> {
+  private static async ensureUserSettings(userId: string): Promise<any> {
     let userSettings = await Settings.findOne({ userId });
     
     if (!userSettings) {
@@ -364,7 +364,7 @@ async send(req: Request, res: Response, next: NextFunction) {
     logger.info(`Found ${subscribers.length} active subscribers`);
 
     // Ensure user settings exist and are properly configured
-    const userSettings = await this.ensureUserSettings(req.user._id);
+    const userSettings = await NewsletterController.ensureUserSettings(req.user._id);
     
     logger.info('User settings after ensuring defaults:', {
       found: !!userSettings,
@@ -375,7 +375,7 @@ async send(req: Request, res: Response, next: NextFunction) {
     });
 
     // Validate email configuration
-    const validation = this.validateEmailConfiguration(userSettings);
+    const validation = NewsletterController.validateEmailConfiguration(userSettings);
     if (!validation.isValid) {
       logger.error('Email configuration validation failed:', validation.error);
       throw new APIError(400, validation.error!);
@@ -494,10 +494,10 @@ async send(req: Request, res: Response, next: NextFunction) {
         createdBy: newsletter.createdBy,
       });
 
-      const userSettings = await this.ensureUserSettings(newsletter.createdBy.toString());
+      const userSettings = await NewsletterController.ensureUserSettings(newsletter.createdBy.toString());
       
       // Validate settings before sending
-      const validation = this.validateEmailConfiguration(userSettings);
+      const validation = NewsletterController.validateEmailConfiguration(userSettings);
       if (!validation.isValid) {
         logger.error('Scheduled newsletter failed - invalid email configuration:', validation.error);
         return;
