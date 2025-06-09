@@ -10,9 +10,6 @@ import Subscriber from "../models/Subscriber";
 import Analytics from "../models/analytics";
 import Settings from "../models/Settings";
 
-
-
-
 export class NewsletterController {
   async create(req: Request, res: Response, next: NextFunction) {
     try {
@@ -250,8 +247,80 @@ export class NewsletterController {
     }
   }
 
- 
-// Updated send method for newsletter.controller.ts
+  /**
+   * Validates email settings and SMTP configuration
+   */
+  private validateEmailConfiguration(userSettings: any): { isValid: boolean; error?: string } {
+    // Check if basic settings exist
+    if (!userSettings || !userSettings.email) {
+      return { isValid: false, error: "Email settings not found. Please configure your email settings." };
+    }
+
+    const { email } = userSettings;
+
+    // Check required email fields
+    if (!email.fromName || email.fromName.trim() === '') {
+      return { isValid: false, error: "From Name is required. Please set your sender name in email settings." };
+    }
+
+    if (!email.senderEmail || email.senderEmail.trim() === '') {
+      return { isValid: false, error: "Sender Email is required. Please set your sender email in email settings." };
+    }
+
+    if (!email.replyTo || email.replyTo.trim() === '') {
+      return { isValid: false, error: "Reply-To email is required. Please configure your reply-to email in settings." };
+    }
+
+    // Basic email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.senderEmail)) {
+      return { isValid: false, error: "Sender email format is invalid. Please provide a valid email address." };
+    }
+
+    if (!emailRegex.test(email.replyTo)) {
+      return { isValid: false, error: "Reply-To email format is invalid. Please provide a valid email address." };
+    }
+
+    // Check SMTP environment variables
+    if (!process.env.EMAIL_HOST || !process.env.EMAIL_PORT || !process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
+      return { isValid: false, error: "SMTP configuration is incomplete. Please contact administrator." };
+    }
+
+    return { isValid: true };
+  }
+
+  /**
+   * Creates or updates user settings with better defaults
+   */
+  private async ensureUserSettings(userId: string): Promise<any> {
+    let userSettings = await Settings.findOne({ userId });
+    
+    if (!userSettings) {
+      logger.info('Creating default settings for user:', userId);
+      
+      // Use environment variable for default sender email or fallback
+      const defaultSenderEmail = process.env.DEFAULT_SENDER_EMAIL || 'newsletter@example.com';
+      
+      userSettings = await Settings.create({
+        userId,
+        email: { 
+          fromName: 'Newsletter Team', 
+          replyTo: defaultSenderEmail,
+          senderEmail: defaultSenderEmail
+        },
+        mailchimp: {
+          apiKey: '',
+          serverPrefix: '',
+          enabled: false,
+          autoSync: false
+        }
+      });
+      
+      logger.info('Default settings created with sender email:', defaultSenderEmail);
+    }
+
+    return userSettings;
+  }
 
 async send(req: Request, res: Response, next: NextFunction) {
   try {
@@ -294,57 +363,42 @@ async send(req: Request, res: Response, next: NextFunction) {
 
     logger.info(`Found ${subscribers.length} active subscribers`);
 
-    // Get or create user settings with detailed logging
-    let userSettings = await Settings.findOne({ userId: req.user._id });
+    // Ensure user settings exist and are properly configured
+    const userSettings = await this.ensureUserSettings(req.user._id);
     
-    logger.info('User settings lookup:', {
+    logger.info('User settings after ensuring defaults:', {
       found: !!userSettings,
-      userId: req.user._id
-    });
-
-    if (!userSettings) {
-      logger.info('Creating default settings for user');
-      userSettings = await Settings.create({
-        userId: req.user._id,
-        email: { 
-          fromName: 'Newsletter', 
-          replyTo: 'noreply@yourdomain.com',
-          senderEmail: 'noreply@yourdomain.com' 
-        },
-        mailchimp: {
-          apiKey: '',
-          serverPrefix: '',
-          enabled: false,
-          autoSync: false
-        }
-      });
-      logger.info('Default settings created');
-    }
-
-    // Log settings details (without sensitive info)
-    logger.info('Settings configuration:', {
       hasEmail: !!userSettings.email,
       fromName: userSettings.email?.fromName,
       replyTo: userSettings.email?.replyTo,
       senderEmail: userSettings.email?.senderEmail,
-      hasMailchimp: !!userSettings.mailchimp
     });
 
-    // Validate settings
-    if (!userSettings.email || !userSettings.email.fromName) {
-      logger.error('Invalid email settings configuration');
-      throw new APIError(400, "Email settings not properly configured. Please configure 'From Name' in settings.");
+    // Validate email configuration
+    const validation = this.validateEmailConfiguration(userSettings);
+    if (!validation.isValid) {
+      logger.error('Email configuration validation failed:', validation.error);
+      throw new APIError(400, validation.error!);
     }
 
-    logger.info('About to call emailService.sendNewsletter');
-    logger.info('Email service environment check:', {
-      hasSmtpHost: !!process.env.EMAIL_HOST,
-      hasSmtpPort: !!process.env.EMAIL_PORT,
-      hasSmtpUser: !!process.env.EMAIL_USER,
-      hasSmtpPass: !!process.env.EMAIL_PASSWORD,
-      smtpHost: process.env.EMAIL_HOST, // Log this to see the actual value
-      smtpPort: process.env.EMAIL_PORT
-    });
+    logger.info('Email configuration validation passed');
+
+    // Additional SMTP environment check with better logging
+    const smtpConfig = {
+      host: process.env.EMAIL_HOST,
+      port: process.env.EMAIL_PORT,
+      user: process.env.EMAIL_USER,
+      hasPassword: !!process.env.EMAIL_PASSWORD
+    };
+
+    logger.info('SMTP Configuration:', smtpConfig);
+
+    if (!smtpConfig.host || !smtpConfig.port || !smtpConfig.user || !smtpConfig.hasPassword) {
+      logger.error('SMTP environment variables missing');
+      throw new APIError(500, "Email server configuration is incomplete. Please contact administrator.");
+    }
+
+    logger.info('About to call emailService.sendNewsletter with validated settings');
 
     try {
       // Try to send the newsletter
@@ -382,7 +436,8 @@ async send(req: Request, res: Response, next: NextFunction) {
 
       return res.json({ 
         status: "success", 
-        data: newsletter 
+        data: newsletter,
+        message: `Newsletter sent successfully to ${subscribers.length} subscribers`
       });
     } catch (sendError: unknown) {
       const errorMessage = sendError instanceof Error ? sendError.message : 'Unknown error occurred';
@@ -393,10 +448,26 @@ async send(req: Request, res: Response, next: NextFunction) {
         error: errorMessage,
         stack: errorStack,
         name: errorName,
-        newsletter: newsletter._id 
+        newsletter: newsletter._id,
+        subscriberCount: subscribers.length,
+        userSettings: {
+          hasEmail: !!userSettings.email,
+          senderEmail: userSettings.email?.senderEmail,
+          fromName: userSettings.email?.fromName
+        }
       });
       logger.info('=== NEWSLETTER SEND DEBUG END - EMAIL SERVICE ERROR ===');
-      throw new APIError(500, `Failed to send newsletter: ${errorMessage}`);
+      
+      // Provide more specific error messages
+      if (errorMessage.includes('ENOTFOUND') || errorMessage.includes('ECONNREFUSED')) {
+        throw new APIError(500, "Unable to connect to email server. Please check your internet connection or contact administrator.");
+      } else if (errorMessage.includes('Invalid login') || errorMessage.includes('Authentication failed')) {
+        throw new APIError(500, "Email authentication failed. Please check email server credentials.");
+      } else if (errorMessage.includes('recipients')) {
+        throw new APIError(500, "Failed to send to recipients. Please check subscriber email addresses and try again.");
+      } else {
+        throw new APIError(500, `Failed to send newsletter: ${errorMessage}`);
+      }
     }
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
@@ -423,11 +494,19 @@ async send(req: Request, res: Response, next: NextFunction) {
         createdBy: newsletter.createdBy,
       });
 
-      const userSettings = await Settings.findOne({ userId: newsletter.createdBy });
+      const userSettings = await this.ensureUserSettings(newsletter.createdBy.toString());
+      
+      // Validate settings before sending
+      const validation = this.validateEmailConfiguration(userSettings);
+      if (!validation.isValid) {
+        logger.error('Scheduled newsletter failed - invalid email configuration:', validation.error);
+        return;
+      }
+
       await emailService.sendNewsletter(newsletter, subscribers, userSettings);
       const updatedNewsletter = await Newsletter.findByIdAndUpdate(
         newsletterId,
-        { status: "sent", sentDate: new Date() },
+        { status: "sent", sentDate: new Date(), sentTo: subscribers.length },
         { new: true }
       );
 
