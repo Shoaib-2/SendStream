@@ -269,9 +269,7 @@ export class NewsletterController {
 
     if (!email.replyTo || email.replyTo.trim() === '') {
       return { isValid: false, error: "Reply-To email is required. Please configure your reply-to email in settings." };
-    }
-
-    // Basic email format validation
+    }    // Basic email format validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email.senderEmail)) {
       return { isValid: false, error: "Sender email format is invalid. Please provide a valid email address." };
@@ -281,8 +279,15 @@ export class NewsletterController {
       return { isValid: false, error: "Reply-To email format is invalid. Please provide a valid email address." };
     }
 
-    // Check SMTP environment variables
-    if (!process.env.EMAIL_HOST || !process.env.EMAIL_PORT || !process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
+    // Check SMTP environment variables with detailed logging
+    let missingVars = [];
+    if (!process.env.EMAIL_HOST) missingVars.push('EMAIL_HOST');
+    if (!process.env.EMAIL_PORT) missingVars.push('EMAIL_PORT');
+    if (!process.env.EMAIL_USER) missingVars.push('EMAIL_USER');
+    if (!process.env.EMAIL_PASSWORD) missingVars.push('EMAIL_PASSWORD');
+
+    if (missingVars.length > 0) {
+      logger.error('Missing SMTP environment variables:', missingVars);
       return { isValid: false, error: "SMTP configuration is incomplete. Please contact administrator." };
     }
 
