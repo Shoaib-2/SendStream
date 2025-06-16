@@ -1461,10 +1461,9 @@ export const updateSubscriptionRenewal = async (
 export const emailAPI = {
   // Get email usage stats for the current day
   getUsage: async () => {
-    try {
-      // FIXED: Check if the endpoint exists before making the request
+    try {      // FIXED: Check if the endpoint exists before making the request
       // This prevents the 404 error from being logged as an error
-      const response = await api.get("/email-usage");
+      const response = await api.get("/email/usage");
       return response.data.data;
     } catch (error) {
       // IMPROVED: Better error handling with specific status code checks

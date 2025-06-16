@@ -6,7 +6,7 @@ import { protect } from '../middleware/auth/auth.middleware';
 const router = express.Router();
 
 router.get(
-  '/email-usage',
+  '/usage',
   protect as RequestHandler,
   emailController.getUsage
 );
