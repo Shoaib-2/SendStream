@@ -386,17 +386,25 @@ async send(req: Request, res: Response, next: NextFunction) {
       throw new APIError(400, validation.error!);
     }
 
-    logger.info('Email configuration validation passed');
-
-    // Additional SMTP environment check with better logging
+    logger.info('Email configuration validation passed');    // Additional SMTP environment check with better logging
     const smtpConfig = {
       host: process.env.EMAIL_HOST,
       port: process.env.EMAIL_PORT,
       user: process.env.EMAIL_USER,
-      hasPassword: !!process.env.EMAIL_PASSWORD
+      hasPassword: !!process.env.EMAIL_PASSWORD,
+      // Adding detailed debugging info
+      envKeys: Object.keys(process.env).filter(key => key.startsWith('EMAIL_')),
+      portType: typeof process.env.EMAIL_PORT,
+      portValue: process.env.EMAIL_PORT
     };
 
-    logger.info('SMTP Configuration:', smtpConfig);
+    logger.info('SMTP Configuration (Detailed):', {
+      ...smtpConfig,
+      hostExists: !!process.env.EMAIL_HOST,
+      portExists: !!process.env.EMAIL_PORT,
+      userExists: !!process.env.EMAIL_USER,
+      passwordExists: !!process.env.EMAIL_PASSWORD
+    });
 
     if (!smtpConfig.host || !smtpConfig.port || !smtpConfig.user || !smtpConfig.hasPassword) {
       logger.error('SMTP environment variables missing');
