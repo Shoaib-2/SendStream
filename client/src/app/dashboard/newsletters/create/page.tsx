@@ -93,7 +93,6 @@ const CreateNewsletter: React.FC = () => {
       setLoading(false);
     }
   };
-
   const scheduleNewsletter = async (date: string) => {
     try {
       if (!draftId) {
@@ -103,17 +102,15 @@ const CreateNewsletter: React.FC = () => {
 
       const scheduledTime = new Date(date);
       const now = new Date();
-      const timezoneOffset = scheduledTime.getTimezoneOffset() * 60000;
-      // console.log('Timezone Offset:', timezoneOffset);
-      // console.log('Scheduled Time:', scheduledTime);
-      const utcTimestamp = scheduledTime.getTime() + timezoneOffset;
-      
-      if (utcTimestamp <= now.getTime()) {
+
+      // Direct comparison of timestamps
+      if (scheduledTime.getTime() <= now.getTime()) {
         showNotificationMessage('Schedule time must be in the future', 'error');
         return;
       }
 
-      await newsletterAPI.schedule(draftId, new Date(utcTimestamp).toISOString());
+      // Send the date directly without timezone adjustment since the input is already in local time
+      await newsletterAPI.schedule(draftId, scheduledTime.toISOString());
       showNotificationMessage('Newsletter scheduled!', 'success');
       router.push('/dashboard/newsletters');
     } catch (error) {
@@ -226,16 +223,47 @@ const CreateNewsletter: React.FC = () => {
                 <Calendar className="w-4 h-4" />
                 Schedule
               </button>
-            ) : (
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto 
-                bg-gray-800/50 p-2 rounded-lg backdrop-blur-sm border border-gray-700">
-                <input
+            ) : (              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto 
+                bg-gray-800/50 p-2 rounded-lg backdrop-blur-sm border border-gray-700">                <input
                   type="datetime-local"
                   className="w-full sm:w-auto px-3 py-2 bg-gray-700/50 rounded-lg border border-gray-600 
                     focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50
                     text-gray-200 text-sm"
-                  defaultValue={new Date(Date.now() + 2 * 60 * 1000).toISOString().slice(0, 16)}
-                  onChange={(e) => scheduleNewsletter(e.target.value)}
+                  defaultValue={(() => {
+                    const now = new Date();
+                    // Add 2 minutes to current time and format as local datetime string
+                    now.setMinutes(now.getMinutes() + 2);
+                    const year = now.getFullYear();
+                    const month = String(now.getMonth() + 1).padStart(2, '0');
+                    const day = String(now.getDate()).padStart(2, '0');
+                    const hours = String(now.getHours()).padStart(2, '0');
+                    const minutes = String(now.getMinutes()).padStart(2, '0');
+                    return `${year}-${month}-${day}T${hours}:${minutes}`;
+                  })()}
+                  min={(() => {
+                    const now = new Date();
+                    const year = now.getFullYear();
+                    const month = String(now.getMonth() + 1).padStart(2, '0');
+                    const day = String(now.getDate()).padStart(2, '0');
+                    const hours = String(now.getHours()).padStart(2, '0');
+                    const minutes = String(now.getMinutes()).padStart(2, '0');
+                    return `${year}-${month}-${day}T${hours}:${minutes}`;
+                  })()}
+                  onChange={(e) => {
+                    const selectedDate = new Date(e.target.value);
+                    const now = new Date();
+                    if (selectedDate.getTime() < now.getTime()) {
+                      // If selected time is in the past, set it to current time + 2 minutes
+                      now.setMinutes(now.getMinutes() + 2);
+                      const year = now.getFullYear();
+                      const month = String(now.getMonth() + 1).padStart(2, '0');
+                      const day = String(now.getDate()).padStart(2, '0');
+                      const hours = String(now.getHours()).padStart(2, '0');
+                      const minutes = String(now.getMinutes()).padStart(2, '0');
+                      e.target.value = `${year}-${month}-${day}T${hours}:${minutes}`;
+                    }
+                    scheduleNewsletter(e.target.value);
+                  }}
                 />
                 <button
                   onClick={() => setShowScheduler(false)}
