@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Users, Mail, Star, BookOpen, Send } from 'lucide-react';
 import { useData } from '@/context/dataContext';
 import { newsletterAPI } from '@/services/api';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import { ResponsivePie } from '@nivo/pie';
 import type { Newsletter } from '@/types';
 import ExpiredSubscription from '@/components/subscription/ExpiredSubscription';
 import { useRouter } from 'next/navigation';
@@ -271,35 +271,36 @@ export default function DashboardPage() {
     ];
 
     return (
-      <div className="p-6 min-h-screen bg-gradient-to-b from-gray-900 via-gray-900 to-gray-900/50">
-        <div className="max-w-6xl mx-auto">
-          <h1 className="text-3xl md:text-4xl font-bold font-inter mb-8 bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
+      <div className="p-3 sm:p-4 md:p-6 min-h-screen bg-gradient-to-b from-gray-900 via-gray-900 to-gray-900/50">
+        <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6 md:space-y-8">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold font-inter bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
             Content Quality Dashboard
           </h1>
           
           {/* Email Sending Limits Card */}
-          <div className="mb-8 bg-gray-800/50 backdrop-blur-sm p-6 rounded-2xl border border-gray-800 hover:border-blue-500/50 transition-all duration-300">
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-4">
-              <div className="flex items-center mb-4 md:mb-0">
-                <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center mr-4">
-                  <Send className="w-6 h-6 text-blue-500" />
+          <div className="bg-gray-800/50 backdrop-blur-sm p-4 sm:p-6 rounded-lg sm:rounded-xl border border-gray-800 hover:border-blue-500/50 transition-all duration-300">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
+              <div className="flex items-center gap-3 sm:gap-4">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-blue-500/10 flex items-center justify-center
+                  transform transition-all duration-300 group-hover:scale-110">
+                  <Send className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-semibold mb-1">Email Sending Limits</h2>
+                  <h2 className="text-base sm:text-lg font-semibold mb-0.5 sm:mb-1">Email Sending Limits</h2>
                   <p className="text-gray-400 text-sm">
                     {emailUsage.remainingEmails} of {emailUsage.dailyLimit} emails remaining today
                   </p>
                 </div>
               </div>
               
-              <div className="px-4 py-2 bg-blue-500/10 text-blue-400 rounded-lg border border-blue-500/30 text-sm">
+              <div className="px-3 py-1.5 bg-blue-500/10 text-blue-400 rounded-lg border border-blue-500/30 text-xs sm:text-sm">
                 Resets at midnight
               </div>
             </div>
             
-            <div className="w-full bg-gray-700/50 rounded-full h-3">
+            <div className="w-full bg-gray-700/50 rounded-full h-2 sm:h-3">
               <div 
-                className={`h-3 rounded-full ${
+                className={`h-full rounded-full transition-all duration-500 ${
                   emailUsage.percentUsed > 80 ? 'bg-red-500' : 
                   emailUsage.percentUsed > 50 ? 'bg-yellow-500' : 
                   'bg-green-500'
@@ -314,107 +315,116 @@ export default function DashboardPage() {
             </div>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
             {metrics.map((metric, index) => (
               <div 
                 key={index}
-                className="bg-gray-800/50 backdrop-blur-sm p-6 rounded-2xl
+                className="bg-gray-800/50 backdrop-blur-sm p-4 sm:p-6 rounded-lg sm:rounded-xl
                   border border-gray-800 hover:border-blue-500/50
                   transition-all duration-300 group"
               >
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center
-                    group-hover:scale-110 transition-all duration-300">
-                    <metric.icon className={`w-6 h-6 ${metric.color}`} />
+                <div className="flex items-center justify-between mb-3 sm:mb-4">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-blue-500/10 
+                    flex items-center justify-center group-hover:scale-110 transition-all duration-300">
+                    <metric.icon className={`w-5 h-5 sm:w-6 sm:h-6 ${metric.color}`} />
                   </div>
-                  <span className={`text-sm px-3 py-1 rounded-full ${
+                  <span className={`text-xs sm:text-sm px-2 sm:px-3 py-1 rounded-full ${
                     parseFloat(metric.change) >= 0 
-                      ? 'text-green-400 bg-green-500/10' 
-                      : 'text-red-400 bg-red-500/10'
+                      ? 'text-green-400 bg-green-500/10 border border-green-500/30' 
+                      : 'text-red-400 bg-red-500/10 border border-red-500/30'
                   }`}>
                     {metric.change}
                   </span>
                 </div>
-                <p className="text-gray-400 text-sm font-inter">{metric.label}</p>
-                <p className="text-2xl font-bold mt-1 font-inter">{metric.value}</p>
+                <p className="text-gray-400 text-xs sm:text-sm font-medium">{metric.label}</p>
+                <p className="text-xl sm:text-2xl font-bold mt-1 font-inter tracking-tight">{metric.value}</p>
               </div>
             ))}
           </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-gray-800/50 backdrop-blur-sm p-4 sm:p-6 rounded-2xl">
+            {/* Charts */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 md:gap-6">
+            <div className="bg-gray-800/50 backdrop-blur-sm p-4 sm:p-6 rounded-lg sm:rounded-xl border border-gray-800 
+              hover:border-blue-500/50 transition-all duration-300">
               <h2 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-6">Content Quality Distribution</h2>
-              <div className="relative h-64 sm:h-80 md:h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={newsletterData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={40}
-                      outerRadius={60}
-                      paddingAngle={5}
-                      dataKey="value"
-                    >
-                      {newsletterData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip content={<CustomTooltip />} />
-                    <Legend 
-                      layout="horizontal"
-                      align="center"
-                      verticalAlign="bottom"
-                      wrapperStyle={{
-                        paddingTop: '20px'
-                      }}
-                      formatter={(value) => (
-                        <span className="text-xs sm:text-sm text-gray-400">{value}</span>
-                      )}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            <div className="bg-gray-800/50 backdrop-blur-sm p-4 sm:p-6 rounded-2xl">
-              <h2 className="text-xl font-semibold mb-4">Latest Newsletter Insights</h2>
-              <div className="space-y-4">
-                {newsletters.slice(0, 3).map((newsletter, idx) => (
-                  <div key={idx} className="p-4 bg-gray-700/20 rounded-lg">
-                    <h3 className="font-medium mb-2">{newsletter.title}</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {qualityMetrics[idx]?.originalContent && (
-                        <span className="text-xs px-2 py-1 bg-blue-500/20 text-blue-400 rounded-full">
-                          Original Content
-                        </span>
-                      )}
-                      {qualityMetrics[idx]?.researchBased && (
-                        <span className="text-xs px-2 py-1 bg-green-500/20 text-green-400 rounded-full">
-                          Research-Based
-                        </span>
-                      )}
-                      {qualityMetrics[idx]?.actionableInsights && (
-                        <span className="text-xs px-2 py-1 bg-yellow-500/20 text-yellow-400 rounded-full">
-                          Actionable Insights
-                        </span>
-                      )}
-                      {qualityMetrics[idx]?.comprehensiveAnalysis && (
-                        <span className="text-xs px-2 py-1 bg-purple-500/20 text-purple-400 rounded-full">
-                          Comprehensive
-                        </span>
-                      )}
+              <div className="relative h-[280px] sm:h-[320px] md:h-[280px]">
+                <ResponsivePie
+                  data={newsletterData.map(d => ({
+                    id: d.name,
+                    value: d.value,
+                    label: d.name,
+                    color: COLORS[newsletterData.indexOf(d) % COLORS.length]
+                  }))}
+                  theme={{
+                    text: {
+                      fontSize: 11,
+                      fill: '#94a3b8'
+                    },
+                    legends: {
+                      text: {
+                        fontSize: 11,
+                        fill: '#94a3b8'
+                      }
+                    }
+                  }}
+                  margin={{ top: 10, right: 20, bottom: 60, left: 20 }}
+                  innerRadius={0.6}
+                  padAngle={0.5}
+                  cornerRadius={3}
+                  activeOuterRadiusOffset={8}
+                  colors={{ datum: 'data.color' }}
+                  borderWidth={1}
+                  borderColor={{ from: 'color', modifiers: [['darker', 0.2]] }}
+                  enableArcLabels={true}
+                  arcLabelsSkipAngle={10}
+                  arcLabelsTextColor={{ from: 'color', modifiers: [['darker', 2]] }}
+                  legends={[{
+                    anchor: 'bottom',
+                    direction: 'row',
+                    justify: false,
+                    translateY: 50,
+                    itemWidth: 85,
+                    itemHeight: 18,
+                    itemTextColor: '#94a3b8',
+                    symbolSize: 10,
+                    symbolShape: 'circle',
+                    itemsSpacing: 2,
+                  }]}
+                  tooltip={({ datum }) => (
+                    <div className="bg-gray-800/90 px-3 py-2 rounded-lg border border-gray-700 shadow-xl">
+                      <p className="text-sm">
+                        <span className="text-gray-400">{datum.id}:</span>{' '}
+                        <span className="text-white font-medium">{datum.value}</span>
+                      </p>
                     </div>
-                    <div className="mt-3 flex justify-between items-center">
-                      <span className="text-sm text-gray-400">
-                      Quality Score: {getQualityScore(newsletters[idx])}%
+                  )}
+                />
+              </div>
+            </div>     
+
+            {/* Newsletter Insights */}
+            <div className="bg-gray-800/50 backdrop-blur-sm p-4 sm:p-6 rounded-lg sm:rounded-xl border border-gray-800 
+              hover:border-blue-500/50 transition-all duration-300">
+              <h2 className="text-lg sm:text-xl font-semibold mb-4">Latest Newsletter Insights</h2>
+              <div className="space-y-3">
+                {newsletters.slice(0, 3).map((newsletter, idx) => (
+                  <div key={idx} className="p-3 sm:p-4 bg-gray-700/20 rounded-lg hover:bg-gray-700/30 
+                    transition-colors duration-200 border border-gray-700/50">
+                    <h3 className="font-medium text-sm sm:text-base mb-2 line-clamp-1">{newsletter.title}</h3>
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-2">
+                      <span className="text-xs sm:text-sm text-gray-400">
+                        Quality Score: {getQualityScore(newsletters[idx])}%
                       </span>
-                      <span className="text-sm text-gray-400">
+                      <span className="text-xs sm:text-sm text-gray-400">
                         {new Date(newsletter.sentDate || '').toLocaleDateString()}
                       </span>
                     </div>
                   </div>
                 ))}
+                {newsletters.length === 0 && (
+                  <div className="p-4 text-center text-gray-400 text-sm">
+                    No newsletters sent yet
+                  </div>
+                )}
               </div>
             </div>  
           </div>
@@ -422,21 +432,6 @@ export default function DashboardPage() {
       </div>
     );
   };
-
-  // CustomTooltip component for the chart
-  const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: any[] }) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-gray-800/90 p-3 rounded-lg border border-gray-700">
-          <p className="text-sm text-gray-400">
-            {payload[0].name}: <span className="text-white font-medium">{payload[0].value}</span>
-          </p>
-        </div>
-      );
-    }
-    return null;
-  };
-
   // Main render
   return renderContent();
 }

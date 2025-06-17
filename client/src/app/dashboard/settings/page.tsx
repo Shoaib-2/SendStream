@@ -4,11 +4,11 @@ import {
   ArrowDownIcon, 
   ArrowPathIcon,
   DocumentCheckIcon,
-  CheckIcon,
-  XMarkIcon
 } from '@heroicons/react/24/outline';
+
 import { settingsAPI } from '@/services/api';
 import SubscriptionManagement from '@/components/dashboardSubscription/SubscriptionManagement';
+import { Save } from 'lucide-react';
 
 // Custom local interface for Settings that enforces required fields
 interface LocalSettings {
@@ -265,23 +265,26 @@ export default function SettingsPage() {
 
   return (
     <div className="p-3 sm:p-4 md:p-6 min-h-screen bg-gradient-to-b from-gray-900 via-gray-900 to-gray-900/50">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 md:mb-8">
+      <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold font-inter bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
             Integration Settings
           </h1>
           <button
             onClick={handleSave}
-            disabled={saving}            className="w-full sm:w-auto bg-blue-500 hover:bg-blue-600 px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-medium
-              transform transition-all duration-300 hover:scale-105 disabled:opacity-50
-              disabled:hover:scale-100 flex items-center justify-center gap-2 text-sm sm:text-base"          >            
-            <DocumentCheckIcon className="w-4 h-4" />
+            disabled={saving}
+            className="w-full sm:w-auto bg-blue-500 hover:bg-blue-600 px-4 py-2.5 sm:px-6 sm:py-3 rounded-lg font-medium
+              transform transition-all duration-300 hover:scale-[1.02] disabled:opacity-50
+              disabled:hover:scale-100 flex items-center justify-center gap-2 text-sm sm:text-base
+              min-w-[140px] sm:min-w-[160px]"
+          >            
+            <Save className="w-4 h-4" />
             {saving ? 'Saving...' : 'Save Changes'}
           </button>
         </div>
 
         {message.text && (
-          <div className={`mb-4 sm:mb-6 p-3 sm:p-4 rounded-xl backdrop-blur-sm text-sm sm:text-base ${
+          <div className={`p-3 sm:p-4 rounded-lg sm:rounded-xl backdrop-blur-sm text-sm ${
             message.type === 'success'
               ? 'bg-green-500/10 border border-green-500/50 text-green-500'
               : 'bg-red-500/10 border border-red-500/50 text-red-500'
@@ -291,12 +294,12 @@ export default function SettingsPage() {
         )}
 
         <div className="space-y-4 sm:space-y-6">
-          <section className="bg-gray-800/50 backdrop-blur-sm p-4 sm:p-6 md:p-8 rounded-xl sm:rounded-2xl
+          <section className="bg-gray-800/50 backdrop-blur-sm p-4 sm:p-6 md:p-8 rounded-lg sm:rounded-xl
             border border-gray-800 hover:border-blue-500/50 transition-all duration-300">
             <h2 className="text-lg sm:text-xl font-semibold font-inter mb-4 sm:mb-6">Email Configuration</h2>
             <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
-              <div>
-                <label className="block text-sm font-medium mb-1.5 sm:mb-2 text-gray-300">From Name</label>
+              <div className="space-y-1.5 sm:space-y-2">
+                <label className="block text-sm font-medium text-gray-300">From Name</label>
                 <input
                   type="text"
                   value={settings.email.fromName}
@@ -304,13 +307,14 @@ export default function SettingsPage() {
                     ...settings,
                     email: { ...settings.email, fromName: e.target.value }
                   })}
-                  className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-700/50 rounded-lg border border-gray-600
-                    focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 text-sm sm:text-base"
+                  className="w-full px-3.5 py-2.5 bg-gray-700/50 rounded-lg border border-gray-600
+                    focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 text-sm sm:text-base
+                    transition-colors duration-200"
                   placeholder="Newsletter Name"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium mb-1.5 sm:mb-2 text-gray-300">Reply-To Email</label>
+              <div className="space-y-1.5 sm:space-y-2">
+                <label className="block text-sm font-medium text-gray-300">Reply-To Email</label>
                 <input
                   type="email"
                   value={settings.email.replyTo}
@@ -318,13 +322,14 @@ export default function SettingsPage() {
                     ...settings,
                     email: { ...settings.email, replyTo: e.target.value }
                   })}
-                  className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-700/50 rounded-lg border border-gray-600
-                    focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 text-sm sm:text-base"
+                  className="w-full px-3.5 py-2.5 bg-gray-700/50 rounded-lg border border-gray-600
+                    focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 text-sm sm:text-base
+                    transition-colors duration-200"
                   placeholder="your@email.com"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium mb-1.5 sm:mb-2 text-gray-300">Sender Email</label>
+              <div className="space-y-1.5 sm:space-y-2 md:col-span-2">
+                <label className="block text-sm font-medium text-gray-300">Sender Email</label>
                 <input
                   type="email"
                   value={settings.email.senderEmail}
@@ -332,34 +337,37 @@ export default function SettingsPage() {
                     ...settings,
                     email: { ...settings.email, senderEmail: e.target.value }
                   })}
-                  className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-700/50 rounded-lg border border-gray-600
-                    focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 text-sm sm:text-base"
+                  className="w-full px-3.5 py-2.5 bg-gray-700/50 rounded-lg border border-gray-600
+                    focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 text-sm sm:text-base
+                    transition-colors duration-200"
                   placeholder="sender@yourdomain.com"
                 />
-                <p className="text-xs text-gray-400 mt-1">
+                <p className="text-xs text-gray-400 mt-1.5">
                   This email will be used as the sender address for your newsletters
                 </p>
               </div>
             </div>
           </section>
 
-          <section className="bg-gray-800/50 backdrop-blur-sm p-4 sm:p-6 md:p-8 rounded-xl sm:rounded-2xl
+          <section className="bg-gray-800/50 backdrop-blur-sm p-4 sm:p-6 md:p-8 rounded-lg sm:rounded-xl
             border border-gray-800 hover:border-blue-500/50 transition-all duration-300">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 sm:mb-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
               <div>
                 <h2 className="text-lg sm:text-xl font-semibold font-inter">Mailchimp</h2>
                 {connectionStatus.mailchimp.connected && (
-                  <span className="text-sm text-green-400">Connected</span>
+                  <span className="text-sm text-green-400 mt-0.5">Connected</span>
                 )}
               </div>
-              <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+              <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                 <button
                   onClick={() => testIntegration('mailchimp')}
                   disabled={testing || !settings.mailchimp.apiKey || !settings.mailchimp.serverPrefix}
-                  className="flex-1 sm:flex-none bg-gray-700/50 hover:bg-gray-600/50 px-3 sm:px-4 py-2 rounded-lg
+                  className="flex-1 sm:flex-none bg-gray-700/50 hover:bg-gray-600/50 px-4 py-2.5 rounded-lg
                     flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed
-                    border border-gray-600 hover:border-blue-500/50 transition-all duration-300 text-sm sm:text-base"
-                >                  <ArrowPathIcon className={`w-4 h-4 ${testing ? 'animate-spin' : ''}`} />
+                    border border-gray-600 hover:border-blue-500/50 transition-all duration-200
+                    text-sm sm:text-base min-w-[140px] sm:min-w-[160px]"
+                >
+                  <ArrowPathIcon className={`w-4 h-4 ${testing ? 'animate-spin' : ''}`} />
                   {testing ? 'Testing...' : 'Test Connection'}
                 </button>
 
@@ -367,10 +375,12 @@ export default function SettingsPage() {
                   <button
                     onClick={syncSubscribers}
                     disabled={syncing}
-                    className="flex-1 sm:flex-none bg-green-500/20 hover:bg-green-500/30 px-3 sm:px-4 py-2 rounded-lg
+                    className="flex-1 sm:flex-none bg-green-500/20 hover:bg-green-500/30 px-4 py-2.5 rounded-lg
                       flex items-center justify-center gap-2 text-green-400 border border-green-500/30
-                      hover:border-green-500/50 transition-all duration-300 text-sm sm:text-base"
-                  >                    <ArrowDownIcon className="w-4 h-4" />
+                      hover:border-green-500/50 transition-all duration-200 text-sm sm:text-base
+                      min-w-[140px] sm:min-w-[160px]"
+                  >
+                    <ArrowDownIcon className="w-4 h-4" />
                     {syncing ? 'Importing...' : 'Import Subscribers'}
                   </button>
                 )}
@@ -378,7 +388,7 @@ export default function SettingsPage() {
             </div>
 
             {connectionStatus.mailchimp.message && (
-              <div className={`mb-4 p-2 sm:p-3 rounded-lg text-xs sm:text-sm ${
+              <div className={`mb-4 p-3 rounded-lg text-sm ${
                 connectionStatus.mailchimp.connected
                   ? 'bg-green-500/10 text-green-400'
                   : 'bg-blue-500/10 text-blue-400'
@@ -388,8 +398,8 @@ export default function SettingsPage() {
             )}
 
             <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
-              <div>
-                <label className="block text-sm font-medium mb-1.5 sm:mb-2 text-gray-300">API Key</label>
+              <div className="space-y-1.5 sm:space-y-2">
+                <label className="block text-sm font-medium text-gray-300">API Key</label>
                 <input
                   type="password"
                   value={settings.mailchimp.apiKey}
@@ -397,16 +407,17 @@ export default function SettingsPage() {
                     ...settings,
                     mailchimp: { ...settings.mailchimp, apiKey: e.target.value }
                   })}
-                  className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-700/50 rounded-lg border border-gray-600
-                    focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 text-sm sm:text-base"
+                  className="w-full px-3.5 py-2.5 bg-gray-700/50 rounded-lg border border-gray-600
+                    focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 text-sm sm:text-base
+                    transition-colors duration-200"
                   placeholder="Enter your Mailchimp API key"
                 />
-                <p className="text-xs text-gray-400 mt-1">
+                <p className="text-xs text-gray-400 mt-1.5">
                   Find your API key in your Mailchimp account under Account → Extras → API Keys
                 </p>
               </div>
-              <div>
-                <label className="block text-sm font-medium mb-1.5 sm:mb-2 text-gray-300">Server Prefix</label>
+              <div className="space-y-1.5 sm:space-y-2">
+                <label className="block text-sm font-medium text-gray-300">Server Prefix</label>
                 <input
                   type="text"
                   value={settings.mailchimp.serverPrefix}
@@ -414,19 +425,20 @@ export default function SettingsPage() {
                     ...settings,
                     mailchimp: { ...settings.mailchimp, serverPrefix: e.target.value }
                   })}
-                  className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-700/50 rounded-lg border border-gray-600
-                    focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 text-sm sm:text-base"
+                  className="w-full px-3.5 py-2.5 bg-gray-700/50 rounded-lg border border-gray-600
+                    focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 text-sm sm:text-base
+                    transition-colors duration-200"
                   placeholder="e.g., us1, us2"
                 />
-                <p className="text-xs text-gray-400 mt-1">
+                <p className="text-xs text-gray-400 mt-1.5">
                   This is part of your Mailchimp URL: https://<strong>us1</strong>.admin.mailchimp.com
                 </p>
               </div>
             </div>
 
             {connectionStatus.mailchimp.connected && (
-              <div className="mt-4 sm:mt-6 space-y-4 border-t border-gray-700 pt-4 sm:pt-6">
-                <div className="flex items-center justify-between gap-3">
+              <div className="mt-6 space-y-4 border-t border-gray-700 pt-6">
+                <div className="flex items-center justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <h3 className="font-medium text-sm sm:text-base">Enable Mailchimp Integration</h3>
                     <p className="text-xs sm:text-sm text-gray-400 truncate">Connect your newsletter with Mailchimp</p>
@@ -447,7 +459,7 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <h3 className="font-medium text-sm sm:text-base">Auto-Sync on Login</h3>
                     <p className="text-xs sm:text-sm text-gray-400 truncate">Automatically sync with Mailchimp when loading subscribers</p>
@@ -464,7 +476,8 @@ export default function SettingsPage() {
                       <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer 
                         peer-checked:after:translate-x-full peer-checked:after:border-white after:content-['']
                         after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full
-                        after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500 peer-disabled:opacity-50 peer-disabled:cursor-not-allowed"></div>
+                        after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500 peer-disabled:opacity-50
+                        peer-disabled:cursor-not-allowed"></div>
                     </label>
                   </div>
                 </div>
@@ -472,7 +485,7 @@ export default function SettingsPage() {
             )}
           </section>
         </div>
-        <section className="bg-gray-800/50 backdrop-blur-sm p-4 sm:p-6 md:p-8 rounded-xl sm:rounded-2xl
+        <section className="bg-gray-800/50 backdrop-blur-sm p-4 sm:p-6 md:p-8 rounded-lg sm:rounded-xl
           border border-gray-800 hover:border-blue-500/50 transition-all duration-300 mt-4 sm:mt-6">
           <SubscriptionManagement />
         </section>

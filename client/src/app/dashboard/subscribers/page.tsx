@@ -105,45 +105,50 @@ export default function SubscribersPage() {
     };
 
     return (
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-        <div className="bg-gray-800 p-6 md:p-8 rounded-xl w-full max-w-md border border-gray-700 shadow-lg max-h-[90vh] overflow-y-auto">
-          <h2 className="text-2xl font-bold mb-4 md:mb-6">Add New Subscriber</h2>
-          <form onSubmit={handleSubmit} className="space-y-3 md:space-y-4">
-            <div>
-              <label className="block mb-1 md:mb-2 font-medium">Email</label>
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="bg-gray-800 p-5 sm:p-6 rounded-lg w-full max-w-md border border-gray-700 
+          shadow-lg shadow-black/20 max-h-[90vh] overflow-y-auto">
+          <h2 className="text-xl sm:text-2xl font-bold mb-5">Add New Subscriber</h2>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="block font-medium text-sm text-gray-200">Email</label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-2 bg-gray-700 rounded-lg border border-gray-600
-                  focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                className="w-full px-3.5 py-2.5 bg-gray-700/50 rounded-lg border border-gray-600
+                  focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none text-sm
+                  transition-colors duration-200"
                 placeholder="Enter email address"
               />
-              {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+              {errors.email && <p className="text-red-500 text-xs">{errors.email}</p>}
             </div>
-            <div>
-              <label className="block mb-1 md:mb-2 font-medium">Name</label>
+            <div className="space-y-1.5">
+              <label className="block font-medium text-sm text-gray-200">Name</label>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full px-4 py-2 bg-gray-700 rounded-lg border border-gray-600
-                  focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                className="w-full px-3.5 py-2.5 bg-gray-700/50 rounded-lg border border-gray-600
+                  focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none text-sm
+                  transition-colors duration-200"
                 placeholder="Enter name"
               />
-              {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
+              {errors.name && <p className="text-red-500 text-xs">{errors.name}</p>}
             </div>
-            <div className="flex justify-end gap-3 md:gap-4 pt-3 md:pt-4">
+            <div className="flex justify-end gap-3 pt-4">
               <button
                 type="button"
                 onClick={() => setShowSubscribeModal(false)}
-                className="px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors"
+                className="px-4 py-2.5 bg-gray-700/50 rounded-lg hover:bg-gray-600/50 transition-colors
+                  text-sm font-medium min-w-[80px]"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 bg-blue-500 rounded-lg hover:bg-blue-600 transition-colors"
+                className="px-4 py-2.5 bg-blue-500 rounded-lg hover:bg-blue-600 transition-colors
+                  text-sm font-medium min-w-[100px]"
               >
                 Add Subscriber
               </button>
@@ -175,9 +180,10 @@ export default function SubscribersPage() {
           </div>
         </div>
       ) : (
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-6xl mx-auto space-y-4">
           {showNotification && (
-            <div className={`fixed top-2 right-2 p-2 sm:p-3 md:p-4 rounded-xl backdrop-blur-sm z-50 text-sm sm:text-base ${
+            <div className={`fixed top-4 right-4 p-3 sm:p-4 rounded-lg backdrop-blur-sm z-50 text-sm sm:text-base
+              shadow-lg transform transition-all duration-300 ${
               notificationType === 'success'
                 ? 'bg-green-500/10 border border-green-500/50 text-green-500'
                 : 'bg-red-500/10 border border-red-500/50 text-red-500'
@@ -186,82 +192,80 @@ export default function SubscribersPage() {
             </div>
           )}
 
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4">
-            <div className="flex items-center gap-2 mb-4 md:mb-0 w-full md:w-auto">
-              <h1 className="text-xl md:text-2xl lg:text-3xl font-bold font-inter bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
-                Subscribers
-              </h1>
-              <span className="text-gray-400 font-inter">({filteredSubscribers.length})</span>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 md:flex md:flex-wrap gap-2 w-full md:w-auto">
-              <div className="col-span-2 sm:col-span-4 md:col-auto">
+          <div className="flex flex-col space-y-4 sm:space-y-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <h1 className="text-2xl sm:text-3xl font-bold font-inter bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
+                  Subscribers
+                </h1>
+                <span className="text-gray-400 font-inter text-lg sm:text-xl">({filteredSubscribers.length})</span>
+              </div>
+              
+              <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 w-full sm:w-auto">
                 <button
                   onClick={() => setShowSubscribeModal(true)}
-                  className="w-full md:w-auto bg-blue-500 hover:bg-blue-600 px-3 sm:px-4 py-2 rounded-lg font-medium
-                    transform transition-all duration-300 hover:scale-105 text-sm sm:text-base"
+                  className="col-span-2 bg-blue-500 hover:bg-blue-600 px-4 py-2.5 rounded-lg font-medium
+                    transform transition-all duration-200 hover:scale-[1.02] text-sm sm:text-base
+                    flex items-center justify-center gap-2 min-w-[140px] sm:min-w-0"
                 >
                   Add Subscriber
                 </button>
-              </div>
-              <div className="col-span-1">
-                <label className="cursor-pointer bg-gray-800/50 hover:bg-gray-700/50 px-2 sm:px-4 py-2 rounded-lg
-                  flex items-center gap-1 sm:gap-2 backdrop-blur-sm border border-gray-700 hover:border-blue-500/50
-                  transition-all duration-300 w-full justify-center text-sm sm:text-base"
+                
+                <label className="cursor-pointer bg-gray-800/50 hover:bg-gray-700/50 px-4 py-2.5 rounded-lg
+                  flex items-center justify-center gap-2 backdrop-blur-sm border border-gray-700 hover:border-blue-500/50
+                  transition-all duration-200 text-sm sm:text-base min-w-[120px]"
                 >
                   <Upload className="w-4 h-4" />
-                  <span className="block">Import</span>
+                  <span>Import</span>
                   <input type="file" className="hidden" accept=".csv" onChange={handleImport} />
                 </label>
-              </div>
-              <div className="col-span-1">
+                
                 <button
                   onClick={handleExport}
-                  className="bg-gray-800/50 hover:bg-gray-700/50 px-2 sm:px-4 py-2 rounded-lg flex items-center gap-1 sm:gap-2
-                    backdrop-blur-sm border border-gray-700 hover:border-blue-500/50
-                    transition-all duration-300 w-full justify-center text-sm sm:text-base"
+                  className="bg-gray-800/50 hover:bg-gray-700/50 px-4 py-2.5 rounded-lg
+                    flex items-center justify-center gap-2 backdrop-blur-sm border border-gray-700 hover:border-blue-500/50
+                    transition-all duration-200 text-sm sm:text-base min-w-[120px]"
                 >
                   <Download className="w-4 h-4" />
-                  <span className="block">Export</span>
+                  <span>Export</span>
                 </button>
-              </div>
-              {role === 'admin' && (
-                <div className="col-span-2 sm:col-span-4 md:col-auto mt-2 sm:mt-0">
+                
+                {role === 'admin' && selectedSubscribers.length > 0 && (
                   <button
                     onClick={handleBulkDelete}
-                    className="w-full md:w-auto px-3 sm:px-4 py-2 rounded-lg text-sm sm:text-base
+                    className="col-span-2 px-4 py-2.5 rounded-lg text-sm sm:text-base
                       bg-red-500/10 hover:bg-red-500/20 backdrop-blur-sm border border-red-500/50
-                      transition-all duration-300 disabled:opacity-50 text-red-500 hover:text-red-400"
-                    disabled={selectedSubscribers.length === 0}
+                      transition-all duration-200 text-red-500 hover:text-red-400
+                      flex items-center justify-center gap-2 min-w-[140px]"
                   >
-                    Bulk Delete
+                    <Trash2 className="w-4 h-4" />
+                    Bulk Delete ({selectedSubscribers.length})
                   </button>
-                </div>
-              )}
+                )}
+              </div>
             </div>
-          </div>
 
-          <div className="relative mb-4">
             <div className="relative">
               <input
                 type="text"
                 placeholder="Search subscribers..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-3 sm:px-4 md:px-6 py-2 md:py-3 bg-gray-800/50 rounded-xl
-                backdrop-blur-sm border border-gray-700 focus:border-blue-500/50
-                transition-all duration-300 pr-10 text-sm sm:text-base"
+                className="w-full px-4 py-2.5 bg-gray-800/50 rounded-lg
+                  backdrop-blur-sm border border-gray-700 focus:border-blue-500/50
+                  transition-all duration-200 pr-10 text-sm sm:text-base"
               />
-              <Search className="absolute top-1/2 transform -translate-y-1/2 right-3 w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
+              <Search className="absolute top-1/2 transform -translate-y-1/2 right-3 w-4 h-4 text-gray-400" />
             </div>
           </div>
 
-          <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl overflow-hidden
-            border border-gray-700 hover:border-blue-500/50 transition-all duration-300">
+          <div className="bg-gray-800/50 backdrop-blur-sm rounded-lg border border-gray-700 
+            hover:border-blue-500/50 transition-all duration-300 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-gray-900/50">
                   <tr>
-                    <th className="px-2 py-2 sm:px-3 md:px-6 md:py-4 text-left">
+                    <th className="px-3 py-3 sm:px-4 md:px-6 text-left">
                       <input
                         type="checkbox"
                         onChange={(e) => {
@@ -275,14 +279,24 @@ export default function SubscribersPage() {
                           }
                         }}
                         checked={selectedSubscribers.length === filteredSubscribers.length && filteredSubscribers.length > 0}
-                        className="rounded border-gray-600 text-blue-500 focus:ring-blue-500/50"
+                        className="rounded border-gray-600 text-blue-500 focus:ring-blue-500/50 cursor-pointer"
                       />
                     </th>
-                    <th className="px-2 py-2 sm:px-3 md:px-6 md:py-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Email</th>
-                    <th className="hidden sm:table-cell px-2 py-2 sm:px-3 md:px-6 md:py-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Name</th>
-                    <th className="hidden sm:table-cell px-2 py-2 sm:px-3 md:px-6 md:py-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Subscribed</th>
-                    <th className="px-2 py-2 sm:px-3 md:px-6 md:py-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Status</th>
-                    <th className="px-2 py-2 sm:px-3 md:px-6 md:py-4 text-center text-xs font-medium text-gray-400 uppercase tracking-wider">Actions</th>
+                    <th className="px-3 py-3 sm:px-4 md:px-6 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                      Email
+                    </th>
+                    <th className="hidden sm:table-cell px-3 py-3 sm:px-4 md:px-6 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                      Name
+                    </th>
+                    <th className="hidden sm:table-cell px-3 py-3 sm:px-4 md:px-6 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                      Subscribed
+                    </th>
+                    <th className="px-3 py-3 sm:px-4 md:px-6 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-3 py-3 sm:px-4 md:px-6 text-center text-xs font-medium text-gray-400 uppercase tracking-wider">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-700/50">
@@ -290,7 +304,7 @@ export default function SubscribersPage() {
                     currentSubscribers.map((subscriber, index) => (
                       <tr key={subscriber.id || `subscriber-${index}`}
                         className="hover:bg-blue-500/5 transition-colors">
-                        <td className="px-2 py-2 sm:px-3 md:px-6 md:py-4 whitespace-nowrap">
+                        <td className="px-3 py-3 sm:px-4 md:px-6 whitespace-nowrap">
                           <input
                             type="checkbox"
                             checked={selectedSubscribers.includes(subscriber.id)}
@@ -301,20 +315,26 @@ export default function SubscribersPage() {
                                 setSelectedSubscribers(selectedSubscribers.filter(id => id !== subscriber.id));
                               }
                             }}
-                            className="rounded border-gray-600 text-blue-500 focus:ring-blue-500/50"
+                            className="rounded border-gray-600 text-blue-500 focus:ring-blue-500/50 cursor-pointer"
                           />
                         </td>
-                        <td className="px-2 py-2 sm:px-3 md:px-6 md:py-4 whitespace-nowrap font-medium text-sm">
-                          {subscriber.email}
+                        <td className="px-3 py-3 sm:px-4 md:px-6 whitespace-nowrap">
+                          <div className="flex flex-col sm:hidden mb-1">
+                            <span className="text-sm font-medium">{subscriber.name}</span>
+                            <span className="text-xs text-gray-400">
+                              {new Date(subscriber.subscribed).toLocaleDateString()}
+                            </span>
+                          </div>
+                          <span className="text-sm font-medium">{subscriber.email}</span>
                         </td>
-                        <td className="hidden sm:table-cell px-2 py-2 sm:px-3 md:px-6 md:py-4 whitespace-nowrap text-gray-300 text-sm">
+                        <td className="hidden sm:table-cell px-3 py-3 sm:px-4 md:px-6 whitespace-nowrap text-gray-300 text-sm">
                           {subscriber.name}
                         </td>
-                        <td className="hidden sm:table-cell px-2 py-2 sm:px-3 md:px-6 md:py-4 whitespace-nowrap text-gray-400 text-sm">
+                        <td className="hidden sm:table-cell px-3 py-3 sm:px-4 md:px-6 whitespace-nowrap text-gray-400 text-sm">
                           {new Date(subscriber.subscribed).toLocaleDateString()}
                         </td>
-                        <td className="px-2 py-2 sm:px-3 md:px-6 md:py-4 whitespace-nowrap">
-                          <span className={`px-2 py-1 rounded-full text-xs ${
+                        <td className="px-3 py-3 sm:px-4 md:px-6 whitespace-nowrap">
+                          <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
                             subscriber.status === 'active'
                               ? 'bg-green-500/10 text-green-500 border border-green-500/50'
                               : 'bg-red-500/10 text-red-400 border border-red-500/50'
@@ -322,14 +342,14 @@ export default function SubscribersPage() {
                             {subscriber.status}
                           </span>
                         </td>
-                        <td className="px-2 py-2 sm:px-3 md:px-6 md:py-4 whitespace-nowrap">
+                        <td className="px-3 py-3 sm:px-4 md:px-6 whitespace-nowrap">
                           {renderActions(subscriber)}
                         </td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={6} className="px-4 py-6 sm:px-6 sm:py-8 text-center text-gray-400 text-sm">
+                      <td colSpan={6} className="px-4 py-8 text-center text-gray-400 text-sm">
                         No subscribers found
                       </td>
                     </tr>
@@ -340,16 +360,17 @@ export default function SubscribersPage() {
           </div>
 
           {filteredSubscribers.length > subscribersPerPage && (
-            <div className="flex justify-center mt-4 gap-1 sm:gap-2 overflow-x-auto py-2">
+            <div className="flex justify-center mt-4 gap-1.5 overflow-x-auto py-2">
               {Array.from({ length: Math.ceil(filteredSubscribers.length / subscribersPerPage) }).map((_, index) => {
                 const pageNumber = index + 1;
                 return (
                   <button
                     key={`page-${pageNumber}`}
                     onClick={() => handlePageChange(pageNumber)}
-                    className={`min-w-[32px] px-2 sm:px-3 py-1 rounded-lg transition-all duration-300 text-sm ${
+                    className={`min-w-[36px] h-[36px] flex items-center justify-center rounded-lg 
+                      transition-all duration-200 text-sm ${
                       currentPage === pageNumber
-                        ? 'bg-blue-500 text-white'
+                        ? 'bg-blue-500 text-white font-medium'
                         : 'bg-gray-800/50 text-gray-400 hover:bg-gray-700/50'
                     }`}
                   >

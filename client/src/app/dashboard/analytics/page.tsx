@@ -1,16 +1,7 @@
 "use client";
 import React from 'react';
 import { Users, Mail } from 'lucide-react';
-import { 
-  ResponsiveContainer, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Area, 
-  AreaChart,
-  ReferenceLine
-} from 'recharts';
+import { ResponsiveLine } from '@nivo/line';
 
 import { analyticsAPI } from '../../../services/api';
 import { useData } from '../../../context/dataContext';
@@ -20,13 +11,11 @@ export default function AnalyticsDashboard() {
   const { subscribers } = useData();
   const [loading, setLoading] = React.useState(true);
   const [summary, setSummary] = React.useState<ApiAnalyticsSummary | null>(null);
-  const [growthData, setGrowthData] = React.useState<GrowthData[]>([]);
-  const [recentActivity, setRecentActivity] = React.useState<Array<{
+  const [growthData, setGrowthData] = React.useState<GrowthData[]>([]);  const [recentActivity, setRecentActivity] = React.useState<Array<{
     title: string;
     recipients: number;
     time: string;
   }>>([]);
-  const [hoveredPoint, setHoveredPoint] = React.useState<number | null>(null);
 
   React.useEffect(() => {
     const fetchAnalytics = async () => {
@@ -146,44 +135,6 @@ export default function AnalyticsDashboard() {
     ? Math.round(growthData.reduce((sum, item) => sum + item.subscribers, 0) / growthData.length)
     : 0;
 
-  // Custom tooltip component for the chart
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-gray-800 p-4 rounded-lg border border-blue-500/30 shadow-lg shadow-blue-500/10">
-          <p className="text-gray-300 font-medium mb-1">{label}</p>
-          <div className="flex items-center">
-            <div className="w-3 h-3 rounded-full bg-blue-500 mr-2"></div>
-            <p className="text-blue-400 font-bold">
-              {payload[0].value.toLocaleString()} subscribers
-            </p>
-          </div>
-          {payload[0].payload.subscribers > averageSubscribers && (
-            <p className="text-green-400 text-xs mt-2">Above average</p>
-          )}
-        </div>
-      );
-    }
-    return null;
-  };
-
-  // Custom dot for the line chart
-  const CustomDot = (props: any) => {
-    const { cx, cy, index } = props;
-    const isHovered = index === hoveredPoint;
-    
-    return (
-      <circle
-        cx={cx}
-        cy={cy}
-        r={isHovered ? 6 : 4}
-        fill={isHovered ? "#fff" : "#3B82F6"}
-        stroke={isHovered ? "#3B82F6" : "rgba(255,255,255,0.5)"}
-        strokeWidth={isHovered ? 2 : 1}
-        className="transition-all duration-300"
-      />
-    );
-  };
 
   return (
     <div className="p-6 min-h-screen bg-gradient-to-b from-gray-900 via-gray-900 to-gray-900/50">
@@ -221,79 +172,96 @@ export default function AnalyticsDashboard() {
 
         <div className="bg-gray-800/50 backdrop-blur-sm p-6 rounded-2xl border border-gray-800 
           hover:border-blue-500/50 transition-all duration-300 mb-8">
-          <h2 className="text-xl font-bold font-inter mb-6">Subscriber Growth</h2>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart 
-                data={growthData}
-                margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
-                onMouseMove={(e) => {
-                  if (e && e.activeTooltipIndex !== undefined) {
-                    setHoveredPoint(e.activeTooltipIndex);
+          <h2 className="text-xl font-bold font-inter mb-6">Subscriber Growth</h2>          <div className="h-64">
+            <ResponsiveLine
+              data={[{
+                id: 'subscribers',
+                data: growthData.map(d => ({
+                  x: d.month,
+                  y: d.subscribers
+                }))
+              }]}
+              margin={{ top: 10, right: 40, left: 40, bottom: 30 }}
+              curve="monotoneX"
+              enableArea={true}
+              areaBaselineValue={0}
+              areaOpacity={0.3}
+              enablePoints={true}
+              pointSize={8}
+              pointColor="#fff"
+              pointBorderWidth={2}
+              pointBorderColor="#3B82F6"
+              colors={["#3B82F6"]}
+              theme={{
+                grid: {
+                  line: {
+                    stroke: "#374151",
+                    strokeWidth: 1,
+                    strokeDasharray: "3 3",
+                    opacity: 0.3
                   }
-                }}
-                onMouseLeave={() => setHoveredPoint(null)}
-              >
-                <defs>
-                  <linearGradient id="colorSubscribers" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid 
-                  strokeDasharray="3 3" 
-                  stroke="#374151" 
-                  opacity={0.3} 
-                  vertical={false}
-                />
-                <XAxis 
-                  dataKey="month" 
-                  stroke="#9CA3AF" 
-                  tick={{ fill: '#9CA3AF' }}
-                  axisLine={{ stroke: '#374151', strokeOpacity: 0.5 }}
-                  tickLine={false}
-                />
-                <YAxis 
-                  stroke="#9CA3AF"
-                  tick={{ fill: '#9CA3AF' }}
-                  domain={[0, 'auto']}
-                  axisLine={{ stroke: '#374151', strokeOpacity: 0.5 }}
-                  tickLine={false}
-                  width={40}
-                />
-                <Tooltip 
-                  content={<CustomTooltip />}
-                  cursor={{ stroke: '#6B7280', strokeDasharray: '5 5' }}
-                />
-                <ReferenceLine 
-                  y={averageSubscribers} 
-                  stroke="#9CA3AF" 
-                  strokeDasharray="3 3"
-                  label={{ 
-                    value: 'Average', 
-                    position: 'right', 
-                    fill: '#9CA3AF',
-                    fontSize: 12
-                  }}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="subscribers"
-                  stroke="#3B82F6"
-                  strokeWidth={3}
-                  fill="url(#colorSubscribers)"
-                  dot={<CustomDot />}
-                  activeDot={{ 
-                    r: 8, 
-                    fill: "#fff",
-                    stroke: "#3B82F6",
-                    strokeWidth: 2
-                  }}
-                  animationDuration={1800}
-                  animationEasing="ease-out"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+                },
+                axis: {
+                  ticks: {
+                    text: {
+                      fill: "#9CA3AF",
+                      fontSize: 12
+                    }
+                  }
+                },
+                tooltip: {
+                  container: {
+                    background: "#1F2937",
+                    color: "#F3F4F6",
+                    fontSize: 12,
+                    borderRadius: 8,
+                    boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                    padding: "8px 12px"
+                  }
+                }
+              }}
+              axisLeft={{
+                tickSize: 0,
+                tickPadding: 8,
+                tickRotation: 0
+              }}
+              axisBottom={{
+                tickSize: 0,
+                tickPadding: 8,
+                tickRotation: 0
+              }}
+              gridYValues={5}
+              enableGridX={false}
+              markers={[
+                {
+                  axis: 'y',
+                  value: averageSubscribers,
+                  lineStyle: { stroke: '#9CA3AF', strokeDasharray: '3 3' },
+                  legend: 'Average',
+                  legendPosition: 'right',
+                  legendOrientation: 'vertical',
+                  textStyle: { fill: '#9CA3AF', fontSize: 12 }
+                }
+              ]}
+              useMesh={true}
+              enableSlices="x"
+              sliceTooltip={({ slice }) => (
+                <div className="bg-gray-800 p-4 rounded-lg border border-blue-500/30 shadow-lg shadow-blue-500/10">
+                  <p className="text-gray-300 font-medium mb-1">
+                    {slice.points[0].data.x as string}
+                  </p>
+                  <div className="flex items-center">
+                    <div className="w-3 h-3 rounded-full bg-blue-500 mr-2"></div>
+                    <p className="text-blue-400 font-bold">
+                      {slice.points[0].data.y.toLocaleString()} subscribers
+                    </p>
+                  </div>
+                  {(slice.points[0].data.y as number) > averageSubscribers && (
+                    <p className="text-green-400 text-xs mt-2">Above average</p>
+                  )}
+                </div>
+              )}
+            />
           </div>
         </div>
 

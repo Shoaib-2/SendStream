@@ -1,6 +1,6 @@
 "use client";
 import React from 'react';
-import { Mail, Send, Plus, Pencil, Clock, LucideIcon } from 'lucide-react';
+import { Mail, Send, Plus, Pencil, Clock} from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { newsletterAPI } from '../../../services/api';
 
