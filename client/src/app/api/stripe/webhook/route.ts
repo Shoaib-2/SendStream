@@ -9,7 +9,6 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 
 export const runtime = 'nodejs'; // 'edge' or 'nodejs'
 export const dynamic = 'force-dynamic';
-export const bodyParser = false;
 
 export async function POST(request: NextRequest) {
   try {

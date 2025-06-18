@@ -14,7 +14,7 @@ if (!dbName) {
   throw new Error('Please define the MONGODB_DATABASE environment variable');
 }
 
-let clientPromise: Promise<MongoClient>;
+// let clientPromise: Promise<MongoClient>;
 
 // MongoDB Native Client connection (keep for legacy code)
 export async function connectToDatabase() {

@@ -28,14 +28,14 @@ export async function POST(request: NextRequest) {
       }, { status: 404 });
     }
     
-    console.log('Found user to refresh trial status:', {
-      email,
-      userId: user._id,
-      currentTrialUsed: user.trialUsed,
-      stripeSubscriptionId: user.stripeSubscriptionId ? '[REDACTED]' : undefined,
-      hasStripeSubscriptionId: !!user.stripeSubscriptionId,
-      stripeCustomerId: user.stripeCustomerId ? '[REDACTED]' : undefined
-    });
+    // console.log('Found user to refresh trial status:', {
+    //   email,
+    //   userId: user._id,
+    //   currentTrialUsed: user.trialUsed,
+    //   stripeSubscriptionId: user.stripeSubscriptionId ? '[REDACTED]' : undefined,
+    //   hasStripeSubscriptionId: !!user.stripeSubscriptionId,
+    //   stripeCustomerId: user.stripeCustomerId ? '[REDACTED]' : undefined
+    // });
     
     // Check Stripe for subscription history
     let stripeHasSubscription = false;
