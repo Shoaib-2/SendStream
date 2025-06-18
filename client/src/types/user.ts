@@ -14,3 +14,14 @@ export interface IUser {
 }
 
 export type UserRole = 'admin' | 'user';
+
+// Type guard for IUser
+export function isIUser(obj: unknown): obj is IUser {
+  if (typeof obj !== 'object' || obj === null) return false;
+  const user = obj as Partial<IUser>;
+  return (
+    typeof user._id === 'string' &&
+    typeof user.email === 'string' &&
+    typeof user.role === 'string'
+  );
+}

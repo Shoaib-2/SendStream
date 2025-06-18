@@ -3,6 +3,7 @@ import Stripe from 'stripe';
 import mongoose from 'mongoose';
 import Subscriber from '../../../../utils/lib/models/User';
 import User from '../../../../utils/lib/models/User';
+import { IUser } from '@/types/user';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2025-02-24.acacia',
@@ -22,8 +23,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     
     // Ensure we have an email - this is critical for trial tracking
-    let { priceId, successUrl, cancelUrl, skipTrial = false, email = '' } = body;
-    
+    const { priceId, successUrl, cancelUrl, email = '' } = body;
+    let skipTrial = body.skipTrial ?? false;
+
     // More thorough logging for debugging
     // console.log('DETAILED CHECKOUT REQUEST:', {
     //   email,
@@ -41,7 +43,7 @@ export async function POST(request: NextRequest) {
     let existingUser = null;
     if (email && email.includes('@')) {
       try {
-        existingUser = await User.findOne({ email }).lean() as any;
+        existingUser = await User.findOne({ email }).lean() as IUser | null;
         
         if (existingUser) {
           // console.log('User found:', {
@@ -177,7 +179,7 @@ export async function POST(request: NextRequest) {
       try {
         // IMPROVED: Better update logic for user records
         // Prepare update data with proper flags
-        const updateData: any = { 
+        const updateData: Record<string, unknown> = { 
           email,
           subscribed: new Date()
         };

@@ -125,12 +125,12 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
           }
           onClose();
           router.push('/dashboard');
-        } catch (signupError: any) {
+        } catch (signupError: unknown) {
           // Check if it's a trial required error from the backend
-          if (signupError.response?.data?.code === 'TRIAL_REQUIRED' || 
-              signupError.response?.data?.code === 'INVALID_SESSION') {
+          if ((signupError as any).response?.data?.code === 'TRIAL_REQUIRED' || 
+              (signupError as any).response?.data?.code === 'INVALID_SESSION') {
             setTrialRequired(true);
-            throw new Error(signupError.response?.data?.message || 'Please start a free trial first');
+            throw new Error((signupError as any).response?.data?.message || 'Please start a free trial first');
           }
           throw signupError;
         }

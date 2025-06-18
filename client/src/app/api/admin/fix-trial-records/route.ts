@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
     // Process each user
     for (const user of users) {
       try {
-        const updateData: any = {};
+        const updateData: Record<string, unknown> = {};
         let needsUpdate = false;
         
         // Check if user has trial end date but trialUsed is not set

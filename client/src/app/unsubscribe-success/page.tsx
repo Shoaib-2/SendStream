@@ -1,5 +1,7 @@
 "use client";
 // src/app/unsubscribe-success/page.tsx
+import Link from 'next/link';
+
 export default function UnsubscribeSuccessPage() {
 
   return (
@@ -14,14 +16,14 @@ export default function UnsubscribeSuccessPage() {
           Successfully Unsubscribed
         </h1>
         <p className="text-gray-300 mb-6">
-          You have been unsubscribed from our newsletter. You won't receive any more emails from us.
+          You have been unsubscribed from our newsletter. You won&apos;t receive any more emails from us.
         </p>
-        <a 
-          href="/" 
+        <Link
+          href="/"
           className="bg-blue-500 hover:bg-blue-600 px-6 py-3 rounded-lg font-medium transform transition-all duration-300 hover:scale-105 inline-block"
         >
           Return to Homepage
-        </a>
+        </Link>
       </div>
     </div>
   );

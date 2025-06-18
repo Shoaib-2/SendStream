@@ -1,6 +1,5 @@
 // pages/api/stripe/update-renewal.ts
 import { NextRequest, NextResponse } from 'next/server';
-import Stripe from 'stripe';
 import axios from 'axios';
 
 export async function POST(request: NextRequest) {
@@ -48,12 +47,12 @@ export async function POST(request: NextRequest) {
       );
       
       return NextResponse.json(response.data);
-    } catch (apiError: any) {
-      console.error('Backend API error:', apiError.response?.data || apiError.message);
+    } catch (apiError: unknown) {
+      console.error('Backend API error:', (apiError as any).response?.data || (apiError as any).message);
       
       // Forward the error status and message from backend
-      const status = apiError.response?.status || 500;
-      const errorData = apiError.response?.data || { 
+      const status = (apiError as any).response?.status || 500;
+      const errorData = (apiError as any).response?.data || { 
         status: 'error',
         message: 'Failed to update subscription renewal settings' 
       };

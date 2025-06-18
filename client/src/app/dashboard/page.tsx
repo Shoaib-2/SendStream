@@ -155,13 +155,16 @@ export default function DashboardPage() {
             comprehensiveAnalysis: newsletter.contentQuality?.contentLength ? newsletter.contentQuality.contentLength > 500 : false
           })));
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('Error fetching newsletters:', error);
         
         if (
-          error?.message?.includes('Subscription expired') ||
-          error?.message?.includes('Subscription required') ||
-          error?.response?.status === 403
+          error && typeof error === 'object' && 'message' in error && typeof (error as any).message === 'string' &&
+          (
+            (error as any).message?.includes('Subscription expired') ||
+            (error as any).message?.includes('Subscription required') ||
+            ((error as any).response?.status === 403)
+          )
         ) {
           localStorage.removeItem('has_active_access');
           setSubscriptionExpired(true);

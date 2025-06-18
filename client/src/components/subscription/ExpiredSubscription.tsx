@@ -64,7 +64,7 @@ const ExpiredSubscription = () => {
       console.log('Clearing countdown timer');
       clearInterval(timer);
     };
-  }, [redirecting, isAlreadyOnRenewalPage]);
+  }, [redirecting, isAlreadyOnRenewalPage, countdown, handleRenewClick]);
 
   console.log('Rendering ExpiredSubscription, redirecting:', redirecting, 'countdown:', countdown);
 
@@ -100,7 +100,7 @@ const ExpiredSubscription = () => {
         {(redirecting || isAlreadyOnRenewalPage) && (
           <div className="flex items-center justify-center gap-2 mb-6 text-gray-400 text-sm">
             {isAlreadyOnRenewalPage ? (
-              <span>You're on the renewal page now</span>
+              <span>You&apos;re on the renewal page now</span>
             ) : (
               <>
                 <div className="flex space-x-1">

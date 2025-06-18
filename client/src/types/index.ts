@@ -24,8 +24,10 @@ export interface ApiAnalyticsSummary {
 }
 
 export interface GrowthData {
-  month: string;
-  subscribers: number;
+  date?: string;
+  month?: string;
+  subscribers?: number;
+  [key: string]: any;
 }
 
 export interface RecentActivity {

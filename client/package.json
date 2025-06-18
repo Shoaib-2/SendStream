@@ -17,6 +17,7 @@
     "@nivo/pie": "^0.99.0",
     "@stripe/stripe-js": "^5.10.0",
     "axios": "^1.7.9",
+    "d3": "^7.9.0",
     "dotenv": "^16.5.0",
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.513.0",

@@ -2,9 +2,7 @@
 'use client'
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { authAPI } from '@/services/api';
-
-
-import { IUser } from '@/types/user';
+import { IUser, isIUser } from '@/types/user';
 
 type User = IUser;
 
@@ -20,7 +18,7 @@ interface AuthContextType {
   signup: (email: string, password: string, stripeSessionId?: string) => Promise<void>;
   logout: () => void;
   forgotPassword: (email: string) => Promise<ForgotPasswordResponse>;
-  resetPassword: (token: string, password: string) => Promise<any>;
+  resetPassword: (token: string, password: string) => Promise<unknown>;
   loginWithProvider: (provider: 'google') => Promise<void>;
 }
 
@@ -37,7 +35,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
    // Check token validity - could be enhanced with refresh token logic
   // Check authentication status on load
   useEffect(() => {
-    const verifyAuth = async () => {
+    const verifyAuth = async (): Promise<void> => {
       try {
         // Make a request to a protected endpoint that validates the cookie
         const response = await authAPI.testConnection();
@@ -56,10 +54,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // Fallback to localStorage during transition
           const storedToken = localStorage.getItem('token');
           const storedUser = localStorage.getItem('user');
-          
           if (storedToken && storedUser) {
             setToken(storedToken);
-            setUser(JSON.parse(storedUser));
+            try {
+              const parsedUser = JSON.parse(storedUser);
+              if (isIUser(parsedUser)) {
+                setUser(parsedUser);
+              } else {
+                setUser(null);
+              }
+            } catch {
+              setUser(null);
+            }
           }
         }
       } catch (error) {
@@ -70,17 +76,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(false);
       }
     };
-
     verifyAuth();
   }, []);
 
 
  // Update the login and signup methods in AuthContext
 
-const login = async (email: string, password: string) => {
+const login = async (email: string, password: string): Promise<void> => {
   try {
     const response = await authAPI.login({ email, password });
-    
     // Check for error responses that don't throw exceptions
     if (response?.status === 'error') {
       console.error('Login failed:', response.message);
@@ -90,7 +94,7 @@ const login = async (email: string, password: string) => {
     // The JWT is now set as an HTTP-only cookie automatically
     // We still use the response data for the user info
     if (response?.user) {
-      setUser(response.user);
+      setUser(isIUser(response.user) ? response.user : null);
       
       // Save token for backward compatibility
       if (response.token) {
@@ -116,12 +120,17 @@ const login = async (email: string, password: string) => {
   }
 };
 
-const signup = async (email: string, password: string, stripeSessionId?: string) => {
+const signup = async (email: string, password: string, stripeSessionId?: string): Promise<void> => {
   try {
     console.log('Registering with Stripe session ID:', stripeSessionId || 'none');
     
     // Include the Stripe session ID if provided
-    const registrationData: any = { email, password };
+    interface RegistrationData {
+      email: string;
+      password: string;
+      stripeSessionId?: string;
+    }
+    const registrationData: RegistrationData = { email, password };
     if (stripeSessionId) {
       registrationData.stripeSessionId = stripeSessionId;
     }
@@ -137,7 +146,7 @@ const signup = async (email: string, password: string, stripeSessionId?: string)
     // The JWT is now set as an HTTP-only cookie automatically
     // We still use the response data for the user info
     if (response?.user) {
-      setUser(response.user);
+      setUser(isIUser(response.user) ? response.user : null);
       
       // Save token for backward compatibility
       if (response.token) {
@@ -163,7 +172,7 @@ const signup = async (email: string, password: string, stripeSessionId?: string)
   }
 };
 
-const forgotPassword = async (email: string) => {
+const forgotPassword = async (email: string): Promise<ForgotPasswordResponse> => {
   try {
     return await authAPI.forgotPassword(email);
   } catch (error) {
@@ -172,14 +181,11 @@ const forgotPassword = async (email: string) => {
   }
 };
 
-const resetPassword = async (token: string, password: string) => {
+const resetPassword = async (token: string, password: string): Promise<unknown> => {
   try {
     const response = await authAPI.resetPassword(token, password);
-    
-    // If successful, update user state
     if (response?.user) {
-      setUser(response.user);
-      
+      setUser(isIUser(response.user) ? response.user : null);
       // Save token for backward compatibility
       if (response.token) {
         setToken(response.token);
@@ -187,7 +193,6 @@ const resetPassword = async (token: string, password: string) => {
         localStorage.setItem('user', JSON.stringify(response.user));
       }
     }
-    
     return response;
   } catch (error) {
     console.error('Reset password error:', error);
@@ -195,7 +200,7 @@ const resetPassword = async (token: string, password: string) => {
   }
 };
 
-const logout = async () => {
+const logout = async (): Promise<void> => {
   try {
     await authAPI.logout();
   } catch (error) {
@@ -210,11 +215,11 @@ const logout = async () => {
   }
 };
 
-const loginWithProvider = async (provider: 'google') => {
+const loginWithProvider = async (provider: 'google'): Promise<void> => {
   try {
     const response = await authAPI.loginWithProvider(provider);
     if (response?.user) {
-      setUser(response.user);
+      setUser(isIUser(response.user) ? response.user : null);
       if (response.token) {
         setToken(response.token);
         localStorage.setItem('token', response.token);
@@ -251,7 +256,7 @@ const loginWithProvider = async (provider: 'google') => {
   );
 }
 
-export const useAuth = () => {
+export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (!context) throw new Error('useAuth must be used within AuthProvider');
   return context;

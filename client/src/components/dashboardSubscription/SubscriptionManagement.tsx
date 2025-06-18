@@ -4,9 +4,7 @@ import {
   ArrowPathIcon,
   ExclamationCircleIcon,
   XCircleIcon,
-  CheckCircleIcon,
-  MinusIcon,
-  PlusIcon
+  CheckCircleIcon
 } from '@heroicons/react/24/outline';
 import { useRouter } from 'next/navigation';
 
@@ -31,7 +29,7 @@ const CancelModal: React.FC<CancelModalProps> = ({ isOpen, onClose, onConfirm, i
         </div>
 
         <p className="text-gray-300 mb-6">
-          Are you sure you want to cancel your subscription? You'll still have access until the end of your current billing period.
+          Are you sure you want to cancel your subscription? You&apos;ll still have access until the end of your current billing period.
         </p>
 
         <div className="flex gap-3 justify-end">
@@ -68,9 +66,18 @@ const CancelModal: React.FC<CancelModalProps> = ({ isOpen, onClose, onConfirm, i
   );
 };
 
+interface Subscription {
+  id: string;
+  status?: string;
+  trialEnd?: string;
+  currentPeriodEnd?: string;
+  cancelAtPeriodEnd?: boolean;
+  [key: string]: unknown;
+}
+
 const SubscriptionManagement = () => {
   const router = useRouter();
-  const [subscription, setSubscription] = useState<any>(null);
+  const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
@@ -98,14 +105,16 @@ const SubscriptionManagement = () => {
 
       const response = await getSubscriptionStatus();
       setSubscription(response.data?.subscription);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error fetching subscription status:", err);
 
       // Check if this is an authentication error
-      if (err.message?.includes('Not authenticated') ||
-        err.response?.status === 401 ||
-        err.message?.includes('User no longer exists') ||
-        err.message?.includes('Failed to fetch subscription status')) {
+      if (
+        err && typeof err === 'object' && 'message' in err && typeof (err as any).message === 'string' &&
+        ((err as any).message?.includes('Not authenticated') ||
+          (err as any).message?.includes('User no longer exists') ||
+          (err as any).message?.includes('Failed to fetch subscription status'))
+      ) {
         setAuthError(true);
 
         // Clear localStorage as tokens may be invalid
@@ -144,20 +153,24 @@ const SubscriptionManagement = () => {
 
       // Refresh subscription status
       await fetchSubscriptionStatus();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error canceling subscription:", err);
 
       // Check if this is an authentication error
-      if (err.message?.includes('Not authenticated') ||
-        err.response?.status === 401 ||
-        err.message?.includes('User no longer exists')) {
+      if (
+        err && typeof err === 'object' && 'message' in err && typeof (err as any).message === 'string' &&
+        ((err as any).message?.includes('Not authenticated') ||
+          (err as any).message?.includes('User no longer exists'))
+      ) {
         setAuthError(true);
 
         // Clear localStorage as tokens may be invalid
         localStorage.removeItem('token');
         localStorage.removeItem('user');
       } else {
-        setError(err.response?.data?.message || 'Failed to cancel subscription');
+        setError((err && typeof err === 'object' && 'response' in err && (err as any).response?.data?.message)
+          ? (err as any).response.data.message
+          : 'Failed to cancel subscription');
       }
     } finally {
       setCancelling(false);
@@ -200,9 +213,11 @@ const SubscriptionManagement = () => {
           'Auto-renewal enabled successfully' :
           'Auto-renewal disabled successfully');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error updating auto-renewal:", err);
-      setError(err.message || 'Failed to update auto-renewal settings');
+      setError((err && typeof err === 'object' && 'message' in err && typeof (err as any).message === 'string')
+        ? (err as any).message
+        : 'Failed to update auto-renewal settings');
     } finally {
       setUpdatingAutoRenew(false);
     }
@@ -246,8 +261,8 @@ const SubscriptionManagement = () => {
     );
   }
 
-  const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString('en-US', {
+  const formatDate = (date?: string) => {
+    return new Date(date ?? '').toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
@@ -256,7 +271,7 @@ const SubscriptionManagement = () => {
 
   // Check if subscription is expired
   const isExpired = subscription.status === 'cancelled' &&
-    new Date(subscription.currentPeriodEnd) < new Date();
+    new Date(subscription.currentPeriodEnd ?? '') < new Date();
 
   return (
     <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700">

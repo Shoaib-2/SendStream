@@ -34,7 +34,7 @@ export default function Home() {
       // Store session ID to be handled by AuthModal
       if (sessionId && typeof window !== 'undefined') {
         localStorage.setItem('stripe_session_id', sessionId);
-        console.log('Stored Stripe session ID:', sessionId);
+        // console.log('Stored Stripe session ID:', sessionId);
       }
     }
   }, [searchParams]);

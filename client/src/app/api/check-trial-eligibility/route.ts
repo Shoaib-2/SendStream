@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
       : { status: 'error', eligibleForTrial: true };
     
     // Also check directly with Stripe
-    let stripeData = { 
+    const stripeData = { 
       hasCustomer: false, 
       hasSubscriptions: false,
       subscriptionCount: 0

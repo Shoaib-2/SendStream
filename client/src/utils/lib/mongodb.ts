@@ -1,4 +1,4 @@
-import { MongoClient, Db } from 'mongodb';
+import { MongoClient } from 'mongodb';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 
@@ -15,7 +15,6 @@ if (!dbName) {
 }
 
 let clientPromise: Promise<MongoClient>;
-let mongooseConnection: Promise<typeof mongoose>;
 
 // MongoDB Native Client connection (keep for legacy code)
 export async function connectToDatabase() {
@@ -31,12 +30,10 @@ export async function connectMongoose() {
       return mongoose;
     }
 
-    if (!mongooseConnection) {
-      mongooseConnection = mongoose.connect(uri, {
-        bufferCommands: false,
-      });
-    }
-    return await mongooseConnection;
+    mongoose.connect(uri, {
+      bufferCommands: false,
+    });
+    return mongoose;
   } catch (error) {
     console.error('MongoDB connection error:', error);
     throw error;

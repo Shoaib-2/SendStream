@@ -5,13 +5,13 @@ import { ResponsiveLine } from '@nivo/line';
 
 import { analyticsAPI } from '../../../services/api';
 import { useData } from '../../../context/dataContext';
-import type { ApiAnalyticsSummary, GrowthData } from '../../../types';
+import type { ApiAnalyticsSummary, GrowthData as AppGrowthData } from '../../../types';
 
 export default function AnalyticsDashboard() {
   const { subscribers } = useData();
   const [loading, setLoading] = React.useState(true);
   const [summary, setSummary] = React.useState<ApiAnalyticsSummary | null>(null);
-  const [growthData, setGrowthData] = React.useState<GrowthData[]>([]);  const [recentActivity, setRecentActivity] = React.useState<Array<{
+  const [growthData, setGrowthData] = React.useState<AppGrowthData[]>([]);  const [recentActivity, setRecentActivity] = React.useState<Array<{
     title: string;
     recipients: number;
     time: string;
@@ -24,9 +24,11 @@ export default function AnalyticsDashboard() {
         
         // Fetch summary data
         const response = await analyticsAPI.getSummary();
-        if (response.status === 'success' && response.data) {
-          const data = response.data.data || response.data;
-          
+        const data = (response.data && typeof response.data === 'object' && 'data' in response.data)
+          ? (response.data as { data: ApiAnalyticsSummary }).data
+          : (response.data as ApiAnalyticsSummary);
+        
+        if (response.status === 'success' && data) {
           setSummary({
             subscribers: data.subscribers,
             newsletters: data.newsletters,
@@ -45,14 +47,12 @@ export default function AnalyticsDashboard() {
           // Handle the API response structure properly
           if (growthResponse && typeof growthResponse === 'object' && 'status' in growthResponse) {
             // API returned the standard wrapper format
-            const apiResponse = growthResponse as unknown as { status: string; data: GrowthData[] };
+            const apiResponse = growthResponse as unknown as { status: string; data: AppGrowthData[] };
             
             if (apiResponse.status === 'success' && Array.isArray(apiResponse.data)) {
-              const formattedData: GrowthData[] = apiResponse.data.map((item: any) => {
-                // Handle date to month conversion - use existing month if available
+              const formattedData: AppGrowthData[] = apiResponse.data.map((item: AppGrowthData) => {
                 const monthValue = item.month || 
                                 (item.date ? new Date(item.date).toLocaleString('default', { month: 'short' }) : '');
-                
                 return {
                   month: monthValue,
                   subscribers: Number(item.subscribers || 0)
@@ -67,10 +67,9 @@ export default function AnalyticsDashboard() {
           
           // Handle case where API directly returns an array
           if (Array.isArray(growthResponse) && growthResponse.length > 0) {
-            const formattedData: GrowthData[] = growthResponse.map((item: any) => {
+            const formattedData: AppGrowthData[] = growthResponse.map((item: AppGrowthData) => {
               const monthValue = item.month || 
                                (item.date ? new Date(item.date).toLocaleString('default', { month: 'short' }) : '');
-              
               return {
                 month: monthValue,
                 subscribers: Number(item.subscribers || 0)
@@ -85,7 +84,7 @@ export default function AnalyticsDashboard() {
           console.error('Growth data fetch error:', error instanceof Error ? error.message : 'Unknown error');
           
           // Set fallback data
-          const mockData: GrowthData[] = [
+          const mockData: AppGrowthData[] = [
             { month: 'Jan', subscribers: 100 },
             { month: 'Feb', subscribers: 120 },
             { month: 'Mar', subscribers: 150 },
@@ -132,7 +131,7 @@ export default function AnalyticsDashboard() {
 
   // Get average and maximum values for reference line
   const averageSubscribers = growthData.length 
-    ? Math.round(growthData.reduce((sum, item) => sum + item.subscribers, 0) / growthData.length)
+    ? Math.round(growthData.reduce((sum, item) => sum + (item.subscribers ?? 0), 0) / growthData.length)
     : 0;
 
 
@@ -177,8 +176,8 @@ export default function AnalyticsDashboard() {
               data={[{
                 id: 'subscribers',
                 data: growthData.map(d => ({
-                  x: d.month,
-                  y: d.subscribers
+                  x: d.month ?? '',
+                  y: d.subscribers ?? 0
                 }))
               }]}
               margin={{ top: 10, right: 40, left: 40, bottom: 30 }}
@@ -253,7 +252,7 @@ export default function AnalyticsDashboard() {
                   <div className="flex items-center">
                     <div className="w-3 h-3 rounded-full bg-blue-500 mr-2"></div>
                     <p className="text-blue-400 font-bold">
-                      {slice.points[0].data.y.toLocaleString()} subscribers
+                      {slice.points[0].data.y ? (slice.points[0].data.y as number).toLocaleString() : 0} subscribers
                     </p>
                   </div>
                   {(slice.points[0].data.y as number) > averageSubscribers && (

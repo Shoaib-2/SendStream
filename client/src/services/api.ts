@@ -139,7 +139,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL;
 // console.log("API URL:", API_URL); // Debug log
 
 export class APIError extends Error {
-  constructor(public status: number, message: string, public data?: any) {
+  constructor(public status: number, message: string, public data?: unknown) {
     super(message);
     this.name = "APIError";
   }
@@ -149,7 +149,7 @@ export class APIError extends Error {
 const handleError = (error: AxiosError) => {
   if (error.response) {
     const statusCode = error.response.status;
-    const responseData = error.response.data as ResponseData<any>;
+    const responseData = error.response.data as ResponseData<unknown>;
 
     // Handle specific database errors
     if (statusCode === 429) {
@@ -504,7 +504,7 @@ export const settingsAPI = {
   sendNewsletter: async (newsletter: {
     subject: string;
     content: string;
-  }): Promise<any> => {
+  }): Promise<unknown> => {
     const response = await api.post("/settings/newsletter", newsletter);
     return response.data.data;
   },
@@ -513,7 +513,7 @@ export const settingsAPI = {
   scheduleNewsletter: async (
     campaignId: string,
     sendTime: Date
-  ): Promise<any> => {
+  ): Promise<unknown> => {
     const response = await api.post("/settings/newsletter/schedule", {
       campaignId,
       sendTime,
@@ -522,19 +522,19 @@ export const settingsAPI = {
   },
 
   // Added return type
-  getSubscriberStats: async (): Promise<any> => {
+  getSubscriberStats: async (): Promise<unknown> => {
     const response = await api.get("/settings/subscribers/stats");
     return response.data.data;
   },
 
   // Added return type
-  syncSubscribers: async (): Promise<any[]> => {
+  syncSubscribers: async (): Promise<unknown[]> => {
     const response = await api.post("/settings/sync-subscribers");
     return response.data.data;
   },
 
   // Added parameter type and return type
-  getCampaignStats: async (campaignId: string): Promise<any> => {
+  getCampaignStats: async (campaignId: string): Promise<unknown> => {
     const response = await api.get(`/settings/campaigns/${campaignId}/stats`);
     return response.data.data;
   },
@@ -786,7 +786,7 @@ export const subscriberAPI = {
         status: sub.status as "active" | "unsubscribed",
         subscribed:
           sub.subscribed ||
-          (sub as any).subscribedDate ||
+          (sub as { subscribedDate?: string }).subscribedDate ||
           new Date().toISOString(),
         source: sub.source as "mailchimp" | "csv" | "manual" | undefined,
       }));
@@ -909,7 +909,7 @@ export const subscriberAPI = {
 export const analyticsAPI = {
   getSummary: async () => {
     try {
-      const response = await api.get<ResponseData<any>>("/analytics/summary");
+      const response = await api.get<ResponseData<unknown>>("/analytics/summary");
       // console.log("Analytics response:", response.data); // Debug log
       return response.data;
     } catch (error) {
@@ -1166,7 +1166,7 @@ export const authAPI = {
   ): Promise<{
     status: "success" | "error";
     message?: string;
-    user?: any;
+    user?: Record<string, unknown>;
     token?: string;
   }> => {
     try {

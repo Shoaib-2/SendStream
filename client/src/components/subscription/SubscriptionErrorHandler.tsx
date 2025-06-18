@@ -2,13 +2,6 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-interface SubscriptionStatus {
-  status: string;
-  trialEndsAt?: string;
-  expiresAt?: string;
-  isActive: boolean;
-}
-
 const SubscriptionErrorHandler = () => {
   const router = useRouter();
   const [checkedSubscription, setCheckedSubscription] = useState(false);
@@ -27,7 +20,6 @@ const SubscriptionErrorHandler = () => {
       setCheckedSubscription(true);
     });
   }, [router]);
-
   
   const checkSubscriptionStatus = async () => {
     try {
@@ -194,164 +186,158 @@ const SubscriptionErrorHandler = () => {
     };
 
     verifySubscription();
+  }, [checkedSubscription, checkSubscriptionStatus, determineAccessStatus]);
 
-    // Periodically check subscription status
-    const intervalCheck = setInterval(() => {
-      // Don't check while on the renewal page
-      if (!window.location.href.includes('renew=true')) {
-        checkForExpiredSubscription();
-      }
-    }, 60000); // Check every minute
+  // Periodically check subscription status
+  const intervalCheck = setInterval(() => {
+    // Don't check while on the renewal page
+    if (!window.location.href.includes('renew=true')) {
+      checkForExpiredSubscription();
+    }
+  }, 60000); // Check every minute
 
-    // Check URL parameters for renewal flow
-    const checkUrl = () => {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get('renew') === 'true') {
-        // Check if user already has access
-        const hasAccess = localStorage.getItem('has_active_access') === 'true';
+  // Check URL parameters for renewal flow
+  const checkUrl = () => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('renew') === 'true') {
+      // Check if user already has access
+      const hasAccess = localStorage.getItem('has_active_access') === 'true';
 
-        if (hasAccess) {
-          // Clear URL parameter
-          const cleanUrl = window.location.pathname;
-          window.history.replaceState({}, document.title, cleanUrl);
+      if (hasAccess) {
+        // Clear URL parameter
+        const cleanUrl = window.location.pathname;
+        window.history.replaceState({}, document.title, cleanUrl);
 
-          // Redirect to dashboard if on home page
-          if (window.location.pathname === '/') {
-            // console.log('User has active access, redirecting to dashboard');
-            router.push('/dashboard');
-          }
+        // Redirect to dashboard if on home page
+        if (window.location.pathname === '/') {
+          // console.log('User has active access, redirecting to dashboard');
+          router.push('/dashboard');
         }
       }
-    };
+    }
+  };
 
-    // Initial URL check
-    setTimeout(() => {
-      checkUrl();
-    }, 1000); // 1 second delay
+  // Initial URL check
+  setTimeout(() => {
+    checkUrl();
+  }, 1000); // 1 second delay
 
-    // Listen for route changes
-    window.addEventListener('popstate', checkUrl);
+  // Listen for route changes
+  window.addEventListener('popstate', checkUrl);
 
-    // Listen for subscription errors
-    const handleErrors = (event: ErrorEvent) => {
-      // Skip if user has active access
-      if (localStorage.getItem('has_active_access') === 'true') {
-        // console.log('Ignoring subscription error - user has active access');
-        event.preventDefault();
-        event.stopPropagation();
-        return;
-      }
-
-      if (event.error && event.error.message &&
-        (event.error.message.includes('Subscription expired') ||
-          event.error.message.includes('Subscription required'))) {
-
-        // Verify access status before redirecting
-        checkSubscriptionStatus().then(data => {
-          const hasAccess = determineAccessStatus(data);
-
-          if (hasAccess) {
-            // console.log('Verified active subscription, preventing redirect');
-            localStorage.setItem('has_active_access', 'true');
-            event.preventDefault();
-            event.stopPropagation();
-            return;
-          }
-
-          // No active access, trigger renewal flow
-          // console.log('Subscription verification confirmed no active access, redirecting to renewal');
-          checkForExpiredSubscription();
-        });
-      }
-    };
-
-    // Add global error handler
-    window.addEventListener('error', handleErrors);
-
-    // functions for testing renewal flow
-    if (typeof window !== 'undefined') {
-      window.debugSubscription = {
-        simulateExpired: () => {
-          localStorage.removeItem('has_active_access');
-          // Dispatch a custom event to notify components
-          window.dispatchEvent(new Event('subscription-changed'));
-          window.location.href = "/?renew=true";
-        },
-        forceSimulateExpired: () => {
-          // Set flags to force expired state
-          localStorage.removeItem('has_active_access');
-          localStorage.setItem('force_expired_simulation', 'true');
-
-          // Notify components
-          window.dispatchEvent(new Event('subscription-changed'));
-          // console.log('Forced expired simulation active');
-        },
-        checkStatus: async () => {
-          const data = await checkSubscriptionStatus();
-          // console.log("Current subscription data (RAW):", data);
-          const hasAccess = determineAccessStatus(data);
-          // console.log("Has access:", hasAccess);
-          return { data, hasAccess };
-        },
-        logApiCall: async () => {
-          try {
-            const token = localStorage.getItem('token');
-            if (!token) {
-              console.log("No token available");
-              return null;
-            }
-
-            console.log("Calling API directly with:", token.substring(0, 10) + "...");
-            const response = await fetch('/api/stripe/status', {
-              headers: {
-                'Authorization': `Bearer ${token}`
-              }
-            });
-
-            const responseText = await response.text();
-            console.log("Raw API response text:", responseText);
-
-            try {
-              // Try to parse as JSON
-              const jsonData = JSON.parse(responseText);
-              console.log("Parsed JSON data:", jsonData);
-              console.log("API status path:", jsonData?.data?.subscription?.status);
-              console.log("API period end path:", jsonData?.data?.subscription?.currentPeriodEnd);
-              return jsonData;
-            } catch (e) {
-              console.error("Failed to parse response as JSON:", e);
-            }
-
-            return { rawText: responseText };
-          } catch (error) {
-            console.error("Error in direct API call:", error);
-            return null;
-          }
-        },
-        resetSimulation: () => {
-          localStorage.setItem('has_active_access', 'true');
-          localStorage.removeItem('force_expired_simulation'); // Add this line
-          sessionStorage.removeItem('redirecting_for_renewal');
-          if (window.location.search.includes('renew=true')) {
-            window.history.replaceState({}, document.title, window.location.pathname);
-          }
-          console.log('Simulation reset complete');
-          
-          // Add navigation to dashboard or landing page
-          setTimeout(() => {
-            window.location.href = '/dashboard';
-          }, 100);
-        }
-      };
+  // Listen for subscription errors
+  const handleErrors = (event: ErrorEvent) => {
+    // Skip if user has active access
+    if (localStorage.getItem('has_active_access') === 'true') {
+      // console.log('Ignoring subscription error - user has active access');
+      event.preventDefault();
+      event.stopPropagation();
+      return;
     }
 
-    return () => {
-      clearInterval(intervalCheck);
-      window.removeEventListener('error', handleErrors);
-      window.removeEventListener('popstate', checkUrl);
+    if (event.error && event.error.message &&
+      (event.error.message.includes('Subscription expired') ||
+        event.error.message.includes('Subscription required'))) {
+
+      // Verify access status before redirecting
+      checkSubscriptionStatus().then(data => {
+        const hasAccess = determineAccessStatus(data);
+
+        if (hasAccess) {
+          // console.log('Verified active subscription, preventing redirect');
+          localStorage.setItem('has_active_access', 'true');
+          event.preventDefault();
+          event.stopPropagation();
+          return;
+        }
+
+        // No active access, trigger renewal flow
+        // console.log('Subscription verification confirmed no active access, redirecting to renewal');
+        checkForExpiredSubscription();
+      });
+    }
+  };
+
+  // Add global error handler
+  window.addEventListener('error', handleErrors);
+
+  // functions for testing renewal flow
+  if (typeof window !== 'undefined') {
+    window.debugSubscription = {
+      simulateExpired: () => {
+        localStorage.removeItem('has_active_access');
+        // Dispatch a custom event to notify components
+        window.dispatchEvent(new Event('subscription-changed'));
+        window.location.href = "/?renew=true";
+      },
+      forceSimulateExpired: () => {
+        // Set flags to force expired state
+        localStorage.removeItem('has_active_access');
+        localStorage.setItem('force_expired_simulation', 'true');
+
+        // Notify components
+        window.dispatchEvent(new Event('subscription-changed'));
+        // console.log('Forced expired simulation active');
+      },
+      checkStatus: async () => {
+        const data = await checkSubscriptionStatus();
+        // console.log("Current subscription data (RAW):", data);
+        const hasAccess = determineAccessStatus(data);
+        // console.log("Has access:", hasAccess);
+        return { data, hasAccess };
+      },
+      logApiCall: async () => {
+        try {
+          const token = localStorage.getItem('token');
+          if (!token) {
+            console.log("No token available");
+            return null;
+          }
+
+          console.log("Calling API directly with:", token.substring(0, 10) + "...");
+          const response = await fetch('/api/stripe/status', {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+
+          const responseText = await response.text();
+          console.log("Raw API response text:", responseText);
+
+          try {
+            // Try to parse as JSON
+            const jsonData = JSON.parse(responseText);
+            console.log("Parsed JSON data:", jsonData);
+            console.log("API status path:", jsonData?.data?.subscription?.status);
+            console.log("API period end path:", jsonData?.data?.subscription?.currentPeriodEnd);
+            return jsonData;
+          } catch (e) {
+            console.error("Failed to parse response as JSON:", e);
+          }
+
+          return { rawText: responseText };
+        } catch (error) {
+          console.error("Error in direct API call:", error);
+          return null;
+        }
+      },
+      resetSimulation: () => {
+        localStorage.setItem('has_active_access', 'true');
+        localStorage.removeItem('force_expired_simulation'); // Add this line
+        sessionStorage.removeItem('redirecting_for_renewal');
+        if (window.location.search.includes('renew=true')) {
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
+        console.log('Simulation reset complete');
+        
+        // Add navigation to dashboard or landing page
+        setTimeout(() => {
+          window.location.href = '/dashboard';
+        }, 100);
+      }
     };
-  }, [router, checkedSubscription]);
-  // Return null since this is just a subscription checker
+  }
+
   return null;
 };
 // Add TS interface for debug functions

@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import { 
   ArrowDownIcon, 
   ArrowPathIcon,
-  DocumentCheckIcon,
 } from '@heroicons/react/24/outline';
 
 import { settingsAPI } from '@/services/api';
@@ -94,7 +93,7 @@ export default function SettingsPage() {
           mailchimp: { ...prev.mailchimp, connected: true }
         }));
       }
-    } catch (error) {
+    } catch {
       showMessage('Failed to load settings', 'error');
     } finally {
       setLoading(false);
@@ -126,7 +125,7 @@ export default function SettingsPage() {
       });
 
       showMessage('Settings saved successfully', 'success');
-    } catch (error) {
+    } catch {
       showMessage('Failed to save settings', 'error');
     } finally {
       setSaving(false);
@@ -168,7 +167,7 @@ export default function SettingsPage() {
       } else {
         throw new Error('Invalid response from server');
       }
-    } catch (error) {
+    } catch {
       setConnectionStatus(prev => ({
         ...prev,
         [type]: { ...prev[type], connected: false, message: 'Connection failed' }
@@ -195,7 +194,7 @@ export default function SettingsPage() {
       }));
 
       showMessage(`Mailchimp integration ${enabled ? 'enabled' : 'disabled'}`, 'success');
-    } catch (error) {
+    } catch {
       showMessage(`Failed to ${enabled ? 'enable' : 'disable'} integration`, 'error');
     }
   };
@@ -210,7 +209,7 @@ export default function SettingsPage() {
       }));
 
       showMessage(`Auto-sync ${enabled ? 'enabled' : 'disabled'}`, 'success');
-    } catch (error) {
+    } catch {
       showMessage(`Failed to ${enabled ? 'enable' : 'disable'} auto-sync`, 'error');
     }
   };
@@ -232,7 +231,7 @@ export default function SettingsPage() {
           window.location.href = '/dashboard/subscribers';
         }, 500);
       }, 1000);
-    } catch (error) {
+    } catch {
       // Still show partial success since some records likely synced
       showMessage('Sync completed with some issues. Refreshing data...', 'info');
       

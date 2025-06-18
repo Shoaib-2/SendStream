@@ -137,7 +137,7 @@ const CreateNewsletter: React.FC = () => {
           showNotificationMessage('Newsletter sent successfully!', 'success');
           router.push('/dashboard/newsletters');
         } else {
-          const newsletterId = (response as any)._id || (response as any).id;
+          const newsletterId = (response as { _id?: string; id?: string })._id || (response as { _id?: string; id?: string }).id;
           if (newsletterId) {
             await newsletterAPI.send(newsletterId);
             showNotificationMessage('Newsletter sent successfully!', 'success');

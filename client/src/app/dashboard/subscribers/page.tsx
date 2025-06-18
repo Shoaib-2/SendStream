@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from 'react';
 import { Trash2, Upload, Download, Search } from 'lucide-react';
-import { exportSubscribers, importSubscribers } from '../../../utils/csvHandler';
+import { exportSubscribers } from '../../../utils/csvHandler';
 import { useData } from '../../../context/dataContext';
 import { subscriberAPI } from '../../../services/api';
 import { Subscriber } from '../../../types';
@@ -17,7 +17,7 @@ export default function SubscribersPage() {
   const [showNotification, setShowNotification] = useState(false);
   const [notificationMessage, setNotificationMessage] = useState('');
   const [notificationType, setNotificationType] = useState('success');
-  const [role, setRole] = useState('admin');
+  const [role] = useState('admin');
 
   useEffect(() => {
     const filtered = searchQuery
@@ -42,7 +42,7 @@ export default function SubscribersPage() {
       try {
         await subscriberAPI.import(file);
         showNotificationMessage('Import successful', 'success');
-      } catch (error) {
+      } catch {
         showNotificationMessage('Import failed', 'error');
       }
     }
@@ -59,7 +59,7 @@ export default function SubscribersPage() {
       setFilteredSubscribers(prev => prev.filter(sub => !selectedSubscribers.includes(sub.id)));
       setSelectedSubscribers([]);
       showNotificationMessage('Bulk delete successful', 'success');
-    } catch (error) {
+    } catch {
       showNotificationMessage('Bulk delete failed', 'error');
     }
   };

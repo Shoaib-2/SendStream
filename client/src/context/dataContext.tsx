@@ -2,7 +2,7 @@
 "use client";
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { Subscriber, Newsletter } from '@/types';
-import { subscriberAPI, newsletterAPI, APIError, getSubscriptionStatus } from '@/services/api';
+import { subscriberAPI, newsletterAPI, getSubscriptionStatus } from '@/services/api';
 import { useAuth } from './authContext';
 
 interface DataContextType {
@@ -28,7 +28,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   // Initialize WebSocket connection
   useEffect(() => {
-    let token = localStorage.getItem('token');
+    const token = localStorage.getItem('token');
 
     const connectWebSocket = () => {
       if (!token) {
@@ -167,9 +167,9 @@ useEffect(() => {
           subscriptionActive = false;
           // console.log(`Subscription status: ${subscriptionStatus.data?.subscription?.status}`);
         }
-      } catch (subError) {
+      } catch (error) {
         // Continue even if subscription check fails
-        // console.log('Subscription check error:', subError);
+        // console.log('Subscription check error:', error);
       }
       
       // Define properly typed variables with default empty arrays
@@ -183,7 +183,12 @@ useEffect(() => {
           // console.log('Subscribers fetched successfully');
         }
       } catch (err) {
-        if ((err as any).status === 403 && (err as any).message?.includes('Subscription expired')) {
+        if (
+          typeof err === 'object' && err !== null &&
+          'status' in err && typeof (err as { status?: number }).status === 'number' &&
+          'message' in err && typeof (err as { message?: string }).message === 'string' &&
+          (err as { message: string }).message.includes('Subscription expired')
+        ) {
           subscriptionActive = false;
         }
         
@@ -199,7 +204,12 @@ useEffect(() => {
           // console.log('Newsletters fetched successfully');
         }
       } catch (err) {
-        if ((err as any).status === 403 && (err as any).message?.includes('Subscription expired')) {
+        if (
+          typeof err === 'object' && err !== null &&
+          'status' in err && typeof (err as { status?: number }).status === 'number' &&
+          'message' in err && typeof (err as { message?: string }).message === 'string' &&
+          (err as { message: string }).message.includes('Subscription expired')
+        ) {
           subscriptionActive = false;
         }
         
@@ -216,7 +226,7 @@ useEffect(() => {
           email: sub.email,
           name: sub.name,
           status: sub.status,
-          subscribed: sub.subscribed || (sub as any).subscribedDate || new Date().toISOString(),
+          subscribed: sub.subscribed || (typeof sub === 'object' && sub !== null && 'subscribedDate' in sub ? (sub as { subscribedDate?: string }).subscribedDate : undefined) || new Date().toISOString(),
           source: sub.source
         }));
   
@@ -264,7 +274,10 @@ useEffect(() => {
       // Increment fetch attempts
       setFetchAttempts(prevAttempts => prevAttempts + 1);
   
-      if ((error as any).status === 401 && !redirecting) {
+      if (
+        typeof error === 'object' && error !== null &&
+        'status' in error && (error as { status?: number }).status === 401 && !redirecting
+      ) {
         redirecting = true;
         if (!isInitialLoad) {
           // console.log('Authentication error during data fetch, clearing token');
@@ -276,7 +289,10 @@ useEffect(() => {
         if (typeof window !== 'undefined' && !isOnAuthPage()) {
           window.location.href = '/login';
         }
-      } else if ((error as any).status === 404) {
+      } else if (
+        typeof error === 'object' && error !== null &&
+        'status' in error && (error as { status?: number }).status === 404
+      ) {
         if (!isInitialLoad) {
           console.error('API endpoint not found during data fetch. Is the API server running?');
         }

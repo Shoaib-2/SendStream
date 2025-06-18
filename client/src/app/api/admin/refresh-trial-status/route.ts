@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Update user trial status based on subscriptions and trial end date
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
     
     // Set trialUsed based on multiple factors
     updateData.trialUsed = user.trialUsed || 

@@ -1,4 +1,6 @@
-export const exportSubscribers = (subscribers: any[]) => {
+import type { Subscriber } from '../types';
+
+export const exportSubscribers = (subscribers: Subscriber[]) => {
   const csvContent = [
     ['ID', 'Email', 'Name', 'Status', 'Subscribed Date'], // Reordered columns, clear headers
     ...subscribers.map(subscriber => [
@@ -22,7 +24,7 @@ export const exportSubscribers = (subscribers: any[]) => {
 };
 
 // Function to import subscribers from a CSV file
-export const importSubscribers = (file: File, addSubscriber: (subscriber: any) => void) => {
+export const importSubscribers = (file: File, addSubscriber: (subscriber: Subscriber) => void) => {
   const reader = new FileReader();
   reader.onload = (event) => {
     const csv = event.target?.result as string;
@@ -34,14 +36,14 @@ export const importSubscribers = (file: File, addSubscriber: (subscriber: any) =
       const subscriber = headers.reduce((obj, header, index) => {
         obj[header.trim()] = values[index].trim();
         return obj;
-      }, {} as any);
+      }, {} as Record<string, string>);
 
       addSubscriber({
         id: crypto.randomUUID(),
         email: subscriber.Email,
         name: subscriber.Name,
         subscribed: new Date().toISOString(),
-        status: subscriber.Status || 'active'
+        status: subscriber.Status === 'active' || subscriber.Status === 'unsubscribed' ? subscriber.Status : 'active',
       });
     });
   };
@@ -49,7 +51,7 @@ export const importSubscribers = (file: File, addSubscriber: (subscriber: any) =
 };
 
 // Function to remove a subscriber by ID
-export const removeSubscriber = (id: string, subscribers: any[], setSubscribers: (subscribers: any[]) => void) => {
+export const removeSubscriber = (id: string, subscribers: Subscriber[], setSubscribers: (subscribers: Subscriber[]) => void) => {
   const updatedSubscribers = subscribers.filter(subscriber => subscriber.id !== id);
   setSubscribers(updatedSubscribers);
 };

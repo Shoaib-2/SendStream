@@ -25,7 +25,7 @@ const SocialAuth: React.FC<SocialAuthProps> = ({ isLoading }) => {
     try {
       await loginWithProvider(provider);
       showToast('Successfully logged in!', 'success');
-    } catch (error) {
+    } catch {
       showToast('Authentication failed', 'error');
     }
   };
