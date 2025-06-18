@@ -1,7 +1,7 @@
 "use client";
 import React from 'react';
 import { Users, Mail } from 'lucide-react';
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
+import { ResponsiveLine } from '@nivo/line';
 import { analyticsAPI } from '../../../../services/api';
 import { useData } from '../../../../context/dataContext';
 import type { ApiAnalyticsSummary, GrowthData } from '../../../../types';
@@ -159,36 +159,92 @@ export default function AnalyticsDashboard() {
 
         <div className="bg-gray-800/50 backdrop-blur-sm p-6 rounded-2xl border border-gray-800 
           hover:border-blue-500/50 transition-all duration-300 mb-8">
-          <h2 className="text-xl font-bold font-inter mb-6">Subscriber Growth</h2>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={growthData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                <XAxis dataKey="month" stroke="#9CA3AF" />
-                <YAxis 
-                  stroke="#9CA3AF" 
-                  domain={[0, 'auto']} // Ensures the chart starts at 0
-                />
-                <Tooltip
-                  contentStyle={{ 
-                    backgroundColor: '#1F2937', 
-                    border: '1px solid rgba(59, 130, 246, 0.5)',
-                    borderRadius: '0.5rem'
-                  }}
-                  itemStyle={{ color: '#D1D5DB' }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="subscribers"
-                  stroke="#3B82F6"
-                  strokeWidth={3}
-                  dot={{ fill: "#3B82F6", r: 4 }} 
-                  activeDot={{ fill: "#3B82F6", r: 6, strokeWidth: 1, stroke: "#fff" }}
-                  animationDuration={1500}
-                  animationEasing="ease-in-out"
-                />
-              </LineChart>
-            </ResponsiveContainer>
+          <h2 className="text-xl font-bold font-inter mb-6">Subscriber Growth</h2>          <div className="h-64 sm:h-72">
+            <ResponsiveLine
+              data={[
+                {
+                  id: "subscribers",
+                  data: growthData.map(d => ({
+                    x: d.month,
+                    y: d.subscribers
+                  }))
+                }
+              ]}
+              margin={{ top: 10, right: 20, bottom: 40, left: 60 }}
+              xScale={{
+                type: 'point'
+              }}
+              yScale={{
+                type: 'linear',
+                min: 0,
+                max: 'auto'
+              }}              curve="monotoneX"
+              axisTop={null}
+              axisRight={null}
+              axisBottom={{
+                tickSize: 5,
+                tickPadding: 5,
+                tickRotation: 0,
+                format: d => d.toString()
+              }}
+              axisLeft={{
+                tickSize: 5,
+                tickPadding: 5,
+                tickRotation: 0,
+                format: d => d.toString()
+              }}
+              theme={{
+                axis: {
+                  ticks: {
+                    text: {
+                      fill: '#9CA3AF',
+                      fontSize: 12
+                    }
+                  }
+                },
+                grid: {
+                  line: {
+                    stroke: '#374151',
+                    strokeWidth: 1,
+                    strokeDasharray: '3 3'
+                  }
+                },
+                tooltip: {
+                  container: {
+                    background: '#1F2937',
+                    color: '#D1D5DB',
+                    fontSize: 12,
+                    borderRadius: '0.5rem',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                    padding: '8px 12px',
+                    border: '1px solid rgba(59, 130, 246, 0.5)'
+                  }
+                }
+              }}
+              colors={['#3B82F6']}
+              lineWidth={3}
+              enablePoints={true}
+              pointSize={6}
+              pointColor="#3B82F6"
+              pointBorderWidth={2}
+              pointBorderColor="#fff"
+              enableArea={true}
+              areaBaselineValue={0}
+              areaOpacity={0.1}
+              enableGridX={false}
+              enableGridY={true}
+              enableSlices="x"
+              sliceTooltip={({ slice }) => (
+                <div className="text-sm">
+                  <strong>{slice.points[0].data.x}</strong>
+                  <div className="flex items-center gap-2 mt-1">
+                    <div className="w-2 h-2 rounded-full bg-blue-500" />
+                    <span>{slice.points[0].data.y.toLocaleString()} subscribers</span>
+                  </div>
+                </div>
+              )}
+              motionConfig="gentle"
+            />
           </div>
         </div>
 
