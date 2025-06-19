@@ -75,11 +75,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         };
 
         socket.onerror = (event: Event) => {
-          console.error('WebSocket error:', event);
-          // Check if token might be invalid
+          // console.error('WebSocket error:', event); // Commented out to remove build log error
           const currentToken = localStorage.getItem('token');
           if (currentToken !== token) {
-            // console.log('Token changed, closing current socket');
             socket.close();
           }
         };

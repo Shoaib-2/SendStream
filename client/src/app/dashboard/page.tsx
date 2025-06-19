@@ -8,6 +8,7 @@ import type { Newsletter } from '@/types';
 import ExpiredSubscription from '@/components/subscription/ExpiredSubscription';
 import { useRouter } from 'next/navigation';
 import { emailAPI } from '@/services/api';
+import type { AxiosError } from 'axios';
 
 const COLORS = ['#3B82F6', '#10B981', '#EF4444', '#F59E0B'];
 
@@ -23,6 +24,10 @@ interface EmailUsage {
   dailyLimit: number;
   remainingEmails: number;
   percentUsed: number;
+}
+
+function isAxiosError(error: unknown): error is AxiosError {
+  return typeof error === 'object' && error !== null && 'isAxiosError' in error;
 }
 
 export default function DashboardPage() {
@@ -157,14 +162,18 @@ export default function DashboardPage() {
         }
       } catch (error: unknown) {
         console.error('Error fetching newsletters:', error);
-        
+        let errorMessage = '';
+        let errorStatus = 0;
+        if (isAxiosError(error)) {
+          errorMessage = error.message;
+          errorStatus = error.response?.status || 0;
+        } else if (error && typeof error === 'object' && 'message' in error && typeof (error as { message?: unknown }).message === 'string') {
+          errorMessage = (error as { message: string }).message;
+        }
         if (
-          error && typeof error === 'object' && 'message' in error && typeof (error as any).message === 'string' &&
-          (
-            (error as any).message?.includes('Subscription expired') ||
-            (error as any).message?.includes('Subscription required') ||
-            ((error as any).response?.status === 403)
-          )
+          errorMessage?.includes('Subscription expired') ||
+          errorMessage?.includes('Subscription required') ||
+          errorStatus === 403
         ) {
           localStorage.removeItem('has_active_access');
           setSubscriptionExpired(true);

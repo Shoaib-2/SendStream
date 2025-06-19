@@ -109,7 +109,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
           throw new Error('Please start a free trial first to create an account');
         }
         
-        console.log(`Signing up with stripe session ID: ${stripeSessionId || 'none'}`);
+        // console.log(`Signing up with stripe session ID: ${stripeSessionId || 'none'}`);
         
         try {
           // Include the session ID
@@ -127,10 +127,13 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
           router.push('/dashboard');
         } catch (signupError: unknown) {
           // Check if it's a trial required error from the backend
-          if ((signupError as any).response?.data?.code === 'TRIAL_REQUIRED' || 
-              (signupError as any).response?.data?.code === 'INVALID_SESSION') {
+          if (
+            isApiError(signupError) &&
+            (signupError.response.data.code === 'TRIAL_REQUIRED' ||
+              signupError.response.data.code === 'INVALID_SESSION')
+          ) {
             setTrialRequired(true);
-            throw new Error((signupError as any).response?.data?.message || 'Please start a free trial first');
+            throw new Error(signupError.response.data.message || 'Please start a free trial first');
           }
           throw signupError;
         }
@@ -416,5 +419,17 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
     </div>
   );
 };
+
+// Type guard for API error
+function isApiError(error: unknown): error is { response: { data: { code?: string; message?: string } } } {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'response' in error &&
+    typeof (error as any).response === 'object' &&
+    (error as any).response !== null &&
+    'data' in (error as any).response
+  );
+}
 
 export default AuthModal;

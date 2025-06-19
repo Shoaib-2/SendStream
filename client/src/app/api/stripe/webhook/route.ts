@@ -67,9 +67,7 @@ export async function POST(request: NextRequest) {
           // Handle subscription updates
           const subscription = event.data.object as Stripe.Subscription;
           const customerId2 = subscription.customer as string;
-          
-          // Determine if this is a trial
-          const isTrialing = subscription.status === 'trialing';
+            // Determine trial end date if exists
           const trialEnd = subscription.trial_end 
             ? new Date(subscription.trial_end * 1000) 
             : undefined;
@@ -77,12 +75,10 @@ export async function POST(request: NextRequest) {
           // Check if canceled but still active
           const isCanceled = subscription.cancel_at_period_end;
           const canceled = isCanceled ? 'canceled' : subscription.status;
-          
-          // console.log('Subscription event:', {
+            // console.log('Subscription event:', {
           //   event: event.type,
           //   status: subscription.status,
           //   isCanceled,
-          //   isTrialing,
           //   trialEnd
           // });
           

@@ -22,24 +22,10 @@ interface Newsletter {
   };
 }
 
-interface NewsletterResponse {
-  newsletters: Newsletter[];
-  qualityStats: {
-    averageScore: number;
-    qualityDistribution: {
-      high: number;
-      medium: number;
-      low: number;
-    };
-    topPerformers: Newsletter[];
-  };
-}
-
 const NewsletterDashboard = () => {
   const router = useRouter();
   const [newsletters, setNewsletters] = React.useState<Newsletter[]>([]);
   const [loading, setLoading] = React.useState(true);
-  const [qualityStats, setQualityStats] = React.useState<NewsletterResponse['qualityStats'] | null>(null);
 
   const fetchNewsletterStats = React.useCallback(async () => {
     try {
@@ -47,16 +33,13 @@ const NewsletterDashboard = () => {
       
       if (response && response.newsletters) {
         setNewsletters(response.newsletters);
-        setQualityStats(response.qualityStats);
       } else {
         console.error('Invalid response format:', response);
         setNewsletters([]);
-        setQualityStats(null);
       }
     } catch (error) {
       console.error('Error fetching newsletters:', error);
       setNewsletters([]);
-      setQualityStats(null);
     } finally {
       setLoading(false);
     }

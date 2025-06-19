@@ -107,17 +107,16 @@ const SubscriptionManagement = () => {
       setSubscription(response.data?.subscription);
     } catch (err: unknown) {
       console.error("Error fetching subscription status:", err);
-
-      // Check if this is an authentication error
+      let errorMessage = '';
+      if (isApiError(err) && typeof err.message === 'string') {
+        errorMessage = err.message;
+      }
       if (
-        err && typeof err === 'object' && 'message' in err && typeof (err as any).message === 'string' &&
-        ((err as any).message?.includes('Not authenticated') ||
-          (err as any).message?.includes('User no longer exists') ||
-          (err as any).message?.includes('Failed to fetch subscription status'))
+        errorMessage.includes('Not authenticated') ||
+        errorMessage.includes('User no longer exists') ||
+        errorMessage.includes('Failed to fetch subscription status')
       ) {
         setAuthError(true);
-
-        // Clear localStorage as tokens may be invalid
         localStorage.removeItem('token');
         localStorage.removeItem('user');
       } else {
@@ -155,22 +154,23 @@ const SubscriptionManagement = () => {
       await fetchSubscriptionStatus();
     } catch (err: unknown) {
       console.error("Error canceling subscription:", err);
-
-      // Check if this is an authentication error
+      let errorMessage = '';
+      let responseMessage = '';
+      if (isApiError(err) && typeof err.message === 'string') {
+        errorMessage = err.message;
+      }
+      if (isApiError(err) && err.response?.data?.message) {
+        responseMessage = err.response.data.message;
+      }
       if (
-        err && typeof err === 'object' && 'message' in err && typeof (err as any).message === 'string' &&
-        ((err as any).message?.includes('Not authenticated') ||
-          (err as any).message?.includes('User no longer exists'))
+        errorMessage.includes('Not authenticated') ||
+        errorMessage.includes('User no longer exists')
       ) {
         setAuthError(true);
-
-        // Clear localStorage as tokens may be invalid
         localStorage.removeItem('token');
         localStorage.removeItem('user');
       } else {
-        setError((err && typeof err === 'object' && 'response' in err && (err as any).response?.data?.message)
-          ? (err as any).response.data.message
-          : 'Failed to cancel subscription');
+        setError(responseMessage || 'Failed to cancel subscription');
       }
     } finally {
       setCancelling(false);
@@ -405,3 +405,12 @@ const SubscriptionManagement = () => {
 };
 
 export default SubscriptionManagement;
+
+// Type guard for API error
+function isApiError(error: unknown): error is { message?: string; response?: { data?: { message?: string } } } {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    ('message' in error || 'response' in error)
+  );
+}

@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Save, Calendar, Send, BookOpen, Lightbulb, FileCheck, Link } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { APIError, newsletterAPI } from '../../../../services/api';
-import { Newsletter, ContentQuality } from '../../../../types/index';
+import { Newsletter } from '../../../../types/index';
 import { useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 

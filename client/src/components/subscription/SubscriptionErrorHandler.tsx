@@ -2,6 +2,17 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
+// Add a SubscriptionData type for type safety (move to top for global usage)
+export interface SubscriptionData {
+  subscription?: {
+    status?: string;
+    trialEnd?: string;
+    currentPeriodEnd?: string;
+    [key: string]: unknown;
+  };
+  [key: string]: unknown;
+}
+
 const SubscriptionErrorHandler = () => {
   const router = useRouter();
   const [checkedSubscription, setCheckedSubscription] = useState(false);
@@ -12,7 +23,7 @@ const SubscriptionErrorHandler = () => {
     // Subscription check logic here
     checkSubscriptionStatus().then((data) => {
       if (data) {
-        const hasAccess = determineAccessStatus(data);
+        const hasAccess = determineAccessStatus(data ?? null);
         if (!hasAccess) {
           router.push('/?renew=true');
         }
@@ -55,7 +66,7 @@ const SubscriptionErrorHandler = () => {
   };
 
   // Update the determineAccessStatus function
-  const determineAccessStatus = (subData: any) => {
+  const determineAccessStatus = (subData: SubscriptionData | null) => {
     if (!subData || !subData.subscription) {
       // console.log('No valid subscription data found');
       return false;
@@ -121,7 +132,7 @@ const SubscriptionErrorHandler = () => {
       }
 
       const subscriptionData = await checkSubscriptionStatus();
-      const hasAccess = determineAccessStatus(subscriptionData);
+      const hasAccess = determineAccessStatus(subscriptionData ?? null);
 
       if (!hasAccess) {
         // console.log('Subscription access check failed, triggering renewal flow');
@@ -164,7 +175,7 @@ const SubscriptionErrorHandler = () => {
       }
 
       const subscriptionData = await checkSubscriptionStatus();
-      const hasAccess = determineAccessStatus(subscriptionData);
+      const hasAccess = determineAccessStatus(subscriptionData ?? null);
 
       // Set local storage based on real subscription data
       if (hasAccess) {
@@ -186,15 +197,7 @@ const SubscriptionErrorHandler = () => {
     };
 
     verifySubscription();
-  }, [checkedSubscription, checkSubscriptionStatus, determineAccessStatus]);
-
-  // Periodically check subscription status
-  const intervalCheck = setInterval(() => {
-    // Don't check while on the renewal page
-    if (!window.location.href.includes('renew=true')) {
-      checkForExpiredSubscription();
-    }
-  }, 60000); // Check every minute
+  }, [checkedSubscription, checkSubscriptionStatus, determineAccessStatus, checkForExpiredSubscription]); // Added missing dependency
 
   // Check URL parameters for renewal flow
   const checkUrl = () => {
@@ -241,7 +244,7 @@ const SubscriptionErrorHandler = () => {
 
       // Verify access status before redirecting
       checkSubscriptionStatus().then(data => {
-        const hasAccess = determineAccessStatus(data);
+        const hasAccess = determineAccessStatus(data ?? null);
 
         if (hasAccess) {
           // console.log('Verified active subscription, preventing redirect');
@@ -280,11 +283,13 @@ const SubscriptionErrorHandler = () => {
         // console.log('Forced expired simulation active');
       },
       checkStatus: async () => {
-        const data = await checkSubscriptionStatus();
-        // console.log("Current subscription data (RAW):", data);
-        const hasAccess = determineAccessStatus(data);
-        // console.log("Has access:", hasAccess);
-        return { data, hasAccess };
+        try {
+          const subscriptionData = await checkSubscriptionStatus();
+          const hasAccess = determineAccessStatus(subscriptionData ?? null);
+          return { data: subscriptionData ?? {}, hasAccess };
+        } catch (error) {
+          return { data: {}, hasAccess: null };
+        }
       },
       logApiCall: async () => {
         try {
@@ -346,8 +351,8 @@ declare global {
     debugSubscription?: {
       simulateExpired: () => void;
       forceSimulateExpired: () => void;
-      checkStatus: () => Promise<{ data: any, hasAccess: boolean | null }>;
-      logApiCall: () => Promise<any>;
+      checkStatus: () => Promise<{ data: SubscriptionData, hasAccess: boolean | null }>;
+      logApiCall: () => Promise<unknown>;
       resetSimulation: () => void;
     };
   }

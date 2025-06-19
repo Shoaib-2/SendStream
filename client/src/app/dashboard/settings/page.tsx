@@ -65,10 +65,7 @@ export default function SettingsPage() {
     mailchimp: { connected: false, message: '', listId: '' }
   });
 
-  useEffect(() => {
-    loadSettings();
-  }, []);
-
+  // Move loadSettings above useEffect
   const loadSettings = async () => {
     try {
       const data = await settingsAPI.getSettings();
@@ -84,21 +81,19 @@ export default function SettingsPage() {
           serverPrefix: data.mailchimp.serverPrefix || '',
           enabled: data.mailchimp.enabled || false,
           autoSync: data.mailchimp.autoSync || false,
-          listId: data.mailchimp.listId
+          listId: data.mailchimp.listId || ''
         }
       });
-      if (data.mailchimp?.enabled) {
-        setConnectionStatus(prev => ({
-          ...prev,
-          mailchimp: { ...prev.mailchimp, connected: true }
-        }));
-      }
-    } catch {
-      showMessage('Failed to load settings', 'error');
-    } finally {
       setLoading(false);
+    } catch (error) {
+      setLoading(false);
+      setMessage({ text: 'Failed to load settings', type: 'error' });
     }
   };
+
+  useEffect(() => {
+    loadSettings();
+  }, [loadSettings]); // Added loadSettings to dependency array
 
   const handleSave = async () => {
     setSaving(true);
@@ -248,9 +243,6 @@ export default function SettingsPage() {
     setMessage({ text, type });
     setTimeout(() => setMessage({ text: '', type: '' }), 3000);
   };
-
-  // Handle input type for masked fields
-  const isApiKeyMasked = settings.mailchimp.apiKey.includes('••••');
 
   if (loading) {
     return (

@@ -145,41 +145,51 @@ export class APIError extends Error {
   }
 }
 
+// Utility type guard for AxiosError
+const isAxiosError = (error: unknown): error is AxiosError<ErrorResponseData> => {
+  return axios.isAxiosError(error);
+};
+
 // Improved error handling for database scaling
-const handleError = (error: AxiosError) => {
-  if (error.response) {
-    const statusCode = error.response.status;
-    const responseData = error.response.data as ResponseData<unknown>;
+const handleError = (error: unknown) => {
+  if (isAxiosError(error)) {
+    if (error.response) {
+      const statusCode = error.response.status;
+      const responseData = error.response.data;
 
-    // Handle specific database errors
-    if (statusCode === 429) {
+      // Handle specific database errors
+      if (statusCode === 429) {
+        throw new APIError(
+          429,
+          "Rate limit exceeded. Please try again later.",
+          responseData
+        );
+      }
+
+      if (statusCode === 503) {
+        throw new APIError(
+          503,
+          "Database currently unavailable. Please try again later.",
+          responseData
+        );
+      }
+
       throw new APIError(
-        429,
-        "Rate limit exceeded. Please try again later.",
+        statusCode,
+        responseData.message || `Request failed with status ${statusCode}`,
         responseData
       );
     }
 
-    if (statusCode === 503) {
-      throw new APIError(
-        503,
-        "Database currently unavailable. Please try again later.",
-        responseData
-      );
+    if (error.message === "Network Error") {
+      throw new APIError(503, "Service unavailable: Cannot connect to server");
     }
 
-    throw new APIError(
-      statusCode,
-      responseData.message || `Request failed with status ${statusCode}`,
-      responseData
-    );
+    throw new APIError(500, error.message || "An unexpected error occurred");
   }
-
-  if (error.message === "Network Error") {
-    throw new APIError(503, "Service unavailable: Cannot connect to server");
-  }
-
-  throw new APIError(500, error.message || "An unexpected error occurred");
+  
+  // If it's not an Axios error, throw a generic error
+  throw new APIError(500, "An unexpected error occurred");
 };
 
 // Request deduplication function for performance with large datasets
@@ -295,10 +305,7 @@ api.interceptors.response.use(
         window.location.pathname === "/");
 
     // Silent mode for initial page load or on landing page
-    const silentMode = inSilentMode();
-
-    // Check for stored valid access flag
-    const hasValidAccess = localStorage.getItem("has_active_access") === "true";
+    const silentMode = inSilentMode();    // Check if the user just renewed
 
     // First check if user just renewed (has renewal flag in localStorage)
     const justRenewed = localStorage.getItem("subscription_renewed");
@@ -590,15 +597,15 @@ export const newsletterAPI = {
       });
 
       return response.data.data;
-    } catch (error: any) {
+    } catch (error) {
       console.error(`${type} integration test detailed error:`, error);
-
+      const axiosError = error as AxiosError<ErrorResponseData>;
       return {
         success: false,
         message:
-          error.response?.data?.data?.message ||
-          error.response?.data?.message ||
-          `Failed to connect to ${type}: ${error.message}`,
+          (axiosError.response?.data?.message) ||
+          axiosError.message ||
+          `Failed to connect to ${type}`,
       };
     }
   },
@@ -627,23 +634,25 @@ export const newsletterAPI = {
 
   getAll: async () => {
     try {
-      const response = await api.get<ResponseData<NewsletterWithStats[]>>(
-        "/newsletters"
-      );
+      const response = await api.get<ResponseData<NewsletterWithStats[]>>("/newsletters");
       return response.data.data;
     } catch (error) {
-      handleError(error as AxiosError);
+      if (isAxiosError(error)) {
+        handleError(error);
+      }
+      throw new APIError(500, "Failed to fetch newsletters");
     }
   },
 
   getOne: async (id: string) => {
     try {
-      const response = await api.get<ResponseData<Newsletter>>(
-        `/newsletters/${id}`
-      );
+      const response = await api.get<ResponseData<Newsletter>>(`/newsletters/${id}`);
       return response.data.data;
     } catch (error) {
-      handleError(error as AxiosError);
+      if (isAxiosError(error)) {
+        handleError(error);
+      }
+      throw new APIError(500, "Failed to fetch newsletter");
     }
   },
   create: async (data: Omit<Newsletter, "id" | "sentTo" | "createdBy">) => {
@@ -725,22 +734,16 @@ export const newsletterAPI = {
 
       if (axiosError.response?.status === 500) {
         // Handle 500 errors more specifically
-        const responseData = axiosError.response.data as any;
+        const responseData = axiosError.response.data as ErrorResponseData;
         if (responseData?.message?.includes("recipients")) {
-          errorMessage =
-            "No valid recipients found. Please check your subscriber list.";
-        } else if (responseData?.message?.includes("email")) {
-          errorMessage =
-            "Email service configuration error. Please check your settings.";
+          errorMessage = "No valid recipients found. Please check your subscriber list.";
         } else {
-          errorMessage =
-            responseData?.message ||
-            "Internal server error while sending newsletter";
+          errorMessage = responseData?.message || "Internal server error";
         }
       } else if (axiosError.response?.status === 404) {
         errorMessage = "Newsletter not found or send endpoint unavailable";
       } else if (axiosError.response?.status === 400) {
-        const responseData = axiosError.response.data as any;
+        const responseData = axiosError.response.data as ErrorResponseData;
         errorMessage = responseData?.message || "Invalid newsletter data";
       } else if (axiosError.code === "ECONNABORTED") {
         errorMessage = "Newsletter send timed out. It may still be processing.";
@@ -1501,4 +1504,12 @@ export async function login(credentials: Credentials) {
     body: JSON.stringify(credentials)
   });
   return response.json();
+}
+
+// Error response interface
+interface ErrorResponseData {
+  message?: string;
+  error?: string;
+  status?: string;
+  data?: unknown;
 }

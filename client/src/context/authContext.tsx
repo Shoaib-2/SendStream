@@ -68,7 +68,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
           }
         }
-      } catch (error) {
+      } catch {
         // Clear localStorage on auth error
         localStorage.removeItem('token');
         localStorage.removeItem('user');

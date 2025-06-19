@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { AlertCircle, CheckCircle, Loader } from 'lucide-react';
 
@@ -18,7 +18,7 @@ const ExpiredSubscription = () => {
   }, []);
 
   // Handle redirection based on already stored return path
-  const handleRenewClick = () => {
+  const handleRenewClick = useCallback(() => {
     if (!redirecting && !isAlreadyOnRenewalPage) {
       setRedirecting(true);
       
@@ -35,7 +35,7 @@ const ExpiredSubscription = () => {
         router.push('/?renew=true');
       }, 0);
     }
-  };
+  }, [redirecting, isAlreadyOnRenewalPage, router]);
 
   // Handle automatic redirection - in a separate useEffect to ensure it runs
   useEffect(() => {

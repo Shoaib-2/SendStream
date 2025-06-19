@@ -1,5 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
+
+// Define types for the response data
+interface SubscriptionStatusResponse {
+  status: string;
+  subscription?: {
+    id: string;
+    status: string;
+    currentPeriodEnd?: string;
+  };
+  message?: string;
+  error?: string;
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,19 +24,23 @@ export async function GET(request: NextRequest) {
     
     // Forward the request to your backend API
     try {      
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/subscription/status`, {
-        headers: {
-          'Authorization': authHeader
+      const response = await axios.get<SubscriptionStatusResponse>(
+        `${process.env.NEXT_PUBLIC_API_URL}/subscription/status`, 
+        {
+          headers: {
+            'Authorization': authHeader
+          }
         }
-      });
+      );
       
       return NextResponse.json(response.data);
-    } catch (apiError: unknown) {
-      console.error('Backend API error:', (apiError as any).response?.data || (apiError as any).message);
+    } catch (apiError) {
+      const error = apiError as AxiosError<SubscriptionStatusResponse>;
+      console.error('Backend API error:', error.response?.data || error.message);
       
       // Forward the error status and message from backend
-      const status = (apiError as any).response?.status || 500;
-      const errorData = (apiError as any).response?.data || { 
+      const status = error.response?.status || 500;
+      const errorData = error.response?.data || { 
         error: 'Failed to connect to backend API' 
       };
       

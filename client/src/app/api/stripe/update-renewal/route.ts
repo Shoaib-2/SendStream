@@ -1,6 +1,22 @@
 // pages/api/stripe/update-renewal.ts
 import { NextRequest, NextResponse } from 'next/server';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
+
+// Define types for request and response data
+interface UpdateRenewalRequest {
+  subscriptionId: string;
+  cancelAtPeriodEnd: boolean;
+}
+
+interface UpdateRenewalResponse {
+  status: 'success' | 'error';
+  message?: string;
+  subscription?: {
+    id: string;
+    status: string;
+    cancelAtPeriodEnd: boolean;
+  };
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,7 +31,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Parse the request body
-    const body = await request.json();
+    const body = await request.json() as UpdateRenewalRequest;
     const { subscriptionId, cancelAtPeriodEnd } = body;
     
     if (!subscriptionId) {
@@ -35,7 +51,7 @@ export async function POST(request: NextRequest) {
     // Forward the request to your backend API
     try {
       const backendUrl = process.env.NEXT_PUBLIC_API_URL;
-      const response = await axios.post(
+      const response = await axios.post<UpdateRenewalResponse>(
         `${backendUrl}/subscription/update-renewal`, 
         { subscriptionId, cancelAtPeriodEnd },
         {
@@ -47,12 +63,13 @@ export async function POST(request: NextRequest) {
       );
       
       return NextResponse.json(response.data);
-    } catch (apiError: unknown) {
-      console.error('Backend API error:', (apiError as any).response?.data || (apiError as any).message);
+    } catch (apiError) {
+      const error = apiError as AxiosError<UpdateRenewalResponse>;
+      console.error('Backend API error:', error.response?.data || error.message);
       
       // Forward the error status and message from backend
-      const status = (apiError as any).response?.status || 500;
-      const errorData = (apiError as any).response?.data || { 
+      const status = error.response?.status || 500;
+      const errorData = error.response?.data || { 
         status: 'error',
         message: 'Failed to update subscription renewal settings' 
       };
