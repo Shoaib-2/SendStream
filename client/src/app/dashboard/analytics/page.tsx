@@ -67,7 +67,7 @@ export default function AnalyticsDashboard() {
           
           // Handle case where API directly returns an array
           if (Array.isArray(growthResponse) && growthResponse.length > 0) {
-            const formattedData: AppGrowthData[] = growthResponse.map((item: AppGrowthData) => {
+            const formattedData: AppGrowthData[] = (growthResponse as AppGrowthData[]).map((item) => {
               const monthValue = item.month || 
                                (item.date ? new Date(item.date).toLocaleString('default', { month: 'short' }) : '');
               return {

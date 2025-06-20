@@ -39,9 +39,10 @@ const ResetPassword: React.FC<ResetPasswordProps> = ({ token }) => {
     
     try {
       const response = await resetPassword(token, password);
-      
-      if (response?.status === 'error') {
-        throw new Error(response.message || 'Failed to reset password');
+      const status = (response as { status?: string })?.status;
+      const message = (response as { message?: string })?.message;
+      if (status === 'error') {
+        throw new Error(message || 'Failed to reset password');
       }
       
       setSuccessMessage('Password reset successful! Redirecting to login...');

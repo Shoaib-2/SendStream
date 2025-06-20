@@ -215,8 +215,8 @@ const SubscriptionManagement = () => {
       }
     } catch (err: unknown) {
       console.error("Error updating auto-renewal:", err);
-      setError((err && typeof err === 'object' && 'message' in err && typeof (err as any).message === 'string')
-        ? (err as any).message
+      setError((err && typeof err === 'object' && 'message' in err && typeof (err as { message?: unknown }).message === 'string')
+        ? (err as { message: string }).message
         : 'Failed to update auto-renewal settings');
     } finally {
       setUpdatingAutoRenew(false);
@@ -256,7 +256,7 @@ const SubscriptionManagement = () => {
     return (
       <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700">
         <h3 className="text-xl font-bold mb-2">Subscription</h3>
-        <p className="text-gray-400">You don't have an active subscription</p>
+        <p className="text-gray-400">You don&apos;t have an active subscription</p>
       </div>
     );
   }
@@ -377,7 +377,7 @@ const SubscriptionManagement = () => {
           <CheckCircleIcon className="w-4 h-4 mt-0.5 text-amber-400 flex-shrink-0" />
           <span>
             Your subscription has been cancelled and will end on {formatDate(subscription.currentPeriodEnd)}.
-            You'll continue to have full access until this date.
+            You&apos;ll continue to have full access until this date.
           </span>
         </div>
       )}

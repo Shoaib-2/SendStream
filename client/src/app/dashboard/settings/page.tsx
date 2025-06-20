@@ -65,35 +65,33 @@ export default function SettingsPage() {
     mailchimp: { connected: false, message: '', listId: '' }
   });
 
-  // Move loadSettings above useEffect
-  const loadSettings = async () => {
-    try {
-      const data = await settingsAPI.getSettings();
-      // Ensure senderEmail is never undefined
-      setSettings({
-        email: {
-          fromName: data.email.fromName || '',
-          replyTo: data.email.replyTo || '',
-          senderEmail: data.email.senderEmail || ''
-        },
-        mailchimp: {
-          apiKey: data.mailchimp.apiKey || '',
-          serverPrefix: data.mailchimp.serverPrefix || '',
-          enabled: data.mailchimp.enabled || false,
-          autoSync: data.mailchimp.autoSync || false,
-          listId: data.mailchimp.listId || ''
-        }
-      });
-      setLoading(false);
-    } catch (error) {
-      setLoading(false);
-      setMessage({ text: 'Failed to load settings', type: 'error' });
-    }
-  };
-
+  // Move loadSettings inside useEffect to avoid dependency warning
   useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const data = await settingsAPI.getSettings();
+        setSettings({
+          email: {
+            fromName: data.email.fromName || '',
+            replyTo: data.email.replyTo || '',
+            senderEmail: data.email.senderEmail || ''
+          },
+          mailchimp: {
+            apiKey: data.mailchimp.apiKey || '',
+            serverPrefix: data.mailchimp.serverPrefix || '',
+            enabled: data.mailchimp.enabled || false,
+            autoSync: data.mailchimp.autoSync || false,
+            listId: data.mailchimp.listId || ''
+          }
+        });
+        setLoading(false);
+      } catch {
+        setLoading(false);
+        setMessage({ text: 'Failed to load settings', type: 'error' });
+      }
+    };
     loadSettings();
-  }, [loadSettings]); // Added loadSettings to dependency array
+  }, []); // Remove loadSettings from dependency array
 
   const handleSave = async () => {
     setSaving(true);

@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 
 // Add a SubscriptionData type for type safety (move to top for global usage)
@@ -18,10 +18,39 @@ const SubscriptionErrorHandler = () => {
   const [checkedSubscription, setCheckedSubscription] = useState(false);
 
   // Function to check actual subscription status from API
-  
-  useEffect(() => {
-    // Subscription check logic here
-    checkSubscriptionStatus().then((data) => {
+  const determineAccessStatus = useCallback((subData: SubscriptionData | null) => {
+    if (!subData || !subData.subscription) return false;
+    const subscription = subData.subscription;
+    const status = subscription.status;
+    const trialEndsAt = subscription.trialEnd ?
+      new Date(subscription.trialEnd) :
+      null;
+    const now = new Date();
+    const currentPeriodEnd = subscription.currentPeriodEnd ?
+      new Date(subscription.currentPeriodEnd) :
+      null;
+    const hasActiveSubscription = status === 'active';
+    const hasActiveTrialPeriod = status === 'trialing' && trialEndsAt && trialEndsAt > now;
+    const hasCanceledButActiveAccess = status === 'canceled' && currentPeriodEnd && now < currentPeriodEnd;
+    const hasAccess = hasActiveSubscription || hasActiveTrialPeriod || hasCanceledButActiveAccess;
+    if (hasCanceledButActiveAccess) {
+      // console.log('Subscription is canceled but still active until', currentPeriodEnd?.toISOString());
+    }
+    return hasAccess;
+  }, []);
+
+  const checkSubscriptionStatus = useCallback(async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        return;
+      }
+      const response = await fetch('/api/stripe/status', {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      const data = await response.json();
       if (data) {
         const hasAccess = determineAccessStatus(data ?? null);
         if (!hasAccess) {
@@ -29,87 +58,13 @@ const SubscriptionErrorHandler = () => {
         }
       }
       setCheckedSubscription(true);
-    });
-  }, [router]);
-  
-  const checkSubscriptionStatus = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        // console.log('Not authenticated, skipping subscription check');
-        return;
-      }
-
-      // console.log('Fetching subscription status with token');
-      const response = await fetch('/api/stripe/status', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        // console.log('Raw subscription API response:', data);
-
-        // Properly extract the nested subscription data
-        return {
-          data: data,
-          subscription: data?.data?.subscription || null
-        };
-      } else {
-        console.error('Subscription status API returned error:', response.status);
-      }
-    } catch (error) {
-      console.error('Error checking subscription status:', error);
+    } catch {
+      setCheckedSubscription(true);
     }
-    return null;
-  };
-
-  // Update the determineAccessStatus function
-  const determineAccessStatus = (subData: SubscriptionData | null) => {
-    if (!subData || !subData.subscription) {
-      // console.log('No valid subscription data found');
-      return false;
-    }
-
-    const subscription = subData.subscription;
-
-    // Check subscription status - use the actual nested status
-    const status = subscription.status;
-    const trialEndsAt = subscription.trialEnd ?
-      new Date(subscription.trialEnd) :
-      null;
-
-    const currentPeriodEnd = subscription.currentPeriodEnd ?
-      new Date(subscription.currentPeriodEnd) :
-      null;
-
-    const now = new Date();
-
-    // Important: A canceled subscription with future end date is still ACTIVE
-    // Add detailed logging
-    // console.log('Detailed subscription check:', {
-    //   status,
-    //   currentPeriodEnd: currentPeriodEnd?.toISOString(),
-    //   now: now.toISOString(),
-    //   isBeforeEnd: currentPeriodEnd && now < currentPeriodEnd
-    // });
-
-    const hasActiveSubscription = status === 'active';
-    const hasActiveTrialPeriod = status === 'trialing' && trialEndsAt && trialEndsAt > now;
-    const hasCanceledButActiveAccess = status === 'canceled' && currentPeriodEnd && now < currentPeriodEnd;
-
-    const hasAccess = hasActiveSubscription || hasActiveTrialPeriod || hasCanceledButActiveAccess;
-
-    if (hasCanceledButActiveAccess) {
-      // console.log('Subscription is canceled but still active until', currentPeriodEnd?.toISOString());
-    }
-
-    return hasAccess;
-  };
+  }, [router, determineAccessStatus]);
 
   // Actively check for expired subscriptions and trigger renewal flow
-  const checkForExpiredSubscription = async () => {
+  const checkForExpiredSubscription = useCallback(async () => {
     if (localStorage.getItem('force_expired_simulation') === 'true') {
       // console.log('Returning forced expired subscription for simulation');
       return {
@@ -161,7 +116,7 @@ const SubscriptionErrorHandler = () => {
     } catch (error) {
       console.error('Error checking expired subscription:', error);
     }
-  };
+  }, [checkSubscriptionStatus, determineAccessStatus, router]);
 
   useEffect(() => {
     // Check subscription status on mount
@@ -287,7 +242,7 @@ const SubscriptionErrorHandler = () => {
           const subscriptionData = await checkSubscriptionStatus();
           const hasAccess = determineAccessStatus(subscriptionData ?? null);
           return { data: subscriptionData ?? {}, hasAccess };
-        } catch (error) {
+        } catch {
           return { data: {}, hasAccess: null };
         }
       },

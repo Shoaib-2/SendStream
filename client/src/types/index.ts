@@ -27,7 +27,7 @@ export interface GrowthData {
   date?: string;
   month?: string;
   subscribers?: number;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface RecentActivity {

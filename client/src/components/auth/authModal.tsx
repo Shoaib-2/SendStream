@@ -426,9 +426,9 @@ function isApiError(error: unknown): error is { response: { data: { code?: strin
     typeof error === 'object' &&
     error !== null &&
     'response' in error &&
-    typeof (error as any).response === 'object' &&
-    (error as any).response !== null &&
-    'data' in (error as any).response
+    typeof (error as { response?: unknown }).response === 'object' &&
+    (error as { response?: unknown }).response !== null &&
+    'data' in (error as { response: Record<string, unknown> }).response
   );
 }
 

@@ -74,7 +74,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           }
         };
 
-        socket.onerror = (event: Event) => {
+        socket.onerror = () => {
           // console.error('WebSocket error:', event); // Commented out to remove build log error
           const currentToken = localStorage.getItem('token');
           if (currentToken !== token) {
@@ -118,7 +118,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
-  }, [ws]);
+  }, [ws]); // Add ws as dependency for cleanup
 
  // Updated useEffect for fetching data in dataContext.tsx
 useEffect(() => {
@@ -165,7 +165,7 @@ useEffect(() => {
           subscriptionActive = false;
           // console.log(`Subscription status: ${subscriptionStatus.data?.subscription?.status}`);
         }
-      } catch (error) {
+      } catch {
         // Continue even if subscription check fails
         // console.log('Subscription check error:', error);
       }

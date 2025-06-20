@@ -25,14 +25,15 @@ export default function AnalyticsDashboard() {
         // Fetch summary data
         const response = await analyticsAPI.getSummary();
         if (response.status === 'success' && response.data) {
-          const data = response.data.data || response.data;
-          
+          const data = ((response.data as { data?: unknown })?.data || response.data) as {
+            subscribers: { total: number; change: number };
+            newsletters: { total: number; change: number };
+            recentActivity?: Array<{ title: string; recipients: number; time: string }>;
+          };
           setSummary({
             subscribers: data.subscribers,
             newsletters: data.newsletters,
           });
-          
-          // Fetch recent activity
           setRecentActivity(data.recentActivity || []);
         }
         
@@ -164,10 +165,12 @@ export default function AnalyticsDashboard() {
               data={[
                 {
                   id: "subscribers",
-                  data: growthData.map(d => ({
-                    x: d.month,
-                    y: d.subscribers
-                  }))
+                  data: growthData
+                    .filter(d => typeof d.month === 'string' && typeof d.subscribers === 'number')
+                    .map(d => ({
+                      x: d.month as string,
+                      y: d.subscribers as number
+                    }))
                 }
               ]}
               margin={{ top: 10, right: 20, bottom: 40, left: 60 }}
@@ -236,10 +239,10 @@ export default function AnalyticsDashboard() {
               enableSlices="x"
               sliceTooltip={({ slice }) => (
                 <div className="text-sm">
-                  <strong>{slice.points[0].data.x}</strong>
+                  <strong>{String(slice.points[0].data.x)}</strong>
                   <div className="flex items-center gap-2 mt-1">
                     <div className="w-2 h-2 rounded-full bg-blue-500" />
-                    <span>{slice.points[0].data.y.toLocaleString()} subscribers</span>
+                    <span>{slice.points[0].data.y != null ? Number(slice.points[0].data.y).toLocaleString() : '0'} subscribers</span>
                   </div>
                 </div>
               )}
