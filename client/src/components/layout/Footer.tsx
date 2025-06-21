@@ -4,41 +4,41 @@ import React from 'react';
 /**
  * Interface for footer link sections
  */
-interface FooterSection {
-  title: string;
-  links: {
-    name: string;
-    href: string;
-  }[];
-}
+// interface FooterSection {
+//   title: string;
+//   links: {
+//     name: string;
+//     href: string;
+//   }[];
+// }
 
 /**
  * Footer navigation data
  * Organized by sections for easy maintenance and scalability
  */
-const footerSections: FooterSection[] = [
-  {
-    title: "Company",
-    links: [
-      { name: "About", href: "/about" },
-      { name: "Contact", href: "/contact" }
-    ]
-  },
-  {
-    title: "Legal",
-    links: [
-      { name: "Terms", href: "/terms" },
-      { name: "Privacy", href: "/privacy" }
-    ]
-  },
-  {
-    title: "Resources",
-    links: [
-      { name: "Blog", href: "/blog" },
-      { name: "Documentation", href: "/docs" }
-    ]
-  }
-];
+// const footerSections: FooterSection[] = [
+//   {
+//     title: "Company",
+//     links: [
+//       { name: "About", href: "/about" },
+//       { name: "Contact", href: "/contact" }
+//     ]
+//   },
+//   {
+//     title: "Legal",
+//     links: [
+//       { name: "Terms", href: "/terms" },
+//       { name: "Privacy", href: "/privacy" }
+//     ]
+//   },
+//   {
+//     title: "Resources",
+//     links: [
+//       { name: "Blog", href: "/blog" },
+//       { name: "Documentation", href: "/docs" }
+//     ]
+//   }
+// ];
 
 /**
  * Footer component containing navigation links and copyright information
