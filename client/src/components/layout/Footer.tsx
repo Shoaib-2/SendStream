@@ -50,7 +50,7 @@ const Footer: React.FC = () => {
   return (
     <footer className="bg-gray-800 mt-16 py-12">
       <div className="max-w-6xl mx-auto px-4">
-        {/* Footer navigation grid */}
+        {/* Footer navigation grid
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 mb-8">
           {footerSections.map((section, index) => (
             <div key={index}>
@@ -69,11 +69,11 @@ const Footer: React.FC = () => {
               </ul>
             </div>
           ))}
-        </div>
+        </div> */}
 
         {/* Copyright section */}
         <div className="pt-8 mt-8 border-t border-gray-700 text-gray-400 text-center">
-          <p>&copy; {currentYear} SendStream. All rights reserved.</p>
+          <p>&copy; {currentYear} SendStream. All rights reserved. Developed By Mohammed Shoaib</p>
         </div>
       </div>
     </footer>

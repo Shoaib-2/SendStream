@@ -1,3 +1,6 @@
+// For local development, use: http://localhost:3000
+// Deployment link: https://client-3ye4.onrender.com
+
 "use client";
 import React from 'react';
 import { Users, Mail } from 'lucide-react';
