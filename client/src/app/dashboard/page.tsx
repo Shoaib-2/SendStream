@@ -7,7 +7,6 @@ import { ResponsivePie } from '@nivo/pie';
 import type { Newsletter } from '@/types';
 import ExpiredSubscription from '@/components/subscription/ExpiredSubscription';
 import { emailAPI } from '@/services/api';
-import type { AxiosError } from 'axios';
 import { useSubscription } from '@/context/subscriptionContext';
 
 const COLORS = ['#3B82F6', '#10B981', '#EF4444', '#F59E0B'];

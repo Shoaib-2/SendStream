@@ -119,7 +119,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         setWs(null);
       }
     };
-  }, []); // We'll handle token changes in a separate effect
+  }, [MAX_FETCH_ATTEMPTS]); 
 
   // Handle token changes
   useEffect(() => {
