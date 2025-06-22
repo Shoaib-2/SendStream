@@ -1,3 +1,19 @@
+// -----------------------------
+// API Service Subscription Logic
+//
+// This file contains API service functions and also includes logic for checking subscription status and redirecting to the renewal page (/?renew=true).
+//
+// PHASE 1 AUDIT & CLEANUP:
+// - This file is one of several that handle renewal logic. See also: ExpiredSubscription.tsx, SubscriptionErrorHandler.tsx, dataContext.tsx, authContext.tsx.
+// - TODO: In a future phase, centralize all subscription/renewal logic in a single context or hook to avoid duplication and race conditions.
+//
+// Current logic:
+// - Checks for 'renew=true' in the URL and may trigger redirects or UI changes in API error handling.
+// - May duplicate logic found in other files/components.
+//
+// If you are refactoring subscription logic, coordinate with other files that handle renewal.
+// -----------------------------
+
 import axios, { AxiosError, AxiosRequestConfig } from "axios";
 import { loadStripe } from "@stripe/stripe-js";
 import type { Stripe } from "@stripe/stripe-js";
@@ -244,57 +260,6 @@ let isRedirecting = false;
 
 api.interceptors.response.use(
   (response) => {
-    // Check if response includes subscription status information
-    if (
-      response.config?.url?.includes("/subscription/status") ||
-      response.config?.url?.includes("/auth/me")
-    ) {
-      // Check for paid period message in logs or response
-      const responseData = JSON.stringify(response.data);
-      if (
-        responseData.includes("paid period") ||
-        responseData.includes("active") ||
-        response.data?.data?.subscription?.status === "active" ||
-        response.data?.data?.subscription?.status === "trialing" ||
-        (response.data?.data?.subscription?.status === "canceled" &&
-          new Date(response.data?.data?.subscription?.currentPeriodEnd) >
-            new Date())
-      ) {
-        // Set a flag that this user has valid access
-        localStorage.setItem("has_active_access", "true");
-        // console.log("Setting active access flag based on subscription status");
-      } else if (
-        response.data?.data?.subscription?.status === "canceled" &&
-        new Date(response.data?.data?.subscription?.currentPeriodEnd) <=
-          new Date()
-      ) {
-        // Handle expired canceled subscription - set no access flag
-        localStorage.removeItem("has_active_access");
-        console.log("Detected expired subscription, removing access flag");
-
-        // Check if we're not already on the renewal page
-        if (
-          typeof window !== "undefined" &&
-          !window.location.href.includes("renew=true") &&
-          !isRedirecting
-        ) {
-          console.log("Initiating renewal redirect flow");
-          isRedirecting = true;
-
-          // Store the current page for after renewal
-          localStorage.setItem("returnPath", window.location.pathname);
-
-          // Use timeout to avoid navigation conflicts
-          setTimeout(() => {
-            window.location.href = "/?renew=true";
-            // Reset flag after redirect
-            setTimeout(() => {
-              isRedirecting = false;
-            }, 1000);
-          }, 100);
-        }
-      }
-    }
     return response;
   },
   (error) => {
@@ -1513,3 +1478,6 @@ interface ErrorResponseData {
   status?: string;
   data?: unknown;
 }
+
+// PHASE 2: Subscription/renewal logic is now handled by subscriptionContext.tsx. Remove all direct subscription/renewal checks, redirects, and localStorage management from this file.
+// All logic for renewal redirects, subscription status, and related state is now centralized.

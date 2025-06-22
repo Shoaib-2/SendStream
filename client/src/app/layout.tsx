@@ -6,8 +6,9 @@ import './globals.css'
 import { AuthProvider } from '@/context/authContext';
 import { ToastProvider } from '@/context/toastContext';
 import { DataProvider } from '@/context/dataContext';
-import SubscriptionErrorHandler from '@/components/subscription/SubscriptionErrorHandler';
+import { SubscriptionProvider } from '@/context/subscriptionContext';
 import EmailProvider from '@/components/EmailRetrieval/EmailProvider';
+import SubscriptionErrorHandler from '@/components/subscription/SubscriptionErrorHandler';
 // import EmailPrompt from '@/components/EmailRetrieval/EmailPrompt';
 
 const inter = Inter({ subsets: ['latin'] })
@@ -27,11 +28,12 @@ export default function RootLayout({
       <body className={inter.className}>
         <AuthProvider>
           <ToastProvider>
-          <SubscriptionErrorHandler />
-          <EmailProvider />
+          <SubscriptionProvider>
+            <EmailProvider />
             <DataProvider> 
             {children}
             </DataProvider>
+          </SubscriptionProvider>
           </ToastProvider>
         </AuthProvider>
       </body>

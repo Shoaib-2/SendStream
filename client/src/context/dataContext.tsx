@@ -1,3 +1,20 @@
+// -----------------------------
+// Data Context Subscription Logic
+//
+// This context manages global app data, including subscribers and newsletters.
+// It also contains logic for checking subscription status and redirecting to the renewal page (/?renew=true).
+//
+// PHASE 1 AUDIT & CLEANUP:
+// - This file is one of several that handle renewal logic. See also: ExpiredSubscription.tsx, SubscriptionErrorHandler.tsx, authContext.tsx, api.ts.
+// - TODO: In a future phase, centralize all subscription/renewal logic in a single context or hook to avoid duplication and race conditions.
+//
+// Current logic:
+// - Checks subscription status before fetching data and may redirect to renewal page if expired.
+// - Stores a return path in localStorage for post-renewal navigation.
+// - May duplicate logic found in other files/components.
+//
+// If you are refactoring subscription logic, coordinate with other files that handle renewal.
+// -----------------------------
 // src/context/DataContext.tsx
 "use client";
 import React, { createContext, useContext, useState, useEffect } from 'react';
@@ -120,202 +137,61 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, [ws]); // Add ws as dependency for cleanup
 
- // Updated useEffect for fetching data in dataContext.tsx
+// Updated useEffect for fetching data in dataContext.tsx
 useEffect(() => {
   let isSubscribed = true;
-  let redirecting = false;
-
+  // PHASE 2: Remove all subscription/renewal checks and redirects from this effect. Use subscriptionContext.tsx instead.
+  // The following logic is deprecated:
+  // - getSubscriptionStatus
+  // - redirect to /?renew=true
+  // - localStorage.setItem('returnPath', ...)
+  // - subscriptionActive logic
+  //
+  // Only fetch data. Subscription/renewal state is now managed globally.
   const fetchData = async () => {
-    // Check if we're in initial page load
-    const isInitialLoad = typeof document !== 'undefined' && document.readyState !== 'complete';
-    
-    // Check for token before attempting to fetch data
     const token = localStorage.getItem('token');
     if (!token) {
-      // console.log('No token available, skipping data fetch');
       setSubscribers([]);
       setNewsletters([]);
       setIsLoading(false);
       return;
     }
-  
-    // Prevent too many fetch attempts
-    if (fetchAttempts >= MAX_FETCH_ATTEMPTS) {
-      console.error(`Data fetching failed after ${MAX_FETCH_ATTEMPTS} attempts, stopping retries`);
-      setIsLoading(false);
-      return;
-    }
-  
     try {
       setIsLoading(true);
-      if (!isInitialLoad) {
-        // console.log(`Fetching data (attempt ${fetchAttempts + 1})...`);
-      }
-  
-      // Check subscription status first before fetching data
-      let subscriptionActive = true;
-      try {
-        // Use getSubscriptionStatus from API
-        const subscriptionStatus = await getSubscriptionStatus();
-        if (!subscriptionStatus.data?.hasSubscription) {
-          subscriptionActive = false;
-          // console.log('No active subscription found');
-        } else if (subscriptionStatus.data?.subscription?.status !== 'active' && 
-                   subscriptionStatus.data?.subscription?.status !== 'trialing') {
-          subscriptionActive = false;
-          // console.log(`Subscription status: ${subscriptionStatus.data?.subscription?.status}`);
-        }
-      } catch {
-        // Continue even if subscription check fails
-        // console.log('Subscription check error:', error);
-      }
-      
-      // Define properly typed variables with default empty arrays
+      // Only fetch data, do not check subscription/renewal here
       let subscribersData: Subscriber[] = [];
       let newslettersData: Newsletter[] = [];
-  
       try {
         const response = await subscriberAPI.getAll();
         if (response) subscribersData = response;
-        if (!isInitialLoad) {
-          // console.log('Subscribers fetched successfully');
-        }
       } catch (err) {
-        if (
-          typeof err === 'object' && err !== null &&
-          'status' in err && typeof (err as { status?: number }).status === 'number' &&
-          'message' in err && typeof (err as { message?: string }).message === 'string' &&
-          (err as { message: string }).message.includes('Subscription expired')
-        ) {
-          subscriptionActive = false;
-        }
-        
-        if (!isInitialLoad) {
-          console.error('Error fetching subscribers:', err);
-        }
+        console.error('Error fetching subscribers:', err);
       }
-  
       try {
         const response = await newsletterAPI.getAll();
         if (response) newslettersData = response;
-        if (!isInitialLoad) {
-          // console.log('Newsletters fetched successfully');
-        }
       } catch (err) {
-        if (
-          typeof err === 'object' && err !== null &&
-          'status' in err && typeof (err as { status?: number }).status === 'number' &&
-          'message' in err && typeof (err as { message?: string }).message === 'string' &&
-          (err as { message: string }).message.includes('Subscription expired')
-        ) {
-          subscriptionActive = false;
-        }
-        
-        if (!isInitialLoad) {
-          console.error('Error fetching newsletters:', err);
-        }
+        console.error('Error fetching newsletters:', err);
       }
-  
       if (subscribersData && isSubscribed) {
-        // Directly use the subscriber status from the database
-        const formattedSubscribers: Subscriber[] = subscribersData.map(sub => ({
-          id: sub.id || sub._id || '',
-          _id: sub._id,
-          email: sub.email,
-          name: sub.name,
-          status: sub.status,
-          subscribed: sub.subscribed || (typeof sub === 'object' && sub !== null && 'subscribedDate' in sub ? (sub as { subscribedDate?: string }).subscribedDate : undefined) || new Date().toISOString(),
-          source: sub.source
-        }));
-  
-        setSubscribers(formattedSubscribers);
+        setSubscribers(subscribersData);
       } else {
         setSubscribers([]);
       }
-  
       if (newslettersData && isSubscribed) {
         setNewsletters(newslettersData);
       } else {
         setNewsletters([]);
       }
-      
-      // Check if we need to redirect due to inactive subscription
-      if (!subscriptionActive && !isInitialLoad && !isOnAuthPage() && !redirecting) {
-        // Check if subscription is in paid period
-        const subscriptionData = await getSubscriptionStatus();
-        const canceledButPaid = subscriptionData?.data?.subscription?.status === 'canceled' && 
-                               new Date(subscriptionData?.data?.subscription?.currentPeriodEnd) > new Date();
-                               
-        if (canceledButPaid) {
-          // console.log('Subscription is canceled but still in paid period, allowing access');
-          subscriptionActive = true; // Override to allow access
-        } else {
-          redirecting = true;
-          
-          // Store return path
-          localStorage.setItem('returnPath', window.location.pathname);
-          
-          // Wait a bit to allow current execution to complete
-          setTimeout(() => {
-            window.location.href = '/?renew=true';
-          }, 100);
-        }
-      }
-  
-      // Reset fetch attempts on success
-      setFetchAttempts(0);
     } catch (error) {
-      if (!isInitialLoad) {
-        console.error('Data fetch error:', error);
-      }
-  
-      // Increment fetch attempts
-      setFetchAttempts(prevAttempts => prevAttempts + 1);
-  
-      if (
-        typeof error === 'object' && error !== null &&
-        'status' in error && (error as { status?: number }).status === 401 && !redirecting
-      ) {
-        redirecting = true;
-        if (!isInitialLoad) {
-          // console.log('Authentication error during data fetch, clearing token');
-        }
-        localStorage.removeItem('token');
-        setSubscribers([]);
-        setNewsletters([]);
-  
-        if (typeof window !== 'undefined' && !isOnAuthPage()) {
-          window.location.href = '/login';
-        }
-      } else if (
-        typeof error === 'object' && error !== null &&
-        'status' in error && (error as { status?: number }).status === 404
-      ) {
-        if (!isInitialLoad) {
-          console.error('API endpoint not found during data fetch. Is the API server running?');
-        }
-        // Set empty data but don't redirect
-        setSubscribers([]);
-        setNewsletters([]);
-      }
+      console.error('Data fetch error:', error);
     } finally {
       if (isSubscribed) {
         setIsLoading(false);
       }
     }
   };
-  
-  // Helper function to check if we're on auth page
-  const isOnAuthPage = () => {
-    return typeof window !== 'undefined' && 
-      (window.location.pathname.includes('/login') || 
-       window.location.pathname === '/');
-  };
-  
-  // Call the fetchData function
   fetchData();
-  
-  // Cleanup function
   return () => {
     isSubscribed = false;
   };
@@ -440,3 +316,6 @@ export const useData = () => {
   if (!context) throw new Error('useData must be used within DataProvider');
   return context;
 };
+
+// PHASE 2: Subscription/renewal logic is now handled by subscriptionContext.tsx. Remove any direct subscription checks/redirects from this context.
+// All subscription/renewal checks and redirects below are deprecated and should be removed in favor of the centralized context.

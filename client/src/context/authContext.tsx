@@ -1,3 +1,18 @@
+// -----------------------------
+// Auth Context Subscription Logic
+//
+// This context manages authentication state and also contains logic for checking subscription status and redirecting to the renewal page (/?renew=true).
+//
+// PHASE 1 AUDIT & CLEANUP:
+// - This file is one of several that handle renewal logic. See also: ExpiredSubscription.tsx, SubscriptionErrorHandler.tsx, dataContext.tsx, api.ts.
+// - TODO: In a future phase, centralize all subscription/renewal logic in a single context or hook to avoid duplication and race conditions.
+//
+// Current logic:
+// - Checks for 'renew=true' in the URL and may trigger redirects or UI changes.
+// - May duplicate logic found in other files/components.
+//
+// If you are refactoring subscription logic, coordinate with other files that handle renewal.
+// -----------------------------
 // src/context/AuthContext.tsx
 'use client'
 import React, { createContext, useContext, useState, useEffect } from 'react';
@@ -102,13 +117,7 @@ const login = async (email: string, password: string): Promise<void> => {
         localStorage.setItem('token', response.token);
         localStorage.setItem('user', JSON.stringify(response.user));
         
-        // Add these lines to reset renewal flow state
-        localStorage.setItem('has_active_access', 'true');
-        sessionStorage.removeItem('redirecting_for_renewal');
-        // Clear renewal URL parameter if present
-        if (typeof window !== 'undefined' && window.location.search.includes('renew=true')) {
-          window.history.replaceState({}, document.title, window.location.pathname);
-        }
+        // PHASE 2: Removed all direct renewal/subscription state management. Now handled by subscriptionContext.tsx
       }
     } else {
       // Handle case where response exists but user data is missing
@@ -154,13 +163,7 @@ const signup = async (email: string, password: string, stripeSessionId?: string)
         localStorage.setItem('token', response.token);
         localStorage.setItem('user', JSON.stringify(response.user));
         
-        // Add these lines to reset renewal flow state
-        localStorage.setItem('has_active_access', 'true');
-        sessionStorage.removeItem('redirecting_for_renewal');
-        // Clear renewal URL parameter if present
-        if (typeof window !== 'undefined' && window.location.search.includes('renew=true')) {
-          window.history.replaceState({}, document.title, window.location.pathname);
-        }
+        // PHASE 2: Removed all direct renewal/subscription state management. Now handled by subscriptionContext.tsx
       }
     } else {
       // Handle case where response exists but user data is missing
@@ -224,8 +227,7 @@ const loginWithProvider = async (provider: 'google'): Promise<void> => {
         setToken(response.token);
         localStorage.setItem('token', response.token);
         localStorage.setItem('user', JSON.stringify(response.user));
-        localStorage.setItem('has_active_access', 'true');
-        sessionStorage.removeItem('redirecting_for_renewal');
+        // PHASE 2: Removed all direct renewal/subscription state management. Now handled by subscriptionContext.tsx
       }
     } else {
       throw new Error('Invalid provider login response - user data missing');
@@ -261,3 +263,5 @@ export const useAuth = (): AuthContextType => {
   if (!context) throw new Error('useAuth must be used within AuthProvider');
   return context;
 };
+
+// PHASE 2: Subscription/renewal logic is now handled by subscriptionContext.tsx. Remove any direct subscription checks/redirects from this context.

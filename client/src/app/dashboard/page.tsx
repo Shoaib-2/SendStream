@@ -9,6 +9,7 @@ import ExpiredSubscription from '@/components/subscription/ExpiredSubscription';
 import { useRouter } from 'next/navigation';
 import { emailAPI } from '@/services/api';
 import type { AxiosError } from 'axios';
+import { useSubscription } from '@/context/subscriptionContext';
 
 const COLORS = ['#3B82F6', '#10B981', '#EF4444', '#F59E0B'];
 
@@ -33,12 +34,10 @@ function isAxiosError(error: unknown): error is AxiosError {
 export default function DashboardPage() {
   const router = useRouter();
   const { subscribers } = useData();
+  const { status, isRenewalRequired, loading: subscriptionLoading } = useSubscription();
   const [newsletters, setNewsletters] = useState<Newsletter[]>([]);
   const [qualityMetrics, setQualityMetrics] = useState<QualityMetrics[]>([]);
   const [loading, setLoading] = useState(true);
-  const [subscriptionExpired, setSubscriptionExpired] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [shouldRedirectToLogin, setShouldRedirectToLogin] = useState(false);
   const [emailUsage, setEmailUsage] = useState<EmailUsage>({
     emailsSent: 0,
     dailyLimit: 100,
@@ -46,113 +45,39 @@ export default function DashboardPage() {
     percentUsed: 0
   });
 
-  // Handle authentication redirect - always declare hooks at the top level
-  useEffect(() => {
-    if (shouldRedirectToLogin) {
-      router.push('/login');
-    }
-  }, [shouldRedirectToLogin, router]);
-
   // Fetch email usage stats
   useEffect(() => {
     const fetchEmailUsage = async () => {
       try {
-        if (!isAuthenticated) return;
-        
+        if (isRenewalRequired || status === 'UNKNOWN' || status === 'CHECKING') return;
         const data = await emailAPI.getUsage();
-        
         if (data) {
           const { emailsSent, dailyLimit } = data;
           const remainingEmails = Math.max(0, dailyLimit - emailsSent);
           const percentUsed = (emailsSent / dailyLimit) * 100;
-          
-          setEmailUsage({
-            emailsSent,
-            dailyLimit,
-            remainingEmails,
-            percentUsed
-          });
+          setEmailUsage({ emailsSent, dailyLimit, remainingEmails, percentUsed });
         }
       } catch (error) {
-        console.error('Error fetching email usage stats:', error);
-        // Default values if API fails
-        setEmailUsage({
-          emailsSent: 0,
-          dailyLimit: 100,
-          remainingEmails: 100,
-          percentUsed: 0
-        });
+        setEmailUsage({ emailsSent: 0, dailyLimit: 100, remainingEmails: 100, percentUsed: 0 });
       }
     };
-    
     fetchEmailUsage();
-    
-    // Set interval to refresh stats every minute
     const intervalId = setInterval(fetchEmailUsage, 60000);
-    
     return () => clearInterval(intervalId);
-  }, [isAuthenticated]);
+  }, [isRenewalRequired, status]);
 
-  // Check authentication and subscription status
-  useEffect(() => {
-    const checkAuthAndSubscription = () => {
-      const token = localStorage.getItem('token');
-      setIsAuthenticated(!!token);
-      
-      if (token) {
-        const hasAccess = localStorage.getItem('has_active_access') === 'true';
-        // console.log('Dashboard - subscription check:', hasAccess);
-        setSubscriptionExpired(!hasAccess);
-      } else {
-        setShouldRedirectToLogin(true);
-        setSubscriptionExpired(false);
-      }
-    };
-    
-    // Check on initial render
-    checkAuthAndSubscription();
-    
-    // Listen for our custom event
-    const handleSubscriptionChange = () => {
-      // console.log('Dashboard detected subscription change');
-      checkAuthAndSubscription();
-    };
-    
-    // Listen for both storage and custom events
-    window.addEventListener('storage', handleSubscriptionChange);
-    window.addEventListener('subscription-changed', handleSubscriptionChange);
-    
-    return () => {
-      window.removeEventListener('storage', handleSubscriptionChange);
-      window.removeEventListener('subscription-changed', handleSubscriptionChange);
-    };
-  }, []);
-
+  // Fetch newsletters
   useEffect(() => {
     const fetchNewsletters = async () => {
       try {
-        // Only fetch if authenticated and subscription not expired
-        if (!isAuthenticated) {
-          // console.log('Not authenticated, skipping newsletter fetch');
+        if (isRenewalRequired || status === 'UNKNOWN' || status === 'CHECKING') {
           setLoading(false);
           return;
         }
-        
-        if (subscriptionExpired) {
-          // console.log('Subscription expired, skipping newsletter fetch');
-          setLoading(false);
-          return;
-        }
-        
         setLoading(true);
-        // console.log('Fetching newsletters');
         const data = await newsletterAPI.getAll();
-        
         if (data) {
-          const transformedData = data.map(newsletter => ({
-            ...newsletter
-          }));
-          setNewsletters(transformedData);
+          setNewsletters(data);
           setQualityMetrics(data.map(newsletter => ({
             originalContent: newsletter.contentQuality?.isOriginalContent || false,
             researchBased: newsletter.contentQuality?.hasResearchBacked || false,
@@ -160,58 +85,29 @@ export default function DashboardPage() {
             comprehensiveAnalysis: newsletter.contentQuality?.contentLength ? newsletter.contentQuality.contentLength > 500 : false
           })));
         }
-      } catch (error: unknown) {
-        console.error('Error fetching newsletters:', error);
-        let errorMessage = '';
-        let errorStatus = 0;
-        if (isAxiosError(error)) {
-          errorMessage = error.message;
-          errorStatus = error.response?.status || 0;
-        } else if (error && typeof error === 'object' && 'message' in error && typeof (error as { message?: unknown }).message === 'string') {
-          errorMessage = (error as { message: string }).message;
-        }
-        if (
-          errorMessage?.includes('Subscription expired') ||
-          errorMessage?.includes('Subscription required') ||
-          errorStatus === 403
-        ) {
-          localStorage.removeItem('has_active_access');
-          setSubscriptionExpired(true);
-        }
+      } catch (error) {
+        setNewsletters([]);
+        setQualityMetrics([]);
       } finally {
         setLoading(false);
       }
     };
-  
-    // Fetch data when dependencies change
     fetchNewsletters();
-  }, [isAuthenticated, subscriptionExpired]);
+  }, [isRenewalRequired, status]);
 
   // Content rendering logic
   const renderContent = () => {
-    // Handle loading state
-    if (loading) {
+    if (loading || subscriptionLoading || status === 'CHECKING') {
       return (
         <div className="p-6 min-h-screen bg-gradient-to-b from-gray-900 via-gray-900 to-gray-900/50 flex items-center justify-center">
           <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div>
         </div>
       );
     }
-
-    // Handle expired subscription
-    if (subscriptionExpired) {
+    if (isRenewalRequired) {
       return <ExpiredSubscription />;
     }
     
-    // Handle not authenticated (showing loading while redirect happens)
-    if (!isAuthenticated || shouldRedirectToLogin) {
-      return (
-        <div className="p-6 min-h-screen bg-gradient-to-b from-gray-900 via-gray-900 to-gray-900/50 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div>
-        </div>
-      );
-    }
-
     // Prepare data for charts
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
