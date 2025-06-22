@@ -6,7 +6,6 @@ import { newsletterAPI } from '@/services/api';
 import { ResponsivePie } from '@nivo/pie';
 import type { Newsletter } from '@/types';
 import ExpiredSubscription from '@/components/subscription/ExpiredSubscription';
-import { useRouter } from 'next/navigation';
 import { emailAPI } from '@/services/api';
 import type { AxiosError } from 'axios';
 import { useSubscription } from '@/context/subscriptionContext';
@@ -27,12 +26,7 @@ interface EmailUsage {
   percentUsed: number;
 }
 
-function isAxiosError(error: unknown): error is AxiosError {
-  return typeof error === 'object' && error !== null && 'isAxiosError' in error;
-}
-
 export default function DashboardPage() {
-  const router = useRouter();
   const { subscribers } = useData();
   const { status, isRenewalRequired, loading: subscriptionLoading } = useSubscription();
   const [newsletters, setNewsletters] = useState<Newsletter[]>([]);
@@ -57,7 +51,7 @@ export default function DashboardPage() {
           const percentUsed = (emailsSent / dailyLimit) * 100;
           setEmailUsage({ emailsSent, dailyLimit, remainingEmails, percentUsed });
         }
-      } catch (error) {
+      } catch {
         setEmailUsage({ emailsSent: 0, dailyLimit: 100, remainingEmails: 100, percentUsed: 0 });
       }
     };
@@ -85,7 +79,7 @@ export default function DashboardPage() {
             comprehensiveAnalysis: newsletter.contentQuality?.contentLength ? newsletter.contentQuality.contentLength > 500 : false
           })));
         }
-      } catch (error) {
+      } catch {
         setNewsletters([]);
         setQualityMetrics([]);
       } finally {

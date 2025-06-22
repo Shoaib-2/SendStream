@@ -8,7 +8,6 @@ import { ToastProvider } from '@/context/toastContext';
 import { DataProvider } from '@/context/dataContext';
 import { SubscriptionProvider } from '@/context/subscriptionContext';
 import EmailProvider from '@/components/EmailRetrieval/EmailProvider';
-import SubscriptionErrorHandler from '@/components/subscription/SubscriptionErrorHandler';
 // import EmailPrompt from '@/components/EmailRetrieval/EmailPrompt';
 
 const inter = Inter({ subsets: ['latin'] })

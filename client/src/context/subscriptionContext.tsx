@@ -75,7 +75,7 @@ export const SubscriptionProvider = ({ children }: { children: React.ReactNode }
       } else {
         setStatus(SubscriptionStatus.EXPIRED);
       }
-    } catch (err) {
+    } catch {
       // Suppress error if user is not authenticated
       if (typeof window !== 'undefined' && !localStorage.getItem('token')) {
         setStatus(SubscriptionStatus.UNKNOWN);

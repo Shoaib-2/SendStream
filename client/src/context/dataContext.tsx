@@ -19,7 +19,7 @@
 "use client";
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { Subscriber, Newsletter } from '@/types';
-import { subscriberAPI, newsletterAPI, getSubscriptionStatus } from '@/services/api';
+import { subscriberAPI, newsletterAPI } from '@/services/api';
 import { useAuth } from './authContext';
 
 interface DataContextType {
@@ -39,7 +39,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [newsletters, setNewsletters] = useState<Newsletter[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [ws, setWs] = useState<WebSocket | null>(null);
-  const [fetchAttempts, setFetchAttempts] = useState(0);
   const MAX_FETCH_ATTEMPTS = 3;
   const { user } = useAuth();
 
@@ -195,7 +194,7 @@ useEffect(() => {
   return () => {
     isSubscribed = false;
   };
-}, [fetchAttempts, user, MAX_FETCH_ATTEMPTS]);
+}, [user]);
 
   const addSubscriber = async (subscriberData: Omit<Subscriber, 'id'>) => {
     try {
