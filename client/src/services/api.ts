@@ -1145,7 +1145,7 @@ export const authAPI = {
           timeout: 10000, // 10 second timeout
         }
       );
-      console.log("Reset password response:", response.data);
+      // console.log("Reset password response:", response.data);
       return {
         status: "success",
         ...response.data.data,
@@ -1200,7 +1200,7 @@ export const pricingPlans: PricingPlan[] = [
     name: "Pro",
     price: "$12",
     period: "/month",
-    priceId: "price_1QzeqbGfclTFWug124uFjz1g", // Replace with actual Stripe price ID
+    priceId: "price_1QzeqbGfclTFWug124uFjz1g",
     trialDays: 14,
   },
 ];

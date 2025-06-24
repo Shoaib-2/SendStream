@@ -219,7 +219,7 @@ export const forgotPassword = async (req: Request, res: Response, next: NextFunc
     
     user.passwordResetExpires = resetTokenExpires;
     await user.save({ validateBeforeSave: false });    // Create reset URL
-    const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
+    const resetUrl = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
 
     // Send email
     try {

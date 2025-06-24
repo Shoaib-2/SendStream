@@ -197,7 +197,7 @@ export class EmailService {
     const unsubscribeToken = Buffer.from(subscriber._id.toString()).toString('base64');
     
     // Use the frontend URL for unsubscribe
-    const frontendUrl = process.env.FRONTEND_URL || process.env.CLIENT_URL;
+    const frontendUrl = process.env.CLIENT_URL;
     const unsubscribeUrl = `${frontendUrl}/unsubscribe?token=${encodeURIComponent(unsubscribeToken)}`;
     logger.info('Unsubscribe URL:', unsubscribeUrl);
     
