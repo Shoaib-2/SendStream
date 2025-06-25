@@ -47,9 +47,12 @@ const Hero: React.FC<HeroProps> = ({ isRenewal = false }) => {
         {!isRenewal && (
           <div className="flex-1 flex flex-col items-center justify-center w-full md:w-auto">
             <span className="mb-3 text-base md:text-lg text-blue-400 font-semibold tracking-wide text-center">Demo: How to use the application</span>
-            <div className="relative w-full max-w-lg aspect-video rounded-2xl overflow-hidden shadow-2xl border border-gray-700 bg-black">
+            <div
+              className="relative w-full max-w-lg aspect-video rounded-2xl overflow-hidden shadow-2xl border border-gray-700 bg-black transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] hover:scale-105 hover:shadow-3xl"
+              style={{ willChange: 'transform' }}
+            >
               <video
-                src="/SendStream-Demo.mp4"
+                src="/SendStream-Demo(2).mp4"
                 controls
                 autoPlay
                 muted
