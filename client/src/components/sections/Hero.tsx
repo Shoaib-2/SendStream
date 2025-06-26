@@ -52,7 +52,7 @@ const Hero: React.FC<HeroProps> = ({ isRenewal = false }) => {
               style={{ willChange: 'transform' }}
             >
               <video
-                src="/SendStream-Demo(2).mp4"
+                src="/Sendstream-Demo.mp4"
                 controls
                 autoPlay
                 muted
