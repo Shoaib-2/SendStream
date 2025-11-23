@@ -1,54 +1,526 @@
-# SendStream: Automated Newsletter Platform
+# SendStream: Complete Newsletter Automation Platform
 
-SendStream is a modern, full-stack SaaS platform that streamlines the process of creating, sending, and managing newsletters for individuals, creators, and businesses. Built with Next.js, React, TypeScript, and Node.js, it offers a seamless experience for both newsletter publishers and their subscribers.
+SendStream is a comprehensive, full-stack SaaS platform that streamlines newsletter creation, distribution, and analytics for content creators, businesses, and marketing professionals. Built with Next.js 15, React 18, TypeScript, Node.js, and MongoDB, it provides an enterprise-grade solution for email marketing automation.
 
-## What Does SendStream Do?
-- **Automates Newsletter Delivery:** Schedule, send, and track newsletters with ease. Integrates with email providers and supports automated delivery.
-- **Subscription Management:** Handles user signups, logins, and secure subscription payments (Stripe integration). Centralized logic ensures a smooth renewal and access flow.
-- **Analytics & Insights:** Get actionable analytics on subscriber growth, engagement, and content quality. Visual dashboards help you understand your audience and improve your content.
-- **Content Quality Tracking:** Built-in metrics and charts to help you measure and improve the quality of your newsletters.
-- **Seamless User Experience:** Clean, modern UI with authentication, onboarding, and renewal flows. All subscription logic is centralized for reliability and maintainability.
-- **Integrations:** Easily connect with Mailchimp and other tools to sync subscribers and automate workflows.
+## 🎯 What Does SendStream Do?
 
-## Who Is It For?
-- Newsletter creators, writers, and businesses who want to automate and scale their email outreach.
-- Anyone looking for a robust, production-ready newsletter SaaS with analytics, payment, and subscription management out of the box.
+### Core Features
+- **Newsletter Management:** Create, edit, schedule, and send newsletters with a rich content editor
+- **Subscriber Management:** Import subscribers via CSV, add manually, or sync with Mailchimp
+- **Email Delivery:** Gmail SMTP integration with daily sending limits (100 emails/day per user)
+- **Scheduling System:** Schedule newsletters for future delivery with cron-based automation
+- **Real-time Updates:** WebSocket integration for live subscriber status updates
+- **Analytics Dashboard:** Track opens, clicks, bounces, and unsubscribes with detailed metrics
+- **Content Quality Scoring:** AI-powered content analysis measuring originality, research-backed claims, and actionable insights
+- **Subscription Management:** Stripe integration with 14-day free trial and automated billing
+- **Mailchimp Integration:** Two-way sync with Mailchimp for subscriber management and campaign distribution
+- **User Authentication:** Secure JWT-based authentication with HTTP-only cookies
+- **Password Recovery:** Email-based password reset functionality
+- **Settings Management:** Customizable email sender settings (from name, reply-to, sender email)
 
-## Key Features
-- Next.js 14+ app directory, React 18, TypeScript
-- Centralized subscription/renewal logic (no more race conditions or duplicate redirects)
-- Stripe payments and renewal flows
-- Analytics dashboard for subscribers and newsletters
-- Mailchimp integration
-- Modern, responsive UI (Tailwind CSS)
-- Secure authentication (JWT, HTTP-only cookies)
-- Extensible and production-ready
+### Advanced Features
+- **Email Usage Tracking:** Daily email quota monitoring and enforcement
+- **Unsubscribe Management:** One-click unsubscribe with tracking pixel integration
+- **CSV Import/Export:** Bulk subscriber operations with CSV file support
+- **Growth Analytics:** Visual charts showing subscriber growth over time using Nivo charts
+- **Newsletter Status Tracking:** Draft, scheduled, and sent status with detailed metrics
+- **Rate Limiting:** Built-in rate limiting for API endpoints and Mailchimp integration
+- **Error Handling:** Comprehensive error middleware with detailed logging
+- **Retry Logic:** Automatic retry mechanism for failed API calls
+- **Data Validation:** Schema validation for all API inputs
+- **Responsive Design:** Mobile-first design with Tailwind CSS
 
-## Getting Started
-1. **Clone the repo:**
+## 🏗️ Tech Stack
+
+### Frontend
+- **Framework:** Next.js 15.3.4 with App Router
+- **UI Library:** React 18.3.0
+- **Language:** TypeScript 5
+- **Styling:** Tailwind CSS 3.4.1
+- **Charts:** @nivo/core, @nivo/line, @nivo/pie
+- **UI Components:** @headlessui/react, Lucide React icons
+- **State Management:** Context API (AuthContext, DataContext, SubscriptionContext, ToastContext)
+- **HTTP Client:** Axios 1.7.9
+- **Payment:** @stripe/stripe-js
+- **CSV Handling:** PapaParse
+- **Notifications:** React Hot Toast
+
+### Backend
+- **Runtime:** Node.js with Express 4.21.2
+- **Language:** TypeScript 5.7.3
+- **Database:** MongoDB 6.13.0 with Mongoose 8.9.5
+- **Authentication:** JWT (jsonwebtoken 9.0.2) with bcryptjs 2.4.3
+- **Email Service:** Nodemailer 6.10.0 with Gmail SMTP
+- **Payment Processing:** Stripe 17.7.0
+- **Scheduling:** node-cron 3.0.3
+- **Real-time:** WebSocket (ws 8.18.0)
+- **Logging:** Winston 3.17.0
+- **CORS:** cors 2.8.5
+- **Cookie Parsing:** cookie-parser 1.4.7
+- **Testing:** Jest 29.7.0, Supertest 7.0.0
+
+### DevOps & Tools
+- **Deployment:** Render (configured with render.yaml)
+- **Environment:** dotenv for configuration management
+- **Build Tools:** TypeScript compiler, Next.js build
+- **Testing:** Jest with ts-jest and @types/jest
+- **Development:** nodemon, ts-node
+
+## 📊 Architecture Overview
+
+### Backend Structure
+```
+backend/
+├── src/
+│   ├── config/          # Database configuration
+│   ├── controllers/     # Request handlers (auth, newsletter, analytics, etc.)
+│   ├── middleware/      # Auth, error handling, subscription checks
+│   ├── models/          # Mongoose schemas (User, Newsletter, Subscriber, Analytics, etc.)
+│   ├── routes/          # API route definitions
+│   ├── services/        # Business logic (email, cron, analytics, integrations)
+│   ├── utils/           # Helper functions (validation, errors, rate limiting, retry)
+│   └── server.ts        # Express app initialization
+└── tests/              # Jest test suites
+```
+
+### Frontend Structure
+```
+client/
+├── src/
+│   ├── app/            # Next.js 15 App Router pages
+│   │   ├── dashboard/  # Protected dashboard pages
+│   │   ├── auth/       # Authentication pages
+│   │   └── api/        # API route handlers
+│   ├── components/     # React components (auth, dashboard, UI)
+│   ├── context/        # Context providers for global state
+│   ├── services/       # API service layer
+│   ├── types/          # TypeScript type definitions
+│   └── utils/          # Helper utilities
+└── public/            # Static assets
+```
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Node.js 18+ and npm
+- MongoDB Atlas account or local MongoDB installation
+- Gmail account for SMTP
+- Stripe account for payment processing
+- (Optional) Mailchimp account for integration
+
+### Installation
+
+1. **Clone the repository:**
    ```bash
-   git clone https://github.com/yourusername/sendstream.git
-   cd sendstream
+   git clone https://github.com/Shoaib-2/SendStream.git
+   cd SendStream
    ```
-2. **Install dependencies:**
-   ```bash
-   cd backend && npm install
-   cd ../client && npm install
-   ```
-3. **Configure environment variables:**
-   - Copy `.env.example` to `.env` in both `backend` and `client` folders and fill in your keys (Stripe, Mailchimp, DB, etc).
-4. **Run the app locally:**
-   ```bash
-   # In one terminal
-   cd backend && npm run dev
-   # In another terminal
-   cd client && npm run dev
-   ```
-5. **Deploy:**
-   - Ready for deployment on Render, Vercel, or your favorite cloud provider.
 
-## Contributing
-Pull requests are welcome! For major changes, please open an issue first to discuss what you would like to change.
+2. **Install backend dependencies:**
+   ```bash
+   cd backend
+   npm install
+   ```
 
-## License
-MIT
+3. **Install frontend dependencies:**
+   ```bash
+   cd ../client
+   npm install
+   ```
+
+### Configuration
+
+#### Backend Environment Variables (`.env`)
+Create a `.env` file in the `backend` directory:
+```env
+# Server
+PORT=5000
+NODE_ENV=development
+
+# Database
+MONGODB_URI=your_mongodb_connection_string
+
+# JWT
+JWT_SECRET=your_jwt_secret_key
+JWT_EXPIRES_IN=30d
+
+# Email (Gmail SMTP)
+EMAIL_USER=your_gmail_address
+EMAIL_PASSWORD=your_gmail_app_password
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=465
+EMAIL_SECURE=true
+DEFAULT_SENDER_EMAIL=your_gmail_address
+
+# Stripe
+STRIPE_SECRET_KEY=your_stripe_secret_key
+STRIPE_PRICE_ID=your_stripe_price_id
+STRIPE_WEBHOOK_SECRET=your_stripe_webhook_secret
+
+# URLs
+CLIENT_URL=http://localhost:3000
+SERVER_URL=http://localhost:5000
+
+# Mailchimp (Optional)
+MAILCHIMP_API_KEY=your_mailchimp_api_key
+```
+
+#### Frontend Environment Variables (`.env.local`)
+Create a `.env.local` file in the `client` directory:
+```env
+# API
+NEXT_PUBLIC_API_URL=http://localhost:5000/api
+NEXT_PUBLIC_WS_URL=ws://localhost:5000/ws
+SERVER_URL=http://localhost:5000
+
+# Stripe
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=your_stripe_publishable_key
+NEXT_PUBLIC_STRIPE_PRICE_ID=your_stripe_price_id
+
+# Database (for server-side operations)
+MONGODB_URI=your_mongodb_connection_string
+```
+
+### Running the Application
+
+#### Development Mode
+
+1. **Start the backend server:**
+   ```bash
+   cd backend
+   npm run dev
+   ```
+   Backend runs on `http://localhost:5000`
+
+2. **Start the frontend (in a new terminal):**
+   ```bash
+   cd client
+   npm run dev
+   ```
+   Frontend runs on `http://localhost:3000`
+
+#### Production Build
+
+1. **Build backend:**
+   ```bash
+   cd backend
+   npm run build
+   npm start
+   ```
+
+2. **Build frontend:**
+   ```bash
+   cd client
+   npm run build
+   npm start
+   ```
+
+### Testing
+
+Run backend tests:
+```bash
+cd backend
+npm test                    # Run all tests
+npm run test:watch         # Watch mode
+npm run test:coverage      # With coverage
+```
+
+Available test suites:
+- `analytics.test.ts` - Analytics functionality
+- `auth.test.ts` - Authentication flows
+- `email.test.ts` - Email service
+- `mailchimp.test.ts` - Mailchimp integration
+- `news.test.ts` - Newsletter operations
+- `subs.test.ts` - Subscriber management
+
+## 📖 API Documentation
+
+### Authentication Endpoints
+- `POST /api/auth/register` - User registration
+- `POST /api/auth/login` - User login
+- `POST /api/auth/logout` - User logout
+- `POST /api/auth/forgot-password` - Request password reset
+- `POST /api/auth/reset-password/:token` - Reset password
+- `GET /api/auth/check-trial-eligibility` - Check trial eligibility
+- `GET /api/auth/me` - Get current user
+
+### Newsletter Endpoints (Protected)
+- `GET /api/newsletters` - Get all newsletters
+- `POST /api/newsletters` - Create newsletter
+- `GET /api/newsletters/stats` - Get newsletter statistics
+- `GET /api/newsletters/:id` - Get single newsletter
+- `PATCH /api/newsletters/:id` - Update newsletter
+- `DELETE /api/newsletters/:id` - Delete newsletter
+- `POST /api/newsletters/:id/send` - Send newsletter
+- `POST /api/newsletters/:id/schedule` - Schedule newsletter
+
+### Subscriber Endpoints (Protected)
+- `GET /api/subscribers` - Get all subscribers
+- `POST /api/subscribers` - Add subscriber
+- `PATCH /api/subscribers/:id` - Update subscriber
+- `DELETE /api/subscribers/:id` - Delete subscriber
+- `POST /api/subscribers/import` - Import from Mailchimp
+- `POST /api/subscribers/bulk` - Bulk add subscribers
+- `GET /api/subscribers/export` - Export to CSV
+
+### Analytics Endpoints (Protected)
+- `GET /api/analytics/summary` - Dashboard summary
+- `GET /api/analytics/newsletter/:newsletterId` - Newsletter analytics
+- `GET /api/analytics/growth` - Growth data
+- `GET /api/analytics/activity` - Recent activity
+- `GET /api/analytics/track-open/:newsletterId/:subscriberId` - Track email open (public)
+
+### Subscription Endpoints
+- `POST /api/subscription/create-trial-session` - Create Stripe trial session
+- `GET /api/subscription/status` - Get subscription status (protected)
+- `POST /api/subscription/cancel` - Cancel subscription (protected)
+- `POST /api/subscription/update-renewal` - Update renewal settings (protected)
+
+### Settings Endpoints (Protected)
+- `GET /api/settings` - Get user settings
+- `PUT /api/settings` - Update user settings
+- `POST /api/settings/mailchimp/test` - Test Mailchimp connection
+
+### Health Check
+- `GET /api/health` - Health check endpoint
+
+## 🔒 Security Features
+
+- **JWT Authentication:** Secure token-based authentication with HTTP-only cookies
+- **Password Hashing:** bcrypt with salt rounds for password security
+- **CORS Configuration:** Whitelist-based CORS with credentials support
+- **Rate Limiting:** Custom rate limiters for API and third-party services
+- **Input Validation:** Schema validation for all user inputs
+- **SQL Injection Prevention:** MongoDB parameterized queries
+- **XSS Protection:** React's built-in XSS protection
+- **Environment Variables:** Sensitive data stored in environment variables
+- **Subscription Middleware:** Protected routes with subscription verification
+
+## 📈 Analytics & Tracking
+
+### Tracked Metrics
+- **Email Opens:** Tracking pixel implementation
+- **Click Tracking:** Link click monitoring
+- **Bounce Tracking:** Failed delivery tracking
+- **Unsubscribe Tracking:** Unsubscribe event monitoring
+- **Subscriber Growth:** Time-based growth analytics
+- **Content Quality Score:** Multi-factor quality assessment
+
+### Content Quality Scoring System
+Newsletters are scored based on:
+- Content length (up to 25 points)
+- Original content (25 points)
+- Research-backed claims with sources (up to 25 points)
+- Actionable insights and key takeaways (up to 25 points)
+- **Total possible score:** 100 points
+
+## 💳 Subscription & Billing
+
+- **Payment Processor:** Stripe
+- **Free Trial:** 14 days
+- **Billing Cycle:** Monthly subscription
+- **Features:**
+  - Automatic trial-to-paid conversion
+  - Subscription status tracking (active, trialing, past_due, canceled, unpaid)
+  - Cancel anytime with period-end cancellation
+  - Auto-renewal management
+  - Trial eligibility tracking (one trial per user)
+  - Webhook integration for subscription events
+
+## 📧 Email Delivery
+
+### Gmail SMTP Configuration
+- **Service:** Gmail SMTP
+- **Security:** TLS/SSL encryption
+- **Daily Limit:** 100 emails per user per day
+- **Tracking:** Email usage monitoring and quota enforcement
+- **Features:**
+  - Custom sender name and reply-to
+  - HTML email templates
+  - Tracking pixel integration
+  - Unsubscribe link automation
+  - Batch processing (5 emails at a time)
+
+### Email Templates
+- Professional HTML email design
+- Mobile-responsive layout
+- Tracking pixel for open rate monitoring
+- One-click unsubscribe link
+- Custom branding support
+
+## 🔗 Third-Party Integrations
+
+### Mailchimp Integration
+- **Two-way sync:** Sync subscribers between platform and Mailchimp
+- **Features:**
+  - Automatic list synchronization
+  - Campaign creation and sending
+  - Subscriber status updates
+  - Bulk operations support
+  - Connection testing
+  - Rate limiting compliance
+
+### Stripe Integration
+- **Checkout sessions:** Hosted checkout with trial support
+- **Subscription management:** Full lifecycle management
+- **Webhooks:** Real-time subscription event handling
+- **Customer portal:** Subscription management UI
+
+## 🌐 Deployment
+
+### Render Deployment (Configured)
+The project includes `render.yaml` configuration for automated deployment:
+
+**Backend Service:**
+- Build: `npm install && npm run build`
+- Start: `npm start`
+- Health check: `/api/health`
+- Auto-deploy enabled
+
+**Frontend Service:**
+- Build: Next.js production build
+- Start: `npm start` on port 3000
+- Environment variables configured
+
+### Manual Deployment Options
+- **Vercel:** Optimal for Next.js frontend
+- **Heroku:** Backend and frontend
+- **Railway:** Full-stack deployment
+- **DigitalOcean App Platform:** Containerized deployment
+- **AWS:** EC2, Elastic Beanstalk, or Lambda
+
+### Environment Setup for Production
+1. Set all required environment variables
+2. Configure MongoDB Atlas with IP whitelist
+3. Set up Stripe webhook endpoint
+4. Configure Gmail with app-specific password
+5. Update CORS origins for production URLs
+6. Enable SSL/TLS certificates
+
+## 🧪 Testing Strategy
+
+### Test Coverage
+- **Unit Tests:** Individual functions and utilities
+- **Integration Tests:** API endpoints and services
+- **Authentication Tests:** Login, registration, password reset
+- **Newsletter Tests:** CRUD operations and scheduling
+- **Subscriber Tests:** Import, export, sync operations
+- **Email Tests:** Delivery, tracking, templates
+- **Mailchimp Tests:** API integration and sync
+
+### Running Tests
+```bash
+# Run all tests
+npm test
+
+# Watch mode for development
+npm run test:watch
+
+# Generate coverage report
+npm run test:coverage
+```
+
+## 📝 Key Models & Schemas
+
+### User Model
+- Email, password (hashed), role
+- Stripe customer ID, subscription ID
+- Subscription status, trial dates
+- Trial usage tracking
+- Password reset tokens
+
+### Newsletter Model
+- Title, subject, content
+- Status (draft, scheduled, sent)
+- Scheduling and sent dates
+- Content quality metrics
+- User association
+
+### Subscriber Model
+- Email, name, status
+- Subscription date, unsubscribe date
+- Source tracking (CSV, Mailchimp, manual)
+- User association
+- Unique email per user constraint
+
+### Analytics Model
+- Newsletter reference
+- Opens, clicks, bounces, unsubscribes
+- Detailed event tracking with timestamps
+- Subscriber-level details
+
+### Settings Model
+- Email configuration (from name, reply-to, sender)
+- Mailchimp API credentials
+- Auto-sync preferences
+
+### EmailUsage Model
+- Daily usage tracking per user
+- Email count and limits
+- Last updated timestamp
+
+## 🛠️ Development Tools
+
+### Available Scripts
+
+**Backend:**
+- `npm run dev` - Start development server with nodemon
+- `npm run build` - Compile TypeScript to JavaScript
+- `npm start` - Run production server
+- `npm test` - Run test suite
+
+**Frontend:**
+- `npm run dev` - Start Next.js development server
+- `npm run build` - Create production build
+- `npm start` - Start production server
+- `npm run lint` - Run ESLint
+
+## 🤝 Contributing
+
+Contributions are welcome! Please follow these guidelines:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+### Code Style
+- Follow TypeScript best practices
+- Use meaningful variable and function names
+- Add comments for complex logic
+- Write tests for new features
+- Update documentation as needed
+
+## 📄 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 👥 Authors
+
+- **Shoaib-2** - [GitHub Profile](https://github.com/Shoaib-2)
+
+## 🙏 Acknowledgments
+
+- Next.js team for the amazing framework
+- Stripe for payment processing
+- Mailchimp for email marketing integration
+- MongoDB for database solutions
+- All open-source contributors
+
+## 📞 Support
+
+For support, email your-email@example.com or open an issue in the GitHub repository.
+
+## 🔄 Version History
+
+- **1.0.0** (Current)
+  - Initial release with full feature set
+  - Newsletter creation and management
+  - Subscriber management with CSV import/export
+  - Mailchimp integration
+  - Stripe subscription with 14-day trial
+  - Analytics dashboard
+  - Content quality scoring
+  - Email scheduling with cron
+  - Real-time WebSocket updates
