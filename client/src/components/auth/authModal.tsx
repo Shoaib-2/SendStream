@@ -183,28 +183,35 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-gray-800/50 backdrop-blur-sm p-8 rounded-2xl w-full max-w-md relative
-        border border-gray-700 hover:border-blue-500/50 transition-all duration-300">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-fade-in">
+      {/* Gradient orbs background */}
+      <div className="absolute top-20 left-10 w-96 h-96 bg-primary-500/20 rounded-full blur-3xl animate-pulse-slow" />
+      <div className="absolute bottom-20 right-10 w-96 h-96 bg-secondary-500/20 rounded-full blur-3xl animate-pulse-slow" style={{ animationDelay: '1s' }} />
+      
+      <div className="glass-strong p-8 rounded-2xl w-full max-w-md relative
+        border border-white/20 shadow-2xl animate-scale-in">
+        {/* Glow effect */}
+        <div className="absolute -inset-1 bg-gradient-to-r from-primary-500 via-accent-500 to-secondary-500 
+          rounded-2xl blur-xl opacity-20" />
+        
         <button 
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 text-gray-400 hover:text-white
-            hover:bg-gray-700/50 rounded-lg transition-all duration-300"
+          className="absolute top-4 right-4 p-2 text-neutral-400 hover:text-white z-10
+            hover:bg-white/10 rounded-lg transition-all duration-300"
           disabled={isLoading}
         >
           <X className="w-5 h-5" />
         </button>
 
-        <div className="mb-8 text-center">
-          <h2 className="text-3xl font-bold font-inter bg-clip-text text-transparent 
-            bg-gradient-to-r from-white to-gray-400">
+        <div className="mb-8 text-center relative z-10">
+          <h2 className="text-3xl font-bold font-display gradient-text mb-2">
             {mode === 'login' 
               ? 'Welcome Back' 
               : mode === 'signup' 
                 ? 'Create Account' 
                 : 'Reset Password'}
           </h2>
-          <p className="text-gray-400 mt-2">
+          <p className="text-neutral-400 mt-2">
             {mode === 'login' 
               ? 'Sign in to access your account' 
               : mode === 'signup'
@@ -217,16 +224,17 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
 
         {/* Trial Required Alert */}
         {trialRequired && (
-          <div className="bg-amber-500/10 border border-amber-500/50 text-amber-400 
-            px-4 py-3 rounded-xl mb-6 backdrop-blur-sm flex items-start gap-2">
+          <div className="bg-warning-500/10 border border-warning-500/30 text-warning-400 
+            px-4 py-3 rounded-xl mb-6 glass flex items-start gap-3 shadow-soft">
             <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
-            <div>
-              <p className="font-medium">Free Trial Required</p>
-              <p className="text-sm mt-1">Please start a free trial first to create an account.</p>
+            <div className="flex-1">
+              <p className="font-semibold font-display">Free Trial Required</p>
+              <p className="text-sm mt-1 text-warning-300">Please start a free trial first to create an account.</p>
               <button
                 onClick={handleStartTrial}
-                className="mt-2 px-4 py-2 bg-amber-500/20 hover:bg-amber-500/30 rounded-lg text-sm
-                  border border-amber-500/30 hover:border-amber-500/50 transition-all duration-300"
+                className="mt-3 px-4 py-2 bg-warning-500/20 hover:bg-warning-500/30 rounded-lg text-sm font-medium
+                  border border-warning-500/40 hover:border-warning-500/60 transition-all duration-300
+                  hover:scale-105 active:scale-95"
               >
                 Start Free Trial
               </button>
@@ -235,83 +243,96 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
         )}
 
         {errors.general && !trialRequired && (
-          <div className="bg-red-500/10 border border-red-500/50 text-red-400 
-            px-4 py-3 rounded-xl mb-6 backdrop-blur-sm">
-            {errors.general}
+          <div className="bg-error-500/10 border border-error-500/30 text-error-400 
+            px-4 py-3 rounded-xl mb-6 glass shadow-soft flex items-start gap-2">
+            <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
+            <p className="flex-1">{errors.general}</p>
           </div>
         )}
 
         {successMessage && (
-          <div className="bg-green-500/10 border border-green-500/50 text-green-400 
-            px-4 py-3 rounded-xl mb-6 backdrop-blur-sm">
+          <div className="bg-success-500/10 border border-success-500/30 text-success-400 
+            px-4 py-3 rounded-xl mb-6 glass shadow-soft">
             {successMessage}
           </div>
         )}
 
         {stripeSessionId && mode === 'signup' && (
-          <div className="bg-blue-500/10 border border-blue-500/50 text-blue-400 
-            px-4 py-3 rounded-xl mb-6 backdrop-blur-sm">
+          <div className="bg-primary-500/10 border border-primary-500/30 text-primary-400 
+            px-4 py-3 rounded-xl mb-6 glass shadow-glow">
             Your 14-day free trial is ready! Complete registration to get started.
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
           <div>
-            <label className="block text-sm font-medium mb-2 text-gray-300">Email</label>
+            <label className="block text-sm font-medium mb-2 text-neutral-300">Email</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className={`w-full px-4 py-3 bg-gray-700/50 rounded-lg 
+              className={`w-full px-4 py-3 bg-neutral-900/50 rounded-xl text-white
                 ${errors.email 
-                  ? 'border border-red-500/50 focus:border-red-500' 
-                  : 'border border-gray-600 focus:border-blue-500/50'
-                } focus:ring-1 focus:ring-blue-500/50 transition-all duration-300`}
+                  ? 'border-2 border-error-500/50 focus:border-error-500' 
+                  : 'border border-neutral-700 focus:border-primary-500'
+                } focus:ring-2 focus:ring-primary-500/20 transition-all duration-300
+                placeholder:text-neutral-500`}
               placeholder="your@email.com"
               disabled={isLoading}
             />
             {errors.email && (
-              <p className="text-red-400 text-sm mt-2">{errors.email}</p>
+              <p className="text-error-400 text-sm mt-2 flex items-center gap-1">
+                <AlertCircle className="w-3 h-3" />
+                {errors.email}
+              </p>
             )}
           </div>
 
           {mode === 'signup' && (
             <>
               <div>
-                <label className="block text-sm font-medium mb-2 text-gray-300">New Password</label>
+                <label className="block text-sm font-medium mb-2 text-neutral-300">New Password</label>
                 <input
                   type="password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  className={`w-full px-4 py-3 bg-gray-700/50 rounded-lg 
+                  className={`w-full px-4 py-3 bg-neutral-900/50 rounded-xl text-white
                     ${errors.newPassword 
-                      ? 'border border-red-500/50 focus:border-red-500' 
-                      : 'border border-gray-600 focus:border-blue-500/50'
-                    } focus:ring-1 focus:ring-blue-500/50 transition-all duration-300`}
+                      ? 'border-2 border-error-500/50 focus:border-error-500' 
+                      : 'border border-neutral-700 focus:border-primary-500'
+                    } focus:ring-2 focus:ring-primary-500/20 transition-all duration-300
+                    placeholder:text-neutral-500`}
                   placeholder="••••••••"
                   disabled={isLoading}
                 />
                 {errors.newPassword && (
-                  <p className="text-red-400 text-sm mt-2">{errors.newPassword}</p>
+                  <p className="text-error-400 text-sm mt-2 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    {errors.newPassword}
+                  </p>
                 )}
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2 text-gray-300">Confirm Password</label>
+                <label className="block text-sm font-medium mb-2 text-neutral-300">Confirm Password</label>
                 <input
                   type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className={`w-full px-4 py-3 bg-gray-700/50 rounded-lg 
+                  className={`w-full px-4 py-3 bg-neutral-900/50 rounded-xl text-white
                     ${errors.confirmPassword 
-                      ? 'border border-red-500/50 focus:border-red-500' 
-                      : 'border border-gray-600 focus:border-blue-500/50'
-                    } focus:ring-1 focus:ring-blue-500/50 transition-all duration-300`}
+                      ? 'border-2 border-error-500/50 focus:border-error-500' 
+                      : 'border border-neutral-700 focus:border-primary-500'
+                    } focus:ring-2 focus:ring-primary-500/20 transition-all duration-300
+                    placeholder:text-neutral-500`}
                   placeholder="••••••••"
                   disabled={isLoading}
                 />
                 {errors.confirmPassword && (
-                  <p className="text-red-400 text-sm mt-2">{errors.confirmPassword}</p>
+                  <p className="text-error-400 text-sm mt-2 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    {errors.confirmPassword}
+                  </p>
                 )}
               </div>
             </>
@@ -320,11 +341,11 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
           {mode === 'login' && (
             <div>
               <div className="flex justify-between items-center">
-                <label className="block text-sm font-medium mb-2 text-gray-300">Password</label>
+                <label className="block text-sm font-medium mb-2 text-neutral-300">Password</label>
                 <button 
                   type="button" 
                   onClick={() => setMode('forgotPassword')}
-                  className="text-sm text-blue-400 hover:text-blue-300 mb-2"
+                  className="text-sm text-primary-400 hover:text-primary-300 mb-2 transition-colors"
                   disabled={isLoading}
                 >
                   Forgot Password?
@@ -334,29 +355,37 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                className={`w-full px-4 py-3 bg-gray-700/50 rounded-lg 
+                className={`w-full px-4 py-3 bg-neutral-900/50 rounded-xl text-white
                   ${errors.newPassword 
-                    ? 'border border-red-500/50 focus:border-red-500' 
-                    : 'border border-gray-600 focus:border-blue-500/50'
-                  } focus:ring-1 focus:ring-blue-500/50 transition-all duration-300`}
+                    ? 'border-2 border-error-500/50 focus:border-error-500' 
+                    : 'border border-neutral-700 focus:border-primary-500'
+                  } focus:ring-2 focus:ring-primary-500/20 transition-all duration-300
+                  placeholder:text-neutral-500`}
                 placeholder="••••••••"
                 disabled={isLoading}
               />
               {errors.newPassword && (
-                <p className="text-red-400 text-sm mt-2">{errors.newPassword}</p>
+                <p className="text-error-400 text-sm mt-2 flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" />
+                  {errors.newPassword}
+                </p>
               )}
             </div>
           )}
 
           <button 
             type="submit"
-            className="w-full bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg
+            className="w-full bg-gradient-to-r from-primary-600 to-secondary-600 hover:from-primary-500 hover:to-secondary-500
+              text-white px-6 py-3 rounded-xl font-medium shadow-glow
               transform transition-all duration-300 hover:scale-105 disabled:opacity-50
-              disabled:hover:scale-100 font-medium"
+              disabled:hover:scale-100 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             disabled={isLoading || (mode === 'signup' && !stripeSessionId)}
           >
             {isLoading ? (
-              <Loader className="w-5 h-5 animate-spin mx-auto" />
+              <>
+                <Loader className="w-5 h-5 animate-spin" />
+                <span>Loading...</span>
+              </>
             ) : (
               mode === 'login' 
                 ? 'Sign In' 
@@ -370,22 +399,23 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
             <button
               type="button"
               onClick={handleStartTrial}
-              className="w-full mt-4 bg-gradient-to-r from-amber-500/20 to-amber-600/20 text-amber-400
-                hover:from-amber-500/30 hover:to-amber-600/30 px-6 py-3 rounded-lg border border-amber-500/30
-                hover:border-amber-500/50 transition-all duration-300 font-medium flex items-center justify-center gap-2"
+              className="w-full mt-4 bg-gradient-to-r from-warning-500/20 to-warning-600/20 text-warning-400
+                hover:from-warning-500/30 hover:to-warning-600/30 px-6 py-3 rounded-xl border border-warning-500/40
+                hover:border-warning-500/60 transition-all duration-300 font-medium flex items-center justify-center gap-2
+                hover:scale-105 active:scale-95"
             >
               Start Free Trial First
             </button>
           )}
         </form>
 
-        <div className="mt-6 text-center">
+        <div className="mt-6 text-center relative z-10">
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-700"></div>
+              <div className="w-full border-t border-neutral-800"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-gray-800/50 text-gray-400">
+              <span className="px-3 glass text-neutral-400">
                 {mode === 'login' 
                   ? 'New here?' 
                   : mode === 'signup' 
@@ -399,13 +429,14 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
             onClick={() => {
               if (mode === 'login') {
                 setMode('signup');
-                setTrialRequired(false); // Reset trial required state when switching modes
+                setTrialRequired(false);
               } else if (mode === 'signup' || mode === 'forgotPassword') {
                 setMode('login');
-                setTrialRequired(false); // Reset trial required state when switching modes
+                setTrialRequired(false);
               }
             }}
-            className="text-blue-400 hover:text-blue-300 mt-4 font-medium transition-colors"
+            className="text-primary-400 hover:text-primary-300 mt-4 font-medium transition-colors
+              hover:underline underline-offset-4"
             disabled={isLoading}
           >
             {mode === 'login' 

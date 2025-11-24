@@ -8,6 +8,9 @@ import type { Newsletter } from '@/types';
 import ExpiredSubscription from '@/components/subscription/ExpiredSubscription';
 import { emailAPI } from '@/services/api';
 import { useSubscription } from '@/context/subscriptionContext';
+import Card from '@/components/UI/Card';
+import Badge from '@/components/UI/Badge';
+import Container from '@/components/UI/Container';
 
 // Lazy load heavy chart component
 const ResponsivePie = dynamic(
@@ -101,9 +104,12 @@ export default function DashboardPage() {
   const renderContent = () => {
     if (loading || subscriptionLoading || status === 'CHECKING') {
       return (
-        <div className="p-6 min-h-screen bg-gradient-to-b from-gray-900 via-gray-900 to-gray-900/50 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div>
-        </div>
+        <Container size="xl" className="py-20 min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-16 h-16 border-4 border-primary-500/30 border-t-primary-500 rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-neutral-400">Loading your dashboard...</p>
+          </div>
+        </Container>
       );
     }
     if (isRenewalRequired) {
@@ -181,82 +187,108 @@ export default function DashboardPage() {
     ];
 
     return (
-      <div className="p-3 sm:p-4 md:p-6 min-h-screen bg-gradient-to-b from-gray-900 via-gray-900 to-gray-900/50">
-        <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6 md:space-y-8">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold font-inter bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
-            Content Quality Dashboard
-          </h1>
+      <Container size="xl" className="py-8 min-h-screen">
+        <div className="space-y-8 animate-fade-in-up">
+          {/* Header */}
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <h1 className="text-3xl md:text-4xl font-bold font-display gradient-text mb-2">
+                Content Quality Dashboard
+              </h1>
+              <p className="text-neutral-400">Track your newsletter performance and content metrics</p>
+            </div>
+            <Badge variant="primary" size="lg" className="w-fit">
+              <Send className="w-4 h-4 mr-1" />
+              Active Subscription
+            </Badge>
+          </div>
           
           {/* Email Sending Limits Card */}
-          <div className="bg-gray-800/50 backdrop-blur-sm p-4 sm:p-6 rounded-lg sm:rounded-xl border border-gray-800 hover:border-blue-500/50 transition-all duration-300">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
-              <div className="flex items-center gap-3 sm:gap-4">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-blue-500/10 flex items-center justify-center
-                  transform transition-all duration-300 group-hover:scale-110">
-                  <Send className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" />
+          <Card variant="hover" className="group">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-secondary-500 to-secondary-600 
+                  flex items-center justify-center shadow-glow-cyan group-hover:scale-110 transition-transform">
+                  <Send className="w-7 h-7 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-base sm:text-lg font-semibold mb-0.5 sm:mb-1">Email Sending Limits</h2>
-                  <p className="text-gray-400 text-sm">
+                  <h2 className="text-xl font-semibold font-display text-white mb-1">Email Sending Limits</h2>
+                  <p className="text-neutral-400">
                     {emailUsage.remainingEmails} of {emailUsage.dailyLimit} emails remaining today
                   </p>
                 </div>
               </div>
               
-              <div className="px-3 py-1.5 bg-blue-500/10 text-blue-400 rounded-lg border border-blue-500/30 text-xs sm:text-sm">
+              <Badge 
+                variant={emailUsage.percentUsed > 80 ? 'warning' : 'secondary'} 
+                size="lg"
+              >
                 Resets at midnight
-              </div>
+              </Badge>
             </div>
             
-            <div className="w-full bg-gray-700/50 rounded-full h-2 sm:h-3">
+            <div className="w-full bg-neutral-800/50 rounded-full h-3 overflow-hidden">
               <div 
                 className={`h-full rounded-full transition-all duration-500 ${
-                  emailUsage.percentUsed > 80 ? 'bg-red-500' : 
-                  emailUsage.percentUsed > 50 ? 'bg-yellow-500' : 
-                  'bg-green-500'
+                  emailUsage.percentUsed > 80 ? 'bg-gradient-to-r from-error-500 to-error-600' : 
+                  emailUsage.percentUsed > 50 ? 'bg-gradient-to-r from-warning-500 to-warning-600' : 
+                  'bg-gradient-to-r from-success-500 to-success-600'
                 }`} 
                 style={{ width: `${emailUsage.percentUsed}%` }}
               ></div>
             </div>
             
-            <div className="flex justify-between mt-2 text-xs text-gray-400">
-              <span>{emailUsage.emailsSent} used</span>
-              <span>{emailUsage.remainingEmails} remaining</span>
+            <div className="flex justify-between mt-3 text-sm">
+              <span className="text-neutral-400">{emailUsage.emailsSent} used</span>
+              <span className="text-neutral-400">{emailUsage.remainingEmails} remaining</span>
             </div>
-          </div>
+          </Card>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
+          {/* Metrics Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {metrics.map((metric, index) => (
-              <div 
+              <Card 
                 key={index}
-                className="bg-gray-800/50 backdrop-blur-sm p-4 sm:p-6 rounded-lg sm:rounded-xl
-                  border border-gray-800 hover:border-blue-500/50
-                  transition-all duration-300 group"
+                variant="hover"
+                className="group relative overflow-hidden"
               >
-                <div className="flex items-center justify-between mb-3 sm:mb-4">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-blue-500/10 
-                    flex items-center justify-center group-hover:scale-110 transition-all duration-300">
-                    <metric.icon className={`w-5 h-5 sm:w-6 sm:h-6 ${metric.color}`} />
+                <div className="absolute inset-0 bg-gradient-to-br from-primary-500/0 via-accent-500/0 to-secondary-500/0 
+                  group-hover:from-primary-500/5 group-hover:via-accent-500/5 group-hover:to-secondary-500/5 
+                  transition-all duration-500 rounded-2xl" />
+                
+                <div className="relative">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${
+                      index === 0 ? 'from-primary-500 to-primary-600' :
+                      index === 1 ? 'from-secondary-500 to-secondary-600' :
+                      index === 2 ? 'from-accent-500 to-accent-600' :
+                      'from-purple-500 to-purple-600'
+                    } flex items-center justify-center group-hover:scale-110 transition-all duration-300 shadow-glow`}>
+                      <metric.icon className="w-6 h-6 text-white" />
+                    </div>
+                    <Badge 
+                      variant={parseFloat(metric.change) >= 0 ? 'success' : 'error'}
+                      size="sm"
+                    >
+                      {metric.change}
+                    </Badge>
                   </div>
-                  <span className={`text-xs sm:text-sm px-2 sm:px-3 py-1 rounded-full ${
-                    parseFloat(metric.change) >= 0 
-                      ? 'text-green-400 bg-green-500/10 border border-green-500/30' 
-                      : 'text-red-400 bg-red-500/10 border border-red-500/30'
-                  }`}>
-                    {metric.change}
-                  </span>
+                  <p className="text-neutral-400 text-sm font-medium mb-2">{metric.label}</p>
+                  <p className="text-3xl font-bold font-display gradient-text">{metric.value}</p>
                 </div>
-                <p className="text-gray-400 text-xs sm:text-sm font-medium">{metric.label}</p>
-                <p className="text-xl sm:text-2xl font-bold mt-1 font-inter tracking-tight">{metric.value}</p>
-              </div>
+              </Card>
             ))}
           </div>
             {/* Charts */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 md:gap-6">
-            <div className="bg-gray-800/50 backdrop-blur-sm p-4 sm:p-6 rounded-lg sm:rounded-xl border border-gray-800 
-              hover:border-blue-500/50 transition-all duration-300">
-              <h2 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-6">Content Quality Distribution</h2>
-              <div className="relative h-[280px] sm:h-[320px] md:h-[280px]">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card variant="hover" className="group">
+              <h2 className="text-xl font-semibold font-display text-white mb-6 flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-primary-500/10 flex items-center justify-center">
+                  <Star className="w-4 h-4 text-primary-400" />
+                </div>
+                Content Quality Distribution
+              </h2>
+              <div className="relative h-[320px]">
                 <ResponsivePie
                   data={newsletterData.map(d => ({
                     id: d.name,
@@ -300,46 +332,54 @@ export default function DashboardPage() {
                     itemsSpacing: 2,
                   }]}
                   tooltip={({ datum }) => (
-                    <div className="bg-gray-800/90 px-3 py-2 rounded-lg border border-gray-700 shadow-xl">
+                    <div className="glass-strong px-3 py-2 rounded-lg border border-white/20 shadow-glow">
                       <p className="text-sm">
-                        <span className="text-gray-400">{datum.id}:</span>{' '}
+                        <span className="text-neutral-400">{datum.id}:</span>{' '}
                         <span className="text-white font-medium">{datum.value}</span>
                       </p>
                     </div>
                   )}
                 />
               </div>
-            </div>     
+            </Card>     
 
             {/* Newsletter Insights */}
-            <div className="bg-gray-800/50 backdrop-blur-sm p-4 sm:p-6 rounded-lg sm:rounded-xl border border-gray-800 
-              hover:border-blue-500/50 transition-all duration-300">
-              <h2 className="text-lg sm:text-xl font-semibold mb-4">Latest Newsletter Insights</h2>
+            <Card variant="hover" className="group">
+              <h2 className="text-xl font-semibold font-display text-white mb-6 flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-secondary-500/10 flex items-center justify-center">
+                  <Mail className="w-4 h-4 text-secondary-400" />
+                </div>
+                Latest Newsletter Insights
+              </h2>
               <div className="space-y-3">
                 {newsletters.slice(0, 3).map((newsletter, idx) => (
-                  <div key={idx} className="p-3 sm:p-4 bg-gray-700/20 rounded-lg hover:bg-gray-700/30 
-                    transition-colors duration-200 border border-gray-700/50">
-                    <h3 className="font-medium text-sm sm:text-base mb-2 line-clamp-1">{newsletter.title}</h3>
-                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-2">
-                      <span className="text-xs sm:text-sm text-gray-400">
-                        Quality Score: {getQualityScore(newsletters[idx])}%
-                      </span>
-                      <span className="text-xs sm:text-sm text-gray-400">
+                  <div key={idx} className="p-4 glass rounded-xl hover:bg-white/10 
+                    transition-all duration-300 border border-neutral-800 hover:border-primary-500/30 group/item">
+                    <h3 className="font-medium text-base text-white mb-2 line-clamp-1 group-hover/item:text-primary-300 transition-colors">
+                      {newsletter.title}
+                    </h3>
+                    <div className="flex justify-between items-center gap-2">
+                      <Badge variant="primary" size="sm">
+                        Quality: {getQualityScore(newsletters[idx])}%
+                      </Badge>
+                      <span className="text-sm text-neutral-400">
                         {new Date(newsletter.sentDate || '').toLocaleDateString()}
                       </span>
                     </div>
                   </div>
                 ))}
                 {newsletters.length === 0 && (
-                  <div className="p-4 text-center text-gray-400 text-sm">
-                    No newsletters sent yet
+                  <div className="p-8 text-center glass rounded-xl border border-neutral-800">
+                    <Mail className="w-12 h-12 text-neutral-600 mx-auto mb-3" />
+                    <p className="text-neutral-400">No newsletters sent yet</p>
+                    <p className="text-sm text-neutral-500 mt-1">Create your first newsletter to see insights</p>
                   </div>
                 )}
               </div>
-            </div>  
+            </Card>  
           </div>
         </div>
-      </div>
+        </Container>
     );
   };
   // Main render
