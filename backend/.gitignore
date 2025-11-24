@@ -2,7 +2,14 @@
 .env
 .env.test
 
-
 # Node modules
 node_modules
+
+# Build output
+dist/
+*.tsbuildinfo
+
+# Logs
+logs/
+*.log
 
