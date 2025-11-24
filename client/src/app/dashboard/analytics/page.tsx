@@ -9,6 +9,9 @@ import { ResponsiveLine } from '@nivo/line';
 import { analyticsAPI } from '../../../services/api';
 import { useData } from '../../../context/dataContext';
 import type { ApiAnalyticsSummary, GrowthData as AppGrowthData } from '../../../types';
+import Container from '@/components/UI/Container';
+import Card from '@/components/UI/Card';
+import Badge from '@/components/UI/Badge';
 
 export default function AnalyticsDashboard() {
   const { subscribers } = useData();
@@ -111,7 +114,9 @@ export default function AnalyticsDashboard() {
     return (
       <div className="flex justify-center items-center h-[80vh]">
         <div className="w-16 h-16 relative">
-          <div className="w-16 h-16 rounded-full border-4 border-blue-500/20 border-t-blue-500 animate-spin" />
+          <div className="absolute inset-0 rounded-full border-4 border-primary-500/20" />
+          <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-primary-500 animate-spin" />
+          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-primary-500/20 to-secondary-500/20 blur-xl" />
         </div>
       </div>
     );
@@ -139,42 +144,43 @@ export default function AnalyticsDashboard() {
 
 
   return (
-    <div className="p-6 min-h-screen bg-gradient-to-b from-gray-900 via-gray-900 to-gray-900/50">
-      <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl md:text-4xl font-bold font-inter mb-8 bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
+    <div className="p-6 min-h-screen">
+      <Container size="xl">
+        <h1 className="text-3xl md:text-4xl font-bold font-display mb-8 gradient-text">
           Analytics Overview
         </h1>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           {metrics.map((metric, idx) => (
-            <div 
+            <Card 
               key={idx}
-              className="bg-gray-800/50 backdrop-blur-sm p-6 rounded-2xl
-                border border-gray-800 hover:border-blue-500/50
-                transition-all duration-300 group"
+              variant="hover"
+              padding="lg"
             >
               <div className="flex items-center justify-between mb-4">
-                <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center
+                <div className="relative w-12 h-12 rounded-xl flex items-center justify-center
                   group-hover:scale-110 transition-all duration-300">
-                  <metric.icon className="w-6 h-6 text-blue-500" />
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl blur-md opacity-50" />
+                  <div className="relative w-full h-full bg-gradient-to-br from-primary-500/20 to-primary-600/20 rounded-xl 
+                    flex items-center justify-center border border-primary-500/30">
+                    <metric.icon className="w-6 h-6 text-primary-400" />
+                  </div>
                 </div>
-                <span className={`text-sm px-3 py-1 rounded-full ${
-                  metric.change >= 0 
-                    ? 'text-green-400 bg-green-500/10' 
-                    : 'text-red-400 bg-red-500/10'
-                }`}>
+                <Badge
+                  variant={metric.change >= 0 ? 'success' : 'error'}
+                  size="sm"
+                >
                   {metric.change > 0 ? '+' : ''}{metric.change.toFixed(1)}%
-                </span>
+                </Badge>
               </div>
-              <p className="text-gray-400 text-sm font-inter">{metric.label}</p>
-              <p className="text-2xl font-bold mt-1 font-inter">{metric.value}</p>
-            </div>
+              <p className="text-neutral-400 text-sm font-inter">{metric.label}</p>
+              <p className="text-2xl font-bold mt-1 font-display text-white">{metric.value}</p>
+            </Card>
           ))}
         </div>
 
-        <div className="bg-gray-800/50 backdrop-blur-sm p-6 rounded-2xl border border-gray-800 
-          hover:border-blue-500/50 transition-all duration-300 mb-8">
-          <h2 className="text-xl font-bold font-inter mb-6">Subscriber Growth</h2>          <div className="h-64">
+        <Card variant="glass" padding="lg" className="mb-8">
+          <h2 className="text-xl font-bold font-display mb-6 text-white">Subscriber Growth</h2>          <div className="h-64">
             <ResponsiveLine
               data={[{
                 id: 'subscribers',
@@ -192,12 +198,12 @@ export default function AnalyticsDashboard() {
               pointSize={8}
               pointColor="#fff"
               pointBorderWidth={2}
-              pointBorderColor="#3B82F6"
-              colors={["#3B82F6"]}
+              pointBorderColor="#a855f7"
+              colors={["#a855f7"]}
               theme={{
                 grid: {
                   line: {
-                    stroke: "#374151",
+                    stroke: "#334155",
                     strokeWidth: 1,
                     strokeDasharray: "3 3",
                     opacity: 0.3
@@ -206,19 +212,19 @@ export default function AnalyticsDashboard() {
                 axis: {
                   ticks: {
                     text: {
-                      fill: "#9CA3AF",
+                      fill: "#94a3b8",
                       fontSize: 12
                     }
                   }
                 },
                 tooltip: {
                   container: {
-                    background: "#1F2937",
+                    background: "transparent",
                     color: "#F3F4F6",
                     fontSize: 12,
                     borderRadius: 8,
-                    boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
-                    padding: "8px 12px"
+                    boxShadow: "none",
+                    padding: 0
                   }
                 }
               }}
@@ -238,55 +244,54 @@ export default function AnalyticsDashboard() {
                 {
                   axis: 'y',
                   value: averageSubscribers,
-                  lineStyle: { stroke: '#9CA3AF', strokeDasharray: '3 3' },
+                  lineStyle: { stroke: '#64748b', strokeDasharray: '3 3' },
                   legend: 'Average',
                   legendPosition: 'right',
                   legendOrientation: 'vertical',
-                  textStyle: { fill: '#9CA3AF', fontSize: 12 }
+                  textStyle: { fill: '#64748b', fontSize: 12 }
                 }
               ]}
               useMesh={true}
               enableSlices="x"
               sliceTooltip={({ slice }) => (
-                <div className="bg-gray-800 p-4 rounded-lg border border-blue-500/30 shadow-lg shadow-blue-500/10">
-                  <p className="text-gray-300 font-medium mb-1">
+                <div className="glass-strong p-4 rounded-lg border border-white/20 shadow-glow">
+                  <p className="text-neutral-300 font-medium mb-1">
                     {slice.points[0].data.x as string}
                   </p>
                   <div className="flex items-center">
-                    <div className="w-3 h-3 rounded-full bg-blue-500 mr-2"></div>
-                    <p className="text-blue-400 font-bold">
+                    <div className="w-3 h-3 rounded-full bg-primary-500 mr-2"></div>
+                    <p className="text-primary-400 font-bold">
                       {slice.points[0].data.y ? (slice.points[0].data.y as number).toLocaleString() : 0} subscribers
                     </p>
                   </div>
                   {(slice.points[0].data.y as number) > averageSubscribers && (
-                    <p className="text-green-400 text-xs mt-2">Above average</p>
+                    <p className="text-success-400 text-xs mt-2">Above average</p>
                   )}
                 </div>
               )}
             />
           </div>
-        </div>
+        </Card>
 
-        <div className="bg-gray-800/50 backdrop-blur-sm p-6 rounded-2xl border border-gray-800 
-          hover:border-blue-500/50 transition-all duration-300">
-          <h2 className="text-xl font-bold font-inter mb-6">Recent Activity</h2>
+        <Card variant="glass" padding="lg">
+          <h2 className="text-xl font-bold font-display mb-6 text-white">Recent Activity</h2>
           <div className="space-y-4">
             {recentActivity.map((activity, idx) => (
               <div key={idx} 
-                className="flex justify-between items-center py-3 border-b border-gray-700/50 
-                  hover:border-blue-500/20 transition-colors">
+                className="flex justify-between items-center py-3 border-b border-white/10 
+                  hover:border-primary-500/20 transition-colors">
                 <div>
-                  <p className="font-medium font-inter">{activity.title}</p>
-                  <p className="text-sm text-gray-400">{activity.recipients} recipients</p>
+                  <p className="font-medium font-inter text-white">{activity.title}</p>
+                  <p className="text-sm text-neutral-400">{activity.recipients} recipients</p>
                 </div>
-                <span className="text-sm text-gray-400">
+                <span className="text-sm text-neutral-400">
                   {new Date(activity.time).toLocaleDateString()}
                 </span>
               </div>
             ))}
           </div>
-        </div>
-      </div>
+        </Card>
+      </Container>
     </div>
   );
 }
