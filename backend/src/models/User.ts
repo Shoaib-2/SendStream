@@ -6,7 +6,7 @@ import { config } from 'dotenv';
 
 config();
 
-interface IUser extends Document {
+export interface IUser extends Document {
   email: string;
   password: string;
   role: string;

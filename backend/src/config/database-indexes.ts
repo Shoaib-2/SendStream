@@ -33,6 +33,7 @@ export async function createDatabaseIndexes() {
     // User indexes
     await safeCreateIndex(User.collection, { email: 1 }, { unique: true });
     await safeCreateIndex(User.collection, { stripeCustomerId: 1 }, { sparse: true });
+    await safeCreateIndex(User.collection, { stripeSubscriptionId: 1 }, { sparse: true });
     await safeCreateIndex(User.collection, { passwordResetToken: 1 }, { sparse: true });
     await safeCreateIndex(User.collection, { subscriptionStatus: 1 });
     await safeCreateIndex(User.collection, { trialEndsAt: 1 }, { sparse: true });

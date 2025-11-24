@@ -1,28 +1,18 @@
-import express, { RequestHandler } from 'express';
+import express, { RequestHandler, Request, Response } from 'express';
 import { protect } from '../middleware/auth/auth.middleware';
-import Stripe from 'stripe';
-import User from '../models/User';
+import User, { IUser } from '../models/User';
+import stripeService from '../services/Integrations/stripe';
+import { logger } from '../utils/logger';
 import dotenv from 'dotenv';
 
-// Ensure environment variables are loaded
 dotenv.config();
 
 const router = express.Router();
 
-// Check if the API key exists before initializing Stripe
-const stripeApiKey = process.env.STRIPE_SECRET_KEY;
-if (!stripeApiKey) {
-  throw new Error('STRIPE_SECRET_KEY environment variable is required but not configured');
-}
-
-// Initialize Stripe
-const stripe = new Stripe(stripeApiKey, {
-  apiVersion: '2025-02-24.acacia',
-});
-
 // Define interfaces for request bodies
 interface TrialSessionRequest {
   email: string;
+  skipTrial?: boolean;
 }
 
 interface UpdateRenewalRequest {
@@ -30,18 +20,33 @@ interface UpdateRenewalRequest {
   cancelAtPeriodEnd: boolean;
 }
 
-// Public routes (no auth required)
-const createTrialSession: RequestHandler = async (req, res, _next): Promise<void> => {
+// Extend Express Request type to include user
+interface AuthRequest extends Request {
+  user?: {
+    id: string;
+    email: string;
+    role: string;
+  };
+}
+
+/**
+ * PUBLIC ROUTE: Create Stripe checkout session for trial
+ */
+const createTrialSession: RequestHandler = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { email } = req.body as TrialSessionRequest;
+    const { email, skipTrial } = req.body as TrialSessionRequest;
     
     if (!email) {
-      res.status(400).json({ error: 'Email is required' });
+      res.status(400).json({ 
+        status: 'error',
+        message: 'Email is required' 
+      });
       return;
-    }    // Check if price ID exists
+    }
+
     const stripePriceId = process.env.STRIPE_PRICE_ID;
     if (!stripePriceId) {
-      console.error('STRIPE_PRICE_ID environment variable is not configured');
+      logger.error('STRIPE_PRICE_ID environment variable is not configured');
       res.status(500).json({
         status: 'error',
         message: 'Stripe configuration error'
@@ -49,21 +54,15 @@ const createTrialSession: RequestHandler = async (req, res, _next): Promise<void
       return;
     }
 
-    // Create a checkout session for trial
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      mode: 'subscription',
-      customer_email: email,
-      success_url: `${process.env.CLIENT_URL}/auth/signup?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.CLIENT_URL}`,
-      subscription_data: {
-        trial_period_days: 14,
-      },
-      line_items: [{
-        price: stripePriceId,
-        quantity: 1,
-      }],
-    });
+    const successUrl = `${process.env.CLIENT_URL}/auth/signup?session_id={CHECKOUT_SESSION_ID}`;
+    const cancelUrl = `${process.env.CLIENT_URL}`;
+
+    const session = await stripeService.createCheckoutSession(
+      stripePriceId,
+      successUrl,
+      cancelUrl,
+      { email, skipTrial }
+    );
 
     res.status(200).json({
       status: 'success',
@@ -71,7 +70,7 @@ const createTrialSession: RequestHandler = async (req, res, _next): Promise<void
       url: session.url
     });
   } catch (error) {
-    console.error('Error creating trial session:', error);
+    logger.error('Error creating trial session:', error);
     res.status(500).json({
       status: 'error',
       message: 'Failed to create trial session'
@@ -79,10 +78,13 @@ const createTrialSession: RequestHandler = async (req, res, _next): Promise<void
   }
 };
 
-// Protected routes handlers
-const getSubscriptionStatus: RequestHandler = async (req, res, _next): Promise<void> => {
-  // Check if user exists in request
-  if (!req.user || !req.user.id) {
+/**
+ * PROTECTED ROUTE: Get subscription status for authenticated user
+ */
+const getSubscriptionStatus: RequestHandler = async (req: Request, res: Response): Promise<void> => {
+  const authReq = req as AuthRequest;
+  
+  if (!authReq.user?.id) {
     res.status(401).json({
       status: 'error',
       message: 'Not authenticated',
@@ -92,25 +94,29 @@ const getSubscriptionStatus: RequestHandler = async (req, res, _next): Promise<v
   }
   
   try {
-    const user = await User.findById(req.user.id);
+    const user = await User.findById(authReq.user.id).lean<IUser>();
     
     if (!user) {
-      res.status(404).json({ status: 'error', message: 'User not found' });
+      res.status(404).json({ 
+        status: 'error', 
+        message: 'User not found' 
+      });
       return;
     }
     
-    // @ts-ignore - Ignore TypeScript checking for properties
     if (!user.stripeSubscriptionId) {
       res.status(200).json({
         status: 'success',
-        data: { hasSubscription: false, subscription: null }
+        data: { 
+          hasSubscription: false, 
+          subscription: null 
+        }
       });
       return;
     }
     
     try {
-      // @ts-ignore - Ignore TypeScript checking for properties
-      const subscription = await stripe.subscriptions.retrieve(user.stripeSubscriptionId);
+      const subscription = await stripeService.retrieveSubscription(user.stripeSubscriptionId);
       
       res.status(200).json({
         status: 'success',
@@ -126,26 +132,24 @@ const getSubscriptionStatus: RequestHandler = async (req, res, _next): Promise<v
         }
       });
     } catch (stripeError) {
-      console.error('Error retrieving Stripe subscription:', stripeError);
+      logger.error('Error retrieving Stripe subscription:', stripeError);
       
+      // Return cached data from database if Stripe call fails
       res.status(200).json({
         status: 'success',
         data: {
           hasSubscription: true,
           subscription: {
-            // @ts-ignore - Ignore TypeScript checking for properties
             id: user.stripeSubscriptionId,
-            // @ts-ignore - Ignore TypeScript checking for properties
             status: user.subscriptionStatus,
-            // @ts-ignore - Ignore TypeScript checking for properties
             trialEnd: user.trialEndsAt
           },
-          error: 'Could not retrieve complete subscription details'
+          warning: 'Could not retrieve complete subscription details from Stripe'
         }
       });
     }
   } catch (error) {
-    console.error('Error getting subscription status:', error);
+    logger.error('Error getting subscription status:', error);
     res.status(500).json({
       status: 'error',
       message: 'Failed to get subscription status'
@@ -153,9 +157,13 @@ const getSubscriptionStatus: RequestHandler = async (req, res, _next): Promise<v
   }
 };
 
-const cancelSubscription: RequestHandler = async (req, res, _next): Promise<void> => {
-  // Check if user exists in request
-  if (!req.user || !req.user.id) {
+/**
+ * PROTECTED ROUTE: Cancel subscription at period end
+ */
+const cancelSubscription: RequestHandler = async (req: Request, res: Response): Promise<void> => {
+  const authReq = req as AuthRequest;
+  
+  if (!authReq.user?.id) {
     res.status(401).json({
       status: 'error',
       message: 'Not authenticated',
@@ -165,84 +173,59 @@ const cancelSubscription: RequestHandler = async (req, res, _next): Promise<void
   }
   
   try {
-    const user = await User.findById(req.user.id);
+    const user = await User.findById(authReq.user.id).lean<IUser>();
     
     if (!user) {
-      res.status(404).json({ status: 'error', message: 'User not found' });
+      res.status(404).json({ 
+        status: 'error', 
+        message: 'User not found' 
+      });
       return;
     }
     
-    // @ts-ignore - Ignore TypeScript checking for properties
     if (!user.stripeSubscriptionId) {
-      res.status(400).json({ status: 'error', message: 'No active subscription found' });
+      res.status(400).json({ 
+        status: 'error', 
+        message: 'No active subscription found' 
+      });
       return;
     }
     
     try {
-      // First check if subscription is already canceled
-      try {
-        // @ts-ignore - Ignore TypeScript checking for properties
-        const existingSubscription = await stripe.subscriptions.retrieve(user.stripeSubscriptionId);
-        
-        if (existingSubscription.status === 'canceled') {
-          // Update user status if needed
-          // @ts-ignore - Ignore TypeScript checking for properties
-          if (user.subscriptionStatus !== 'canceled') {
-            // @ts-ignore - Ignore TypeScript checking for properties
-            user.subscriptionStatus = 'canceled';
-            await user.save();
-          }
-          
-          res.status(200).json({
-            status: 'success',
-            data: {
-              message: 'Subscription already canceled',
-              willEndOn: new Date(existingSubscription.current_period_end * 1000)
-            }
-          });
-          return;
-        }
-      } catch (retrieveError) {
-        // Continue with cancel attempt if retrieve fails
-        console.error('Error retrieving subscription:', retrieveError);
-      }
+      // Check if subscription is already canceled
+      const existingSubscription = await stripeService.retrieveSubscription(user.stripeSubscriptionId);
       
-      // @ts-ignore - Ignore TypeScript checking for properties
-      const subscription = await stripe.subscriptions.update(
-        user.stripeSubscriptionId,
-        { cancel_at_period_end: true }
-      );
-      
-      // @ts-ignore - Ignore TypeScript checking for properties
-      user.subscriptionStatus = subscription.status;
-      await user.save();
-      
-      res.status(200).json({
-        status: 'success',
-        data: {
-          message: 'Subscription canceled successfully',
-          willEndOn: new Date(subscription.current_period_end * 1000)
-        }
-      });
-    } catch (stripeError) {
-      console.error('Error canceling Stripe subscription:', stripeError);
-      
-      // Handle the specific error for canceled subscriptions
-      // @ts-ignore
-      if (stripeError.type === 'StripeInvalidRequestError' && 
-          // @ts-ignore
-          stripeError.raw?.message?.includes('canceled subscription')) {
-        
-        // Update user's status
-        // @ts-ignore
-        user.subscriptionStatus = 'canceled';
-        await user.save();
-        
+      if (existingSubscription.status === 'canceled') {
         res.status(200).json({
           status: 'success',
           data: {
             message: 'Subscription already canceled',
-            // @ts-ignore
+            willEndOn: new Date(existingSubscription.current_period_end * 1000)
+          }
+        });
+        return;
+      }
+      
+      // Cancel the subscription
+      const subscription = await stripeService.cancelSubscription(user.stripeSubscriptionId);
+      
+      res.status(200).json({
+        status: 'success',
+        data: {
+          message: 'Subscription will be canceled at period end',
+          willEndOn: new Date(subscription.current_period_end * 1000)
+        }
+      });
+    } catch (stripeError: any) {
+      logger.error('Error canceling Stripe subscription:', stripeError);
+      
+      // Handle already canceled subscription
+      if (stripeError.type === 'StripeInvalidRequestError' && 
+          stripeError.raw?.message?.includes('canceled')) {
+        res.status(200).json({
+          status: 'success',
+          data: {
+            message: 'Subscription already canceled',
             willEndOn: user.trialEndsAt || new Date()
           }
         });
@@ -251,11 +234,11 @@ const cancelSubscription: RequestHandler = async (req, res, _next): Promise<void
       
       res.status(400).json({
         status: 'error',
-        message: 'Failed to cancel subscription with Stripe'
+        message: 'Failed to cancel subscription'
       });
     }
   } catch (error) {
-    console.error('Error canceling subscription:', error);
+    logger.error('Error canceling subscription:', error);
     res.status(500).json({
       status: 'error',
       message: 'Failed to cancel subscription'
@@ -263,9 +246,13 @@ const cancelSubscription: RequestHandler = async (req, res, _next): Promise<void
   }
 };
 
-const updateRenewal: RequestHandler = async (req, res, _next): Promise<void> => {
-  // Check if user exists in request
-  if (!req.user || !req.user.id) {
+/**
+ * PROTECTED ROUTE: Update subscription renewal settings
+ */
+const updateRenewal: RequestHandler = async (req: Request, res: Response): Promise<void> => {
+  const authReq = req as AuthRequest;
+  
+  if (!authReq.user?.id) {
     res.status(401).json({
       status: 'error',
       message: 'Not authenticated',
@@ -293,7 +280,7 @@ const updateRenewal: RequestHandler = async (req, res, _next): Promise<void> => 
   }
   
   try {
-    const user = await User.findById(req.user.id);
+    const user = await User.findById(authReq.user.id).lean<IUser>();
     
     if (!user) {
       res.status(404).json({ 
@@ -303,7 +290,6 @@ const updateRenewal: RequestHandler = async (req, res, _next): Promise<void> => 
       return;
     }
     
-    // @ts-ignore - Ignore TypeScript checking for properties
     if (user.stripeSubscriptionId !== subscriptionId) {
       res.status(403).json({
         status: 'error',
@@ -313,12 +299,10 @@ const updateRenewal: RequestHandler = async (req, res, _next): Promise<void> => 
     }
     
     try {
-      // First check subscription status to avoid errors with canceled subscriptions
-      const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+      // Check subscription status first
+      const subscription = await stripeService.retrieveSubscription(subscriptionId);
       
-      // If subscription is already canceled, we can't modify cancel_at_period_end
       if (subscription.status === 'canceled') {
-        // Just return success with the current details
         res.status(200).json({
           status: 'success',
           data: {
@@ -326,7 +310,7 @@ const updateRenewal: RequestHandler = async (req, res, _next): Promise<void> => 
               id: subscription.id,
               status: subscription.status,
               currentPeriodEnd: new Date(subscription.current_period_end * 1000),
-              cancelAtPeriodEnd: true // Canceled subscriptions are effectively cancelAtPeriodEnd
+              cancelAtPeriodEnd: true
             }
           },
           message: 'No changes needed - subscription is already canceled'
@@ -334,10 +318,10 @@ const updateRenewal: RequestHandler = async (req, res, _next): Promise<void> => 
         return;
       }
       
-      // Only update if the subscription is active or trialing
-      const updatedSubscription = await stripe.subscriptions.update(
+      // Update renewal settings
+      const updatedSubscription = await stripeService.updateSubscriptionRenewal(
         subscriptionId,
-        { cancel_at_period_end: cancelAtPeriodEnd }
+        cancelAtPeriodEnd
       );
       
       res.status(200).json({
@@ -355,15 +339,15 @@ const updateRenewal: RequestHandler = async (req, res, _next): Promise<void> => 
           'Auto-renewal has been enabled'
       });
     } catch (stripeError) {
-      console.error('Error updating subscription in Stripe:', stripeError);
+      logger.error('Error updating subscription in Stripe:', stripeError);
       
       res.status(400).json({
         status: 'error',
-        message: 'Failed to update subscription settings in Stripe'
+        message: 'Failed to update subscription settings'
       });
     }
   } catch (error) {
-    console.error('Error updating subscription renewal:', error);
+    logger.error('Error updating subscription renewal:', error);
     
     res.status(500).json({
       status: 'error',
@@ -373,12 +357,12 @@ const updateRenewal: RequestHandler = async (req, res, _next): Promise<void> => 
 };
 
 // Route definitions
-router.post('/create-trial-session', createTrialSession as RequestHandler);
+router.post('/create-trial-session', createTrialSession);
 
-// Protected routes - explicit type casting for middleware
+// Protected routes
 router.use(protect as RequestHandler);
-router.get('/status', getSubscriptionStatus as RequestHandler);
-router.post('/cancel', cancelSubscription as RequestHandler);
-router.post('/update-renewal', updateRenewal as RequestHandler);
+router.get('/status', getSubscriptionStatus);
+router.post('/cancel', cancelSubscription);
+router.post('/update-renewal', updateRenewal);
 
 export default router;
