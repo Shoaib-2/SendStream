@@ -6454,3 +6454,153 @@
 2025-11-24T14:52:15.235Z [[32minfo[39m]: Successfully validated sync subscribers response
 2025-11-24T14:52:15.236Z [[32minfo[39m]: Synced 4 subscribers from Mailchimp
 2025-11-24T14:52:15.236Z [[32minfo[39m]: Status breakdown - Active: 1, Unsubscribed: 3
+2025-11-24T17:17:26.456Z [[32minfo[39m]: Gmail transporter created
+2025-11-24T17:17:29.210Z [[32minfo[39m]: MongoDB Connected: ac-mjvxksg-shard-00-02.h06439j.mongodb.net
+2025-11-24T17:17:29.211Z [[32minfo[39m]: Creating database indexes...
+2025-11-24T17:17:30.754Z [[32minfo[39m]: ✓ User indexes created
+2025-11-24T17:17:32.042Z [[32minfo[39m]: ✓ Newsletter indexes created
+2025-11-24T17:17:33.405Z [[32minfo[39m]: ✓ Subscriber indexes created
+2025-11-24T17:17:33.859Z [[32minfo[39m]: ✓ Settings indexes created
+2025-11-24T17:17:35.415Z [[32minfo[39m]: ✓ Analytics indexes created
+2025-11-24T17:17:35.415Z [[32minfo[39m]: All database indexes created successfully
+2025-11-24T17:20:59.761Z [[32minfo[39m]: Gmail transporter created
+2025-11-24T17:21:02.402Z [[32minfo[39m]: MongoDB Connected: ac-mjvxksg-shard-00-01.h06439j.mongodb.net
+2025-11-24T17:21:02.403Z [[32minfo[39m]: Creating database indexes...
+2025-11-24T17:21:03.990Z [[32minfo[39m]: ✓ User indexes created
+2025-11-24T17:21:05.166Z [[32minfo[39m]: ✓ Newsletter indexes created
+2025-11-24T17:21:06.452Z [[32minfo[39m]: ✓ Subscriber indexes created
+2025-11-24T17:21:06.860Z [[32minfo[39m]: ✓ Settings indexes created
+2025-11-24T17:21:11.849Z [[32minfo[39m]: Gmail transporter created
+2025-11-24T17:21:14.704Z [[32minfo[39m]: MongoDB Connected: ac-mjvxksg-shard-00-01.h06439j.mongodb.net
+2025-11-24T17:21:14.705Z [[32minfo[39m]: Creating database indexes...
+2025-11-24T17:21:16.451Z [[32minfo[39m]: ✓ User indexes created
+2025-11-24T17:21:17.799Z [[32minfo[39m]: ✓ Newsletter indexes created
+2025-11-24T17:21:19.242Z [[32minfo[39m]: ✓ Subscriber indexes created
+2025-11-24T17:21:19.786Z [[32minfo[39m]: ✓ Settings indexes created
+2025-11-24T17:21:40.333Z [[32minfo[39m]: Gmail transporter created
+2025-11-24T17:21:44.616Z [[32minfo[39m]: Gmail transporter created
+2025-11-24T17:21:49.814Z [[32minfo[39m]: Gmail transporter created
+2025-11-24T17:21:55.805Z [[32minfo[39m]: Gmail transporter created
+2025-11-24T17:21:58.791Z [[32minfo[39m]: MongoDB Connected: ac-mjvxksg-shard-00-00.h06439j.mongodb.net
+2025-11-24T17:21:58.792Z [[32minfo[39m]: Creating database indexes...
+2025-11-24T17:22:00.668Z [[32minfo[39m]: ✓ User indexes created
+2025-11-24T17:22:02.232Z [[32minfo[39m]: ✓ Newsletter indexes created
+2025-11-24T17:22:03.828Z [[32minfo[39m]: ✓ Subscriber indexes created
+2025-11-24T17:22:04.384Z [[32minfo[39m]: ✓ Settings indexes created
+2025-11-24T17:22:06.324Z [[32minfo[39m]: ✓ Analytics indexes created
+2025-11-24T17:22:06.324Z [[32minfo[39m]: All database indexes created successfully
+2025-11-24T17:22:12.220Z [[32minfo[39m]: Successfully validated initialize list response
+2025-11-24T17:22:12.221Z [[32minfo[39m]: Starting subscriber sync with Mailchimp
+2025-11-24T17:22:12.703Z [[32minfo[39m]: Successfully validated sync subscribers response
+2025-11-24T17:22:12.704Z [[32minfo[39m]: Synced 4 subscribers from Mailchimp
+2025-11-24T17:22:12.704Z [[32minfo[39m]: Status breakdown - Active: 1, Unsubscribed: 3
+2025-11-24T17:22:39.619Z [[32minfo[39m]: Gmail transporter created
+2025-11-24T17:22:47.808Z [[32minfo[39m]: Gmail transporter created
+2025-11-24T17:22:50.769Z [[32minfo[39m]: MongoDB Connected: ac-mjvxksg-shard-00-00.h06439j.mongodb.net
+2025-11-24T17:22:50.770Z [[32minfo[39m]: Creating database indexes...
+2025-11-24T17:23:09.758Z [[32minfo[39m]: Gmail transporter created
+2025-11-24T17:23:12.517Z [[32minfo[39m]: MongoDB Connected: ac-mjvxksg-shard-00-00.h06439j.mongodb.net
+2025-11-24T17:23:12.518Z [[32minfo[39m]: Creating database indexes...
+2025-11-24T17:23:14.100Z [[32minfo[39m]: ✓ User indexes created
+2025-11-24T17:23:15.445Z [[32minfo[39m]: ✓ Newsletter indexes created
+2025-11-24T17:23:16.863Z [[32minfo[39m]: ✓ Subscriber indexes created
+2025-11-24T17:23:17.330Z [[32minfo[39m]: ✓ Settings indexes created
+2025-11-24T17:23:18.965Z [[32minfo[39m]: ✓ Analytics indexes created
+2025-11-24T17:23:18.966Z [[32minfo[39m]: All database indexes created successfully
+2025-11-24T17:23:52.410Z [[32minfo[39m]: Gmail transporter created
+2025-11-24T17:23:55.249Z [[32minfo[39m]: MongoDB Connected: ac-mjvxksg-shard-00-01.h06439j.mongodb.net
+2025-11-24T17:23:55.250Z [[32minfo[39m]: Creating database indexes...
+2025-11-24T17:23:57.003Z [[32minfo[39m]: ✓ User indexes created
+2025-11-24T17:23:58.477Z [[32minfo[39m]: ✓ Newsletter indexes created
+2025-11-24T17:23:59.935Z [[32minfo[39m]: ✓ Subscriber indexes created
+2025-11-24T17:24:00.481Z [[32minfo[39m]: ✓ Settings indexes created
+2025-11-24T17:24:02.198Z [[32minfo[39m]: ✓ Analytics indexes created
+2025-11-24T17:24:02.199Z [[32minfo[39m]: All database indexes created successfully
+2025-11-24T17:24:07.584Z [[32minfo[39m]: Gmail transporter created
+2025-11-24T17:24:10.717Z [[32minfo[39m]: MongoDB Connected: ac-mjvxksg-shard-00-02.h06439j.mongodb.net
+2025-11-24T17:24:10.717Z [[32minfo[39m]: Creating database indexes...
+2025-11-24T17:24:15.387Z [[32minfo[39m]: Gmail transporter created
+2025-11-24T17:24:18.381Z [[32minfo[39m]: MongoDB Connected: ac-mjvxksg-shard-00-01.h06439j.mongodb.net
+2025-11-24T17:24:18.381Z [[32minfo[39m]: Creating database indexes...
+2025-11-24T17:24:20.480Z [[32minfo[39m]: ✓ User indexes created
+2025-11-24T17:24:22.087Z [[32minfo[39m]: ✓ Newsletter indexes created
+2025-11-24T17:24:23.927Z [[32minfo[39m]: ✓ Subscriber indexes created
+2025-11-24T17:24:24.532Z [[32minfo[39m]: ✓ Settings indexes created
+2025-11-24T17:24:26.623Z [[32minfo[39m]: ✓ Analytics indexes created
+2025-11-24T17:24:26.623Z [[32minfo[39m]: All database indexes created successfully
+2025-11-24T17:24:33.991Z [[32minfo[39m]: Gmail transporter created
+2025-11-24T17:24:37.166Z [[32minfo[39m]: MongoDB Connected: ac-mjvxksg-shard-00-00.h06439j.mongodb.net
+2025-11-24T17:24:37.166Z [[32minfo[39m]: Creating database indexes...
+2025-11-24T17:24:39.178Z [[32minfo[39m]: ✓ User indexes created
+2025-11-24T17:25:02.992Z [[32minfo[39m]: Gmail transporter created
+2025-11-24T17:25:06.324Z [[32minfo[39m]: MongoDB Connected: ac-mjvxksg-shard-00-00.h06439j.mongodb.net
+2025-11-24T17:25:06.325Z [[32minfo[39m]: Creating database indexes...
+2025-11-24T17:25:08.206Z [[32minfo[39m]: ✓ User indexes created
+2025-11-24T17:25:09.619Z [[32minfo[39m]: ✓ Newsletter indexes created
+2025-11-24T17:25:10.944Z [[32minfo[39m]: ✓ Subscriber indexes created
+2025-11-24T17:25:11.417Z [[32minfo[39m]: ✓ Settings indexes created
+2025-11-24T17:25:13.066Z [[32minfo[39m]: ✓ Analytics indexes created
+2025-11-24T17:25:13.067Z [[32minfo[39m]: All database indexes created successfully
+2025-11-24T17:25:22.241Z [[32minfo[39m]: Gmail transporter created
+2025-11-24T17:25:27.646Z [[32minfo[39m]: Gmail transporter created
+2025-11-24T17:25:31.803Z [[32minfo[39m]: Gmail transporter created
+2025-11-24T17:25:34.938Z [[32minfo[39m]: MongoDB Connected: ac-mjvxksg-shard-00-00.h06439j.mongodb.net
+2025-11-24T17:25:34.939Z [[32minfo[39m]: Creating database indexes...
+2025-11-24T17:25:38.827Z [[32minfo[39m]: Gmail transporter created
+2025-11-24T17:25:41.927Z [[32minfo[39m]: MongoDB Connected: ac-mjvxksg-shard-00-00.h06439j.mongodb.net
+2025-11-24T17:25:41.928Z [[32minfo[39m]: Creating database indexes...
+2025-11-24T17:25:43.889Z [[32minfo[39m]: ✓ User indexes created
+2025-11-24T17:25:45.455Z [[32minfo[39m]: ✓ Newsletter indexes created
+2025-11-24T17:25:49.870Z [[32minfo[39m]: Gmail transporter created
+2025-11-24T17:25:52.970Z [[32minfo[39m]: MongoDB Connected: ac-mjvxksg-shard-00-02.h06439j.mongodb.net
+2025-11-24T17:25:52.971Z [[32minfo[39m]: Creating database indexes...
+2025-11-24T17:25:54.859Z [[32minfo[39m]: ✓ User indexes created
+2025-11-24T17:25:56.528Z [[32minfo[39m]: ✓ Newsletter indexes created
+2025-11-24T17:25:58.233Z [[32minfo[39m]: ✓ Subscriber indexes created
+2025-11-24T17:25:58.787Z [[32minfo[39m]: ✓ Settings indexes created
+2025-11-24T17:26:00.783Z [[32minfo[39m]: ✓ Analytics indexes created
+2025-11-24T17:26:00.784Z [[32minfo[39m]: All database indexes created successfully
+2025-11-24T17:26:55.357Z [[32minfo[39m]: Gmail transporter created
+2025-11-24T17:26:58.750Z [[32minfo[39m]: MongoDB Connected: ac-mjvxksg-shard-00-02.h06439j.mongodb.net
+2025-11-24T17:26:58.751Z [[32minfo[39m]: Creating database indexes...
+2025-11-24T17:27:00.944Z [[32minfo[39m]: ✓ User indexes created
+2025-11-24T17:27:05.583Z [[32minfo[39m]: Gmail transporter created
+2025-11-24T17:27:08.850Z [[32minfo[39m]: MongoDB Connected: ac-mjvxksg-shard-00-01.h06439j.mongodb.net
+2025-11-24T17:27:08.851Z [[32minfo[39m]: Creating database indexes...
+2025-11-24T17:27:10.916Z [[32minfo[39m]: ✓ User indexes created
+2025-11-24T17:27:12.526Z [[32minfo[39m]: ✓ Newsletter indexes created
+2025-11-24T17:27:14.266Z [[32minfo[39m]: ✓ Subscriber indexes created
+2025-11-24T17:27:14.863Z [[32minfo[39m]: ✓ Settings indexes created
+2025-11-24T17:27:16.956Z [[32minfo[39m]: ✓ Analytics indexes created
+2025-11-24T17:27:16.957Z [[32minfo[39m]: All database indexes created successfully
+2025-11-24T17:31:11.299Z [[32minfo[39m]: Gmail transporter created
+2025-11-24T17:31:16.683Z [[32minfo[39m]: Gmail transporter created
+2025-11-24T17:31:33.694Z [[32minfo[39m]: Gmail transporter created
+2025-11-24T17:31:36.868Z [[32minfo[39m]: MongoDB Connected: ac-mjvxksg-shard-00-00.h06439j.mongodb.net
+2025-11-24T17:31:36.869Z [[32minfo[39m]: Creating database indexes...
+2025-11-24T17:31:38.735Z [[32minfo[39m]: ✓ User indexes created
+2025-11-24T17:31:44.322Z [[32minfo[39m]: Gmail transporter created
+2025-11-24T17:31:50.027Z [[32minfo[39m]: Gmail transporter created
+2025-11-24T17:31:52.814Z [[32minfo[39m]: MongoDB Connected: ac-mjvxksg-shard-00-02.h06439j.mongodb.net
+2025-11-24T17:31:52.815Z [[32minfo[39m]: Creating database indexes...
+2025-11-24T17:31:54.631Z [[32minfo[39m]: ✓ User indexes created
+2025-11-24T17:31:55.902Z [[32minfo[39m]: ✓ Newsletter indexes created
+2025-11-24T17:31:57.115Z [[32minfo[39m]: ✓ Subscriber indexes created
+2025-11-24T17:31:57.513Z [[32minfo[39m]: ✓ Settings indexes created
+2025-11-24T17:31:58.920Z [[32minfo[39m]: ✓ Analytics indexes created
+2025-11-24T17:31:58.922Z [[32minfo[39m]: All database indexes created successfully
+2025-11-24T17:32:55.237Z [[31merror[39m]: Decryption failed: Unsupported state or unable to authenticate data
+2025-11-24T17:32:56.386Z [[32minfo[39m]: Successfully validated initialize list response
+2025-11-24T17:32:56.387Z [[32minfo[39m]: Starting subscriber sync with Mailchimp
+2025-11-24T17:32:56.850Z [[32minfo[39m]: Successfully validated sync subscribers response
+2025-11-24T17:32:56.853Z [[32minfo[39m]: Synced 4 subscribers from Mailchimp
+2025-11-24T17:32:56.854Z [[32minfo[39m]: Status breakdown - Active: 1, Unsubscribed: 3
+2025-11-24T17:46:29.440Z [[32minfo[39m]: Gmail transporter created
+2025-11-24T17:46:32.156Z [[32minfo[39m]: MongoDB Connected: ac-mjvxksg-shard-00-02.h06439j.mongodb.net
+2025-11-24T17:46:32.157Z [[32minfo[39m]: Creating database indexes...
+2025-11-24T17:46:33.792Z [[32minfo[39m]: ✓ User indexes created
+2025-11-24T17:46:35.150Z [[32minfo[39m]: ✓ Newsletter indexes created
+2025-11-24T17:46:36.514Z [[32minfo[39m]: ✓ Subscriber indexes created
+2025-11-24T17:46:36.993Z [[32minfo[39m]: ✓ Settings indexes created
+2025-11-24T17:46:38.693Z [[32minfo[39m]: ✓ Analytics indexes created
+2025-11-24T17:46:38.693Z [[32minfo[39m]: All database indexes created successfully

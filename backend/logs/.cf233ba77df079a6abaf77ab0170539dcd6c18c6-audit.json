@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 14
+    },
+    "auditLog": "C:\\Users\\shoai\\newsletter-automation\\AutoSend-Newsletter\\backend\\logs\\.cf233ba77df079a6abaf77ab0170539dcd6c18c6-audit.json",
+    "files": [
+        {
+            "date": 1764006463761,
+            "name": "C:\\Users\\shoai\\newsletter-automation\\AutoSend-Newsletter\\backend\\logs\\combined-2025-11-24.log",
+            "hash": "ed2621bff64d6c0d19df56cdc1e7f62a292f69eefb023e8270ca0694f55c6072"
+        }
+    ],
+    "hashType": "sha256"
+}

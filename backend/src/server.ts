@@ -1,12 +1,15 @@
 // server.ts
 import express, { RequestHandler } from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
 import dotenv from 'dotenv';
 import { connectDB } from './config/database';
 import authRoutes from './routes/auth.routes';
 import cookieParser from 'cookie-parser'; // Add cookie-parser
 import { Request, Response, NextFunction } from "express";
 import { errorHandler } from './middleware/error.middleware';
+import { corsConfig } from './config/cors.config';
+import { helmetConfig } from './config/helmet.config';
 import newsletterRoutes from './routes/newsletter.routes';
 import subscriberRoutes from './routes/subscribers.route';
 import { WebSocketServer } from 'ws';
@@ -25,29 +28,10 @@ dotenv.config();
 
 const app = express();
 
-// Configure CORS with specific origins
-const corsConfig = {
-  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-    const allowedOrigins = [
-      'http://localhost:3000',
-      'http://localhost:3001',
-      'https://client-3ye4.onrender.com',
-      'https://backend-9h3q.onrender.com'
-    ];
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'X-XSRF-TOKEN'],
-  exposedHeaders: ['Set-Cookie'],
-  credentials: true,
-  maxAge: 86400 // 24 hours
-};
+// Security middleware - must be early in the middleware chain
+app.use(helmet(helmetConfig));
 
+// CORS configuration
 app.use(cors(corsConfig));
 
 // Add body parsing middleware
@@ -114,7 +98,7 @@ wss.on('headers', (headers) => {
     headers.push('Access-Control-Allow-Credentials: true');
     headers.push('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, PATCH, OPTIONS');
     headers.push('Access-Control-Allow-Headers: Content-Type, Authorization, Cookie, X-XSRF-TOKEN');
-    headers.push('Access-Control-Expose-Headers: Set-Cookie');
+    headers.push('Access-Control-Expose-Headers: Set-Cookie, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset');
   }
 });
 

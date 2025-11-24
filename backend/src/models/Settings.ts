@@ -1,4 +1,5 @@
 import mongoose, { Document, Schema } from 'mongoose';
+import { encrypt, decrypt } from '../utils/encryption';
 
 export interface ISettings extends Document {
   userId: mongoose.Types.ObjectId;
@@ -16,6 +17,7 @@ export interface ISettings extends Document {
   };
   createdAt: Date;
   updatedAt: Date;
+  getDecryptedMailchimpApiKey(): string | undefined;
 }
 
 const settingsSchema = new Schema({
@@ -40,5 +42,49 @@ const settingsSchema = new Schema({
 }, {
   timestamps: true
 });
+
+// Encrypt Mailchimp API key before saving
+settingsSchema.pre('save', function(next) {
+  if (this.isModified('mailchimp.apiKey') && this.mailchimp?.apiKey) {
+    try {
+      // Only encrypt if it's not already encrypted (check if it's a valid base64 string with our format)
+      // This prevents double encryption
+      const apiKey = this.mailchimp.apiKey;
+      if (!isEncrypted(apiKey)) {
+        this.mailchimp.apiKey = encrypt(apiKey);
+      }
+    } catch (error) {
+      return next(error as Error);
+    }
+  }
+  next();
+});
+
+// Helper function to check if a value is already encrypted
+function isEncrypted(value: string): boolean {
+  // Our encrypted values are base64 and have minimum length due to IV + tag + data
+  // If it's not base64 or too short, it's not encrypted
+  try {
+    const buffer = Buffer.from(value, 'base64');
+    // Encrypted values should be at least IV_LENGTH + TAG_LENGTH + some data
+    return buffer.length > 32 && value === buffer.toString('base64');
+  } catch {
+    return false;
+  }
+}
+
+// Add method to get decrypted API key
+settingsSchema.methods.getDecryptedMailchimpApiKey = function(): string | undefined {
+  if (!this.mailchimp?.apiKey) {
+    return undefined;
+  }
+  
+  try {
+    return decrypt(this.mailchimp.apiKey);
+  } catch (error) {
+    console.error('Failed to decrypt Mailchimp API key:', error);
+    return undefined;
+  }
+};
 
 export default mongoose.model<ISettings>('Settings', settingsSchema);

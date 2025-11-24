@@ -3,6 +3,16 @@ import { ValidationError, NotFoundError } from '../utils/customErrors';
 import { logger } from '../utils/logger';
 import { MailchimpService } from './Integrations/mailchimp';
 
+/**
+ * Helper to get decrypted Mailchimp API key from settings
+ */
+function getDecryptedMailchimpKey(settings: any): string {
+  if (!settings.mailchimp?.apiKey) {
+    throw new Error('Mailchimp API key not found');
+  }
+  return settings.getDecryptedMailchimpApiKey() || settings.mailchimp.apiKey;
+}
+
 interface EmailSettings {
   fromName: string;
   replyTo: string;
@@ -174,8 +184,9 @@ export class SettingsService {
     }
     
     if (enabled) {
+      const decryptedApiKey = getDecryptedMailchimpKey(settings);
       const mailchimpService = new MailchimpService(
-        settings.mailchimp.apiKey,
+        decryptedApiKey,
         settings.mailchimp.serverPrefix
       );
       
@@ -214,8 +225,9 @@ export class SettingsService {
       throw new ValidationError('Mailchimp is not enabled or configured');
     }
 
+    const decryptedApiKey = getDecryptedMailchimpKey(settings);
     const mailchimpService = new MailchimpService(
-      settings.mailchimp.apiKey,
+      decryptedApiKey,
       settings.mailchimp.serverPrefix
     );
     
@@ -235,8 +247,9 @@ export class SettingsService {
       throw new ValidationError('Mailchimp is not enabled or configured');
     }
 
+    const decryptedApiKey = getDecryptedMailchimpKey(settings);
     const mailchimpService = new MailchimpService(
-      settings.mailchimp.apiKey,
+      decryptedApiKey,
       settings.mailchimp.serverPrefix
     );
     
@@ -256,8 +269,9 @@ export class SettingsService {
       throw new ValidationError('Mailchimp is not enabled or configured');
     }
 
+    const decryptedApiKey = getDecryptedMailchimpKey(settings);
     const mailchimpService = new MailchimpService(
-      settings.mailchimp.apiKey,
+      decryptedApiKey,
       settings.mailchimp.serverPrefix
     );
     
@@ -277,8 +291,9 @@ export class SettingsService {
       throw new ValidationError('Mailchimp is not enabled or configured');
     }
 
+    const decryptedApiKey = getDecryptedMailchimpKey(settings);
     const mailchimpService = new MailchimpService(
-      settings.mailchimp.apiKey,
+      decryptedApiKey,
       settings.mailchimp.serverPrefix
     );
     
@@ -298,8 +313,9 @@ export class SettingsService {
       throw new ValidationError('Mailchimp is not enabled or configured');
     }
 
+    const decryptedApiKey = getDecryptedMailchimpKey(settings);
     const mailchimpService = new MailchimpService(
-      settings.mailchimp.apiKey,
+      decryptedApiKey,
       settings.mailchimp.serverPrefix
     );
     

@@ -143,6 +143,7 @@ MONGODB_URI=your_mongodb_connection_string
 # JWT
 JWT_SECRET=your_jwt_secret_key
 JWT_EXPIRES_IN=30d
+ENCRYPTION_KEY=your_base64_encryption_key  # Generate with: node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 
 # Email (Gmail SMTP)
 EMAIL_USER=your_gmail_address
@@ -287,14 +288,32 @@ Available test suites:
 ## 🔒 Security Features
 
 - **JWT Authentication:** Secure token-based authentication with HTTP-only cookies
-- **Password Hashing:** bcrypt with salt rounds for password security
+- **Password Security:** 
+  - bcrypt hashing with salt rounds
+  - Strong password requirements (min 12 chars, uppercase, lowercase, number, special character)
+  - Password reset with time-limited tokens (10 minutes)
+- **Data Encryption:** AES-256-GCM encryption for sensitive data at rest (Mailchimp API keys)
+- **Security Headers:** Helmet.js implementation with:
+  - Content Security Policy (CSP)
+  - HTTP Strict Transport Security (HSTS)
+  - X-Frame-Options (clickjacking protection)
+  - X-Content-Type-Options (MIME sniffing protection)
+  - X-XSS-Protection
 - **CORS Configuration:** Whitelist-based CORS with credentials support
-- **Rate Limiting:** Custom rate limiters for API and third-party services
+- **Rate Limiting:** 
+  - Custom rate limiters for all API endpoints
+  - Auth routes: 5 attempts per 15 minutes with 30-minute block
+  - Email routes: 10 requests per minute
+  - Third-party service rate limiting compliance
 - **Input Validation:** Schema validation for all user inputs
 - **SQL Injection Prevention:** MongoDB parameterized queries
 - **XSS Protection:** React's built-in XSS protection
-- **Environment Variables:** Sensitive data stored in environment variables
+- **Environment Variables:** Sensitive data stored securely
 - **Subscription Middleware:** Protected routes with subscription verification
+- **Database Security:**
+  - Connection pooling with limits
+  - Indexed queries for performance
+  - Query monitoring and optimization
 
 ## 📈 Analytics & Tracking
 
@@ -514,7 +533,26 @@ For support, open an issue in the GitHub repository.
 
 ## 🔄 Version History
 
-- **1.0.0** (Current)
+- **1.1.0** (Current - December 2024)
+  - **Security Enhancements:**
+    - Added Helmet.js security headers (CSP, HSTS, XSS protection)
+    - Implemented AES-256-GCM encryption for API keys at rest
+    - Strengthened password requirements (12+ chars with complexity rules)
+    - Added comprehensive CORS configuration
+    - Fixed all npm audit vulnerabilities (7 backend, 6 frontend)
+  - **Performance Improvements:**
+    - Database connection pooling (10 max, 2 min)
+    - Comprehensive database indexing for all collections
+    - In-memory caching with TTL (5-30 min depending on data type)
+    - Query optimization with .lean() for read-only operations
+    - Dynamic imports for heavy frontend components
+  - **Architecture Improvements:**
+    - Repository pattern for data access layer
+    - Service layer separation of concerns
+    - Rate limiting middleware for all API routes
+    - Enhanced error handling and logging
+
+- **1.0.0**
   - Initial release with full feature set
   - Newsletter creation and management
   - Subscriber management with CSV import/export

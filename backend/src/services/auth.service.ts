@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import { userRepository } from '../repositories/UserRepository';
 import { AuthenticationError, ValidationError, ConflictError } from '../utils/customErrors';
 import { logger } from '../utils/logger';
+import { validatePasswordStrength } from '../utils/validation';
 import Stripe from 'stripe';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -61,6 +62,14 @@ export class AuthService {
    */
   async register(data: RegisterData): Promise<{ user: any; token: string }> {
     const { email, password, stripeSessionId } = data;
+
+    // Validate password strength
+    const passwordValidation = validatePasswordStrength(password);
+    if (!passwordValidation.isValid) {
+      throw new ValidationError(
+        `Password does not meet security requirements:\n${passwordValidation.errors.join('\n')}`
+      );
+    }
 
     // Check if user already exists
     const existingUser = await userRepository.findByEmail(email);
@@ -208,9 +217,12 @@ export class AuthService {
    * Reset password using token
    */
   async resetPassword(token: string, newPassword: string): Promise<{ user: any; token: string }> {
-    // Validate password
-    if (!newPassword || newPassword.length < 8) {
-      throw new ValidationError('Password must be at least 8 characters long');
+    // Validate password strength
+    const passwordValidation = validatePasswordStrength(newPassword);
+    if (!passwordValidation.isValid) {
+      throw new ValidationError(
+        `Password does not meet security requirements:\n${passwordValidation.errors.join('\n')}`
+      );
     }
 
     // Find user with valid token

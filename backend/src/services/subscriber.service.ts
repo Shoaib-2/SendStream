@@ -6,6 +6,16 @@ import { MailchimpService } from './Integrations/mailchimp';
 import Papa from 'papaparse';
 import mongoose from 'mongoose';
 
+/**
+ * Helper to get decrypted Mailchimp API key from settings
+ */
+function getDecryptedMailchimpKey(settings: any): string {
+  if (!settings.mailchimp?.apiKey) {
+    throw new Error('Mailchimp API key not found');
+  }
+  return settings.getDecryptedMailchimpApiKey() || settings.mailchimp.apiKey;
+}
+
 interface MailchimpSubscriber {
   email: string;
   name: string;
@@ -24,8 +34,9 @@ export class SubscriberService {
       return [];
     }
 
+    const decryptedApiKey = getDecryptedMailchimpKey(settings);
     const mailchimpService = new MailchimpService(
-      settings.mailchimp.apiKey,
+      decryptedApiKey,
       settings.mailchimp.serverPrefix.trim()
     );
     
@@ -170,8 +181,9 @@ export class SubscriberService {
       const settings = await Settings.findOne({ userId });
       
       if (settings?.mailchimp?.enabled) {
+        const decryptedApiKey = getDecryptedMailchimpKey(settings);
         const mailchimpService = new MailchimpService(
-          settings.mailchimp.apiKey,
+          decryptedApiKey,
           settings.mailchimp.serverPrefix.trim()
         );
         
@@ -219,8 +231,9 @@ export class SubscriberService {
       const settings = await Settings.findOne({ userId });
       
       if (settings?.mailchimp?.enabled) {
+        const decryptedApiKey = getDecryptedMailchimpKey(settings);
         const mailchimpService = new MailchimpService(
-          settings.mailchimp.apiKey,
+          decryptedApiKey,
           settings.mailchimp.serverPrefix.trim()
         );
         
@@ -318,8 +331,9 @@ export class SubscriberService {
         const settings = await Settings.findOne({ userId: subscriber.createdBy });
         
         if (settings?.mailchimp?.enabled) {
+          const decryptedApiKey = getDecryptedMailchimpKey(settings);
           const mailchimpService = new MailchimpService(
-            settings.mailchimp.apiKey,
+            decryptedApiKey,
             settings.mailchimp.serverPrefix.trim()
           );
           
