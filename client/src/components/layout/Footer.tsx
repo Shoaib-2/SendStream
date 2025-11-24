@@ -1,93 +1,176 @@
-// src/components/layout/Footer.tsx
+'use client';
+
 import React from 'react';
+import Container from '../UI/Container';
+import { Send, Github, Twitter, Linkedin, Mail, Heart } from 'lucide-react';
 
-/**
- * Interface for footer link sections
- */
-// interface FooterSection {
-//   title: string;
-//   links: {
-//     name: string;
-//     href: string;
-//   }[];
-// }
-
-/**
- * Footer navigation data
- * Organized by sections for easy maintenance and scalability
- */
-// const footerSections: FooterSection[] = [
-//   {
-//     title: "Company",
-//     links: [
-//       { name: "About", href: "/about" },
-//       { name: "Contact", href: "/contact" }
-//     ]
-//   },
-//   {
-//     title: "Legal",
-//     links: [
-//       { name: "Terms", href: "/terms" },
-//       { name: "Privacy", href: "/privacy" }
-//     ]
-//   },
-//   {
-//     title: "Resources",
-//     links: [
-//       { name: "Blog", href: "/blog" },
-//       { name: "Documentation", href: "/docs" }
-//     ]
-//   }
-// ];
-
-/**
- * Footer component containing navigation links and copyright information
- * Implements a responsive grid layout
- */
 const Footer: React.FC = () => {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-gray-800 mt-16 py-12">
-      <div className="max-w-6xl mx-auto px-4">
-        {/* Footer navigation grid
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 mb-8">
-          {footerSections.map((section, index) => (
-            <div key={index}>
-              <h4 className="font-semibold mb-4">{section.title}</h4>
-              <ul className="space-y-2 text-gray-400">
-                {section.links.map((link, linkIndex) => (
-                  <li key={linkIndex}>
-                    <a 
-                      href={link.href}
-                      className="hover:text-white transition-colors duration-200"
-                    >
-                      {link.name}
-                    </a>
-                  </li>
-                ))}
-              </ul>
+    <footer className="relative mt-20 bg-gradient-to-b from-neutral-950 to-neutral-950 border-t border-white/10 overflow-hidden">
+      {/* Background effects */}
+      <div className="absolute inset-0 mesh-gradient-dark opacity-20" />
+      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary-500/50 to-transparent" />
+      
+      <Container size="xl" className="relative z-10 py-12">
+        {/* Main Footer Content */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
+          {/* Brand Section */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-xl blur-md opacity-50" />
+                <div className="relative w-10 h-10 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-xl flex items-center justify-center">
+                  <Send className="w-5 h-5 text-white" />
+                </div>
+              </div>
+              <span className="text-xl font-bold font-display gradient-text">AutoSend</span>
             </div>
-          ))}
-        </div> */}
+            <p className="text-neutral-400 text-sm leading-relaxed">
+              AI-powered newsletter automation platform for modern creators. Create, schedule, and grow with ease.
+            </p>
+          </div>
 
-        {/* Copyright section */}
-        <div className="pt-8 mt-8 border-t border-gray-700 text-gray-400 text-center">
-          <p>&copy; {currentYear} SendStream. All rights reserved. Developed By Mohammed Shoaib.</p>
-          <p className="mt-2 text-sm text-gray-400">If you have any issues, DM me on LinkedIn.</p>
-          <p className="mt-2">
-            <a
-              href="https://www.linkedin.com/in/mohammed-shoaib-dev/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-blue-400 hover:text-blue-300 transition-colors duration-200"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 24 24" className="inline-block align-text-bottom"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-10h3v10zm-1.5-11.268c-.966 0-1.75-.784-1.75-1.75s.784-1.75 1.75-1.75 1.75.784 1.75 1.75-.784 1.75-1.75 1.75zm15.5 11.268h-3v-5.604c0-1.337-.025-3.063-1.868-3.063-1.868 0-2.154 1.459-2.154 2.968v5.699h-3v-10h2.881v1.367h.041c.401-.761 1.379-1.563 2.838-1.563 3.036 0 3.6 2 3.6 4.59v5.606z"/></svg>
-              Connect on LinkedIn
-            </a>
-          </p>
+          {/* Quick Links */}
+          <div>
+            <h4 className="font-semibold font-display text-white mb-4">Product</h4>
+            <ul className="space-y-3 text-sm">
+              <li>
+                <button
+                  onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
+                  className="text-neutral-400 hover:text-primary-400 transition-colors"
+                >
+                  Features
+                </button>
+              </li>
+              <li>
+                <button
+                  onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
+                  className="text-neutral-400 hover:text-primary-400 transition-colors"
+                >
+                  Pricing
+                </button>
+              </li>
+              <li>
+                <a href="#" className="text-neutral-400 hover:text-primary-400 transition-colors">
+                  Documentation
+                </a>
+              </li>
+              <li>
+                <a href="#" className="text-neutral-400 hover:text-primary-400 transition-colors">
+                  API Reference
+                </a>
+              </li>
+            </ul>
+          </div>
+
+          {/* Company */}
+          <div>
+            <h4 className="font-semibold font-display text-white mb-4">Company</h4>
+            <ul className="space-y-3 text-sm">
+              <li>
+                <a href="#" className="text-neutral-400 hover:text-primary-400 transition-colors">
+                  About
+                </a>
+              </li>
+              <li>
+                <a href="#" className="text-neutral-400 hover:text-primary-400 transition-colors">
+                  Blog
+                </a>
+              </li>
+              <li>
+                <a href="#" className="text-neutral-400 hover:text-primary-400 transition-colors">
+                  Privacy Policy
+                </a>
+              </li>
+              <li>
+                <a href="#" className="text-neutral-400 hover:text-primary-400 transition-colors">
+                  Terms of Service
+                </a>
+              </li>
+            </ul>
+          </div>
+
+          {/* Contact */}
+          <div>
+            <h4 className="font-semibold font-display text-white mb-4">Get in Touch</h4>
+            <ul className="space-y-3 text-sm">
+              <li>
+                <a 
+                  href="https://www.linkedin.com/in/mohammed-shoaib-dev/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-neutral-400 hover:text-primary-400 transition-colors group"
+                >
+                  <Linkedin className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                  LinkedIn
+                </a>
+              </li>
+              <li>
+                <a 
+                  href="mailto:support@autosend.com" 
+                  className="flex items-center gap-2 text-neutral-400 hover:text-primary-400 transition-colors group"
+                >
+                  <Mail className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                  support@autosend.com
+                </a>
+              </li>
+            </ul>
+            <p className="text-xs text-neutral-500 mt-4 leading-relaxed">
+              Have issues? DM me on LinkedIn for support.
+            </p>
+          </div>
         </div>
-      </div>
+
+        {/* Bottom Bar */}
+        <div className="pt-8 border-t border-white/10">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <p className="text-sm text-neutral-400 text-center md:text-left">
+              &copy; {currentYear} AutoSend. All rights reserved. Developed with{' '}
+              <Heart className="w-3 h-3 inline text-accent-500 fill-current" /> by{' '}
+              <a 
+                href="https://www.linkedin.com/in/mohammed-shoaib-dev/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary-400 hover:text-primary-300 font-medium transition-colors"
+              >
+                Mohammed Shoaib
+              </a>
+            </p>
+
+            {/* Social Links */}
+            <div className="flex items-center gap-4">
+              <a
+                href="https://www.linkedin.com/in/mohammed-shoaib-dev/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-9 h-9 rounded-lg bg-neutral-800/50 hover:bg-primary-500/10 border border-neutral-700 hover:border-primary-500/50
+                  flex items-center justify-center text-neutral-400 hover:text-primary-400 transition-all group"
+                aria-label="LinkedIn"
+              >
+                <Linkedin className="w-4 h-4 group-hover:scale-110 transition-transform" />
+              </a>
+              <a
+                href="#"
+                className="w-9 h-9 rounded-lg bg-neutral-800/50 hover:bg-secondary-500/10 border border-neutral-700 hover:border-secondary-500/50
+                  flex items-center justify-center text-neutral-400 hover:text-secondary-400 transition-all group"
+                aria-label="Twitter"
+              >
+                <Twitter className="w-4 h-4 group-hover:scale-110 transition-transform" />
+              </a>
+              <a
+                href="#"
+                className="w-9 h-9 rounded-lg bg-neutral-800/50 hover:bg-accent-500/10 border border-neutral-700 hover:border-accent-500/50
+                  flex items-center justify-center text-neutral-400 hover:text-accent-400 transition-all group"
+                aria-label="GitHub"
+              >
+                <Github className="w-4 h-4 group-hover:scale-110 transition-transform" />
+              </a>
+            </div>
+          </div>
+        </div>
+      </Container>
     </footer>
   );
 };

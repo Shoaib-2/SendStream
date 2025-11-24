@@ -1,65 +1,159 @@
+'use client';
+
 import React from 'react';
-import { Send, Users, ChartBar, Globe } from 'lucide-react';
+import { Send, Users, ChartBar, Globe, Sparkles, Zap, Mail, BarChart3, Clock, Shield } from 'lucide-react';
+import Card from '../UI/Card';
+import Container from '../UI/Container';
+import Badge from '../UI/Badge';
 
 const features = [
   {
-    icon: <Send className="w-6 h-6" />,
+    icon: Send,
+    iconColor: 'text-primary-400',
+    iconBg: 'bg-primary-500/10',
     title: "Smart Scheduling",
-    description: "Optimized to reach your audience when they're most engaged."
+    description: "AI-powered timing optimization to reach your audience when they're most engaged. Automate your newsletter workflow.",
+    badge: "AI-Powered"
   },
   {
-    icon: <Users className="w-6 h-6" />,
-    title: "Audience Insights",
-    description: "Deep analytics on subscriber behavior and engagement patterns."
+    icon: BarChart3,
+    iconColor: 'text-secondary-400',
+    iconBg: 'bg-secondary-500/10',
+    title: "Advanced Analytics",
+    description: "Real-time metrics, engagement tracking, and actionable insights to understand your audience better and grow faster.",
+    badge: "Real-time"
   },
   {
-    icon: <ChartBar className="w-6 h-6" />,
-    title: "Performance Analytics",
-    description: "Real-time metrics and actionable insights to grow your audience."
+    icon: Users,
+    iconColor: 'text-accent-400',
+    iconBg: 'bg-accent-500/10',
+    title: "Audience Management",
+    description: "Segment subscribers, track behavior patterns, and personalize content for maximum engagement and retention.",
+    badge: "Smart"
   },
   {
-    icon: <Globe className="w-6 h-6" />,
+    icon: Globe,
+    iconColor: 'text-purple-400',
+    iconBg: 'bg-purple-500/10',
     title: "Global Reach",
-    description: "Automatic timezone detection and localized sending for worldwide audience."
+    description: "Automatic timezone detection, localized sending, and multi-language support for worldwide audience engagement.",
+    badge: "Worldwide"
+  },
+  {
+    icon: Zap,
+    iconColor: 'text-yellow-400',
+    iconBg: 'bg-yellow-500/10',
+    title: "Lightning Fast",
+    description: "High-performance infrastructure ensures your newsletters are delivered instantly to thousands of subscribers.",
+    badge: "Fast"
+  },
+  {
+    icon: Shield,
+    iconColor: 'text-green-400',
+    iconBg: 'bg-green-500/10',
+    title: "Secure & Compliant",
+    description: "Enterprise-grade security, GDPR compliance, and automatic spam protection to keep your data safe.",
+    badge: "Secure"
   }
 ];
 
 const Features = () => {
   return (
-    <section className="py-24 relative overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-b from-blue-500/5 to-transparent" />
-      <div className="max-w-6xl mx-auto px-4">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-bold font-inter mb-6 bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
+    <section id="features" className="relative py-20 sm:py-24 lg:py-28 overflow-hidden bg-neutral-950">
+      {/* Background effects */}
+      <div className="absolute inset-0 mesh-gradient opacity-30" />
+      <div className="absolute top-1/2 left-0 w-96 h-96 bg-primary-500/10 rounded-full blur-3xl" />
+      <div className="absolute bottom-0 right-0 w-96 h-96 bg-secondary-500/10 rounded-full blur-3xl" />
+
+      <Container size="xl" className="relative z-10">
+        {/* Section Header */}
+        <div className="text-center mb-16 space-y-4 animate-fade-in-up">
+          <Badge variant="primary" size="lg">
+            <Sparkles className="w-4 h-4 mr-1" />
             Powerful Features
+          </Badge>
+          
+          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold font-display">
+            <span className="block text-white mb-2">Everything You Need</span>
+            <span className="gradient-text">To Succeed</span>
           </h2>
-          <p className="text-xl text-gray-400 max-w-2xl mx-auto">
-            Everything you need to create, manage, and grow your newsletter presence.
+          
+          <p className="text-xl text-neutral-300 max-w-3xl mx-auto leading-relaxed">
+            Create, manage, and grow your newsletter with our comprehensive suite of tools designed for modern creators.
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8">
-          {features.map((feature, index) => (
-            <div 
-              key={index} 
-              className="bg-gray-800/50 backdrop-blur-sm p-8 rounded-2xl group
-                hover:bg-gray-800 transition-all duration-300
-                border border-gray-800 hover:border-blue-500/50"
-            >
-              <div className="flex items-start gap-6">
-                <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center
-                  group-hover:scale-110 group-hover:bg-blue-500/20 transition-all duration-300">
-                  <div className="text-blue-500">{feature.icon}</div>
+        {/* Features Grid */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+          {features.map((feature, index) => {
+            const Icon = feature.icon;
+            return (
+              <Card 
+                key={index} 
+                variant="hover"
+                className="group relative overflow-hidden animate-fade-in-up"
+                style={{ animationDelay: `${index * 0.1}s` }}
+              >
+                {/* Gradient overlay on hover */}
+                <div className="absolute inset-0 bg-gradient-to-br from-primary-500/0 via-accent-500/0 to-secondary-500/0 
+                  group-hover:from-primary-500/5 group-hover:via-accent-500/5 group-hover:to-secondary-500/5 
+                  transition-all duration-500 rounded-2xl" />
+
+                <div className="relative space-y-4">
+                  {/* Icon and Badge */}
+                  <div className="flex items-start justify-between">
+                    <div className={`w-14 h-14 rounded-xl ${feature.iconBg} flex items-center justify-center
+                      group-hover:scale-110 group-hover:rotate-3 transition-all duration-300`}>
+                      <Icon className={`w-7 h-7 ${feature.iconColor}`} />
+                    </div>
+                    <Badge variant="outline" size="sm" className="text-xs">
+                      {feature.badge}
+                    </Badge>
+                  </div>
+
+                  {/* Content */}
+                  <div className="space-y-2">
+                    <h3 className="text-xl font-bold font-display text-white group-hover:text-primary-300 transition-colors">
+                      {feature.title}
+                    </h3>
+                    <p className="text-neutral-400 leading-relaxed">
+                      {feature.description}
+                    </p>
+                  </div>
+
+                  {/* Hover indicator */}
+                  <div className="flex items-center gap-2 text-sm text-primary-400 opacity-0 group-hover:opacity-100 
+                    transition-opacity duration-300">
+                    <span>Learn more</span>
+                    <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" 
+                      fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-xl font-semibold mb-2 font-inter text-white">{feature.title}</h3>
-                  <p className="text-gray-400 leading-relaxed">{feature.description}</p>
-                </div>
-              </div>
-            </div>
-          ))}
+              </Card>
+            );
+          })}
         </div>
-      </div>
+
+        {/* Bottom CTA */}
+        <div className="mt-16 text-center animate-fade-in-up" style={{ animationDelay: '0.6s' }}>
+          <p className="text-neutral-400 mb-4">
+            Ready to transform your newsletter workflow?
+          </p>
+          <button 
+            onClick={() => document.querySelector('header')?.scrollIntoView({ behavior: 'smooth' })}
+            className="text-primary-400 hover:text-primary-300 font-semibold inline-flex items-center gap-2 
+              transition-colors group"
+          >
+            Start your free trial
+            <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" 
+              fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+            </svg>
+          </button>
+        </div>
+      </Container>
     </section>
   );
 };
