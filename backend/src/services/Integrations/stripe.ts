@@ -51,9 +51,9 @@ export const cancelSubscription = async (subscriptionId: string) => {
 };
 
 // Handle webhook events
-export const handleWebhookEvent = async (payload: any, signature: string) => {
+export const handleWebhookEvent = async (payload: unknown, signature: string) => {
   const event = stripe.webhooks.constructEvent(
-    payload,
+    payload as string | Buffer,
     signature,
     process.env.STRIPE_WEBHOOK_SECRET!
   );
@@ -69,7 +69,7 @@ export const handleWebhookEvent = async (payload: any, signature: string) => {
         });
 
         if (user) {
-          const statusMapping: { [key: string]: any } = {
+          const statusMapping: Record<string, 'active' | 'trialing' | 'past_due' | 'canceled' | 'unpaid' | null> = {
             'active': 'active',
             'trialing': 'trialing',
             'past_due': 'past_due',

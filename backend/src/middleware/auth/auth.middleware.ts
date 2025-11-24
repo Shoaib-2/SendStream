@@ -1,7 +1,6 @@
 // backend/src/middleware/auth.middleware.ts
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { APIError } from '../../utils/errors';
 import User from '../../models/User';
 
 interface JwtPayload {
@@ -101,6 +100,6 @@ export const restrictTo = (...roles: string[]) => {
         message: 'You do not have permission to perform this action'
       });
     }
-    next();
+    return next();
   };
 };

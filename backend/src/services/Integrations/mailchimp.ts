@@ -6,8 +6,7 @@ import {
   validateApiResponse, 
   validateListResponse, 
   validateCampaignResponse, 
-  validateMemberResponse,
-  MailchimpMemberResponse 
+  validateMemberResponse
 } from '../../utils/validation';
 import { logger } from '../../utils/logger';
 

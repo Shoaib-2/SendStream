@@ -68,7 +68,7 @@ const createSendToken = (user: any, statusCode: number, res: Response) => {
     });
   };
 
-export const register = async (req: Request, res: Response, next: NextFunction) => {
+export const register = async (req: Request, res: Response, _next: NextFunction) => {
   try {
     const { email, password, stripeSessionId } = req.body;
 
@@ -127,7 +127,7 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
     await user.save();
     const token = user.generateToken();
 
-    res.status(201).json({
+    return res.status(201).json({
       status: 'success',
       data: {
         user: {
@@ -140,7 +140,7 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
     });
   } catch (error) {
     console.error('Registration error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       status: 'error',
       message: 'Registration failed'
     });
@@ -163,13 +163,13 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
     }
 
     // Create token and send response
-    createSendToken(user, 200, res);
+    return createSendToken(user, 200, res);
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
 
-export const logout = (req: Request, res: Response) => {
+export const logout = (_req: Request, res: Response) => {
   // Clear JWT cookie
   res.cookie('jwt', 'loggedout', {
     ...cookieOptions,
@@ -249,7 +249,7 @@ export const forgotPassword = async (req: Request, res: Response, next: NextFunc
       // Use a custom method to send the email instead of accessing private transporter
       await emailService.sendEmail(mailOptions);
 
-      res.status(200).json({
+      return res.status(200).json({
         status: 'success',
         message: 'If your email is registered with us, you will receive a password reset link'
       });
@@ -262,7 +262,7 @@ export const forgotPassword = async (req: Request, res: Response, next: NextFunc
       throw new APIError(500, 'There was an error sending the email. Please try again later');
     }
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
 
@@ -300,35 +300,13 @@ export const resetPassword = async (req: Request, res: Response, next: NextFunct
     await user.save();
 
     // Create and send new token
-    createSendToken(user, 200, res);
+    return createSendToken(user, 200, res);
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
 
-const rateLimitStore: {[key: string]: number[]} = {};
-
-function checkRateLimit(ip: string): boolean {
-  const now = Date.now();
-  const recentChecks = rateLimitStore[ip] || [];
-  
-  // Remove checks older than 1 hour
-  const filteredChecks = recentChecks.filter(time => now - time < 3600000);
-  
-  // Allow max 10 checks per hour
-  if (filteredChecks.length >= 10) {
-    return false;
-  }
-  
-  // Add current timestamp
-  filteredChecks.push(now);
-  rateLimitStore[ip] = filteredChecks;
-  
-  return true;
-}
-
-
-export const checkTrialEligibility = async (req: Request, res: Response, next: NextFunction) => {
+export const checkTrialEligibility = async (req: Request, res: Response, _next: NextFunction) => {
   const { email } = req.query;
 
   // Validate email is present and not empty
@@ -342,25 +320,14 @@ export const checkTrialEligibility = async (req: Request, res: Response, next: N
   try {
     const user = await User.findOne({ email });
 
-    res.status(200).json({
+    return res.status(200).json({
       status: 'success',
       eligibleForTrial: !user || !user.trialUsed
     });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       status: 'error',
       message: 'Internal server error'
     });
   }
 };
-
-// Implement token validation and generation
-function generateTrialCheckToken() {
-  // Create a short-lived, cryptographically secure token
-  return crypto.randomBytes(16).toString('hex');
-}
-
-function isValidTrialCheckToken(token: string) {
-  // Implement token validation logic
-  // Check against stored tokens, expiration, etc.
-}

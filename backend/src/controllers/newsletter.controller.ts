@@ -168,7 +168,7 @@ export class NewsletterController {
         data: updatedNewsletter
       });
     } catch (error) {
-      next(error);
+      return next(error);
     }
   };
 
@@ -222,7 +222,7 @@ export class NewsletterController {
         data: updatedNewsletter
       });
     } catch (error) {
-      next(error);
+      return next(error);
     }
   }
 
@@ -493,7 +493,7 @@ async send(req: Request, res: Response, next: NextFunction) {
       name: errorName
     });
     logger.info('=== NEWSLETTER SEND DEBUG END - ERROR ===');
-    next(error);
+    return next(error);
   }
 }
 
@@ -551,6 +551,7 @@ async send(req: Request, res: Response, next: NextFunction) {
       }
     } catch (error) {
       logger.error("Failed to send scheduled newsletter:", error);
+      return;
     }
   }
 }

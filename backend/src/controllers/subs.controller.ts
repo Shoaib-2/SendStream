@@ -8,12 +8,14 @@ import Settings from '../models/Settings';
 import { broadcastSubscriberUpdate } from '../server';
 import { logger } from '../utils/logger';
 
+/*
 interface MailchimpSubscriber {
   email: string;
   name: string;
   status: 'active' | 'unsubscribed';
   subscribedDate: string;
 }
+*/
 
 const syncMailchimpSubscribers = async (req: Request) => {
   const settings = await Settings.findOne({ userId: req.user._id });
@@ -191,7 +193,7 @@ export const createSubscriber: RequestHandler = async (req, res, next) => {
     });
   } catch (error) {
     console.error('Error creating subscriber:', error);
-    next(error);
+    return next(error);
   }
 };
 
@@ -238,7 +240,7 @@ export const deleteSubscriber = async (req: Request, res: Response, next: NextFu
     });
   } catch (error) {
     console.error('Delete subscriber error:', error);
-    next(error);
+    return next(error);
   }
 };
 
@@ -313,11 +315,11 @@ export const bulkDeleteSubscribers = async (req: Request, res: Response, next: N
     });
   } catch (error) {
     console.error('Bulk delete subscribers error:', error);
-    next(error);
+    return next(error);
   }
 };
 
-export const importSubscribers = async (req: Request, res: Response, next: NextFunction) => {
+export const importSubscribers = async (req: Request, res: Response, _next: NextFunction) => {
   try {
     const { csvData } = req.body;
     
@@ -444,7 +446,7 @@ export const unsubscribeSubscriber = async (req: Request, res: Response, next: N
 
     res.redirect(`${process.env.CLIENT_URL}/unsubscribe-success`);
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
 
@@ -494,6 +496,6 @@ export const updateSubscriber = async (req: Request, res: Response, next: NextFu
     });
   } catch (error) {
     console.error('Error updating subscriber:', error);
-    next(error);
+    return next(error);
   }
 };

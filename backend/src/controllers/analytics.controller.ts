@@ -55,7 +55,7 @@ export class AnalyticsController {
       }
       
       // Calculate cumulative subscriber count for each month
-      const growthData = lastSixMonths.map((monthInfo, index) => {
+      const growthData = lastSixMonths.map((monthInfo) => {
         // For each month, count subscribers who joined on or before this month
         const count = allSubscribers.filter(sub => {
           const subDate = new Date(sub.subscribed);

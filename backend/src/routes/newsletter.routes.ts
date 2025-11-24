@@ -31,7 +31,7 @@ router.route('/:id/schedule').post(async (req, res, next) => {
 });
 
 // Public route for tracking - no auth/subscription required
-router.get('/newsletters/track-open/:newsletterId/:subscriberId', async (req, res, next) => {
+router.get('/newsletters/track-open/:newsletterId/:subscriberId', async (req, res, _next) => {
   try {
     const { newsletterId, subscriberId } = req.params;
     console.log('Tracking open:', { newsletterId, subscriberId });

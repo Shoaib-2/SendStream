@@ -2,9 +2,11 @@ import { Request, Response, NextFunction } from "express";
 import Newsletter from "../models/Newsletter";
 import Subscriber from "../models/Subscriber";
 
+/*
 interface MonthlyData {
   [key: string]: number;
 }
+*/
 
 export const getDashboardSummary = async (
   req: Request,

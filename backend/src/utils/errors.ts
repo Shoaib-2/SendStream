@@ -1,13 +1,14 @@
 // backend/src/utils/errors.ts
 
 interface ErrorConstructor {
-  captureStackTrace?: (targetObject: Object, constructorOpt?: Function) => void;
+  captureStackTrace?: (targetObject: object, constructorOpt?: Function) => void;
 }
+
 export class APIError extends Error {
   constructor(
     public statusCode: number,
     message: string,
-    public data?: any
+    public data?: unknown
   ) {
     super(message);
     this.name = 'APIError';

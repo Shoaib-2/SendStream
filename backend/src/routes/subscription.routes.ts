@@ -1,4 +1,4 @@
-import express, { Request, Response, NextFunction, RequestHandler } from 'express';
+import express, { RequestHandler } from 'express';
 import { protect } from '../middleware/auth/auth.middleware';
 import Stripe from 'stripe';
 import User from '../models/User';
@@ -31,7 +31,7 @@ interface UpdateRenewalRequest {
 }
 
 // Public routes (no auth required)
-const createTrialSession: RequestHandler = async (req, res, next): Promise<void> => {
+const createTrialSession: RequestHandler = async (req, res, _next): Promise<void> => {
   try {
     const { email } = req.body as TrialSessionRequest;
     
@@ -80,7 +80,7 @@ const createTrialSession: RequestHandler = async (req, res, next): Promise<void>
 };
 
 // Protected routes handlers
-const getSubscriptionStatus: RequestHandler = async (req, res, next): Promise<void> => {
+const getSubscriptionStatus: RequestHandler = async (req, res, _next): Promise<void> => {
   // Check if user exists in request
   if (!req.user || !req.user.id) {
     res.status(401).json({
@@ -153,7 +153,7 @@ const getSubscriptionStatus: RequestHandler = async (req, res, next): Promise<vo
   }
 };
 
-const cancelSubscription: RequestHandler = async (req, res, next): Promise<void> => {
+const cancelSubscription: RequestHandler = async (req, res, _next): Promise<void> => {
   // Check if user exists in request
   if (!req.user || !req.user.id) {
     res.status(401).json({
@@ -263,7 +263,7 @@ const cancelSubscription: RequestHandler = async (req, res, next): Promise<void>
   }
 };
 
-const updateRenewal: RequestHandler = async (req, res, next): Promise<void> => {
+const updateRenewal: RequestHandler = async (req, res, _next): Promise<void> => {
   // Check if user exists in request
   if (!req.user || !req.user.id) {
     res.status(401).json({

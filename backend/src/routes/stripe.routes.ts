@@ -10,10 +10,10 @@ export const createCheckoutSession = async (req: Request, res: Response) => {
     }
 
     const session = await stripeService.createCheckoutSession(priceId, successUrl, cancelUrl);
-    res.status(200).json({ sessionId: session.id });
+    return res.status(200).json({ sessionId: session.id });
   } catch (error) {
     console.error('Error creating checkout session:', error);
-    res.status(500).json({ error: 'Failed to create checkout session' });
+    return res.status(500).json({ error: 'Failed to create checkout session' });
   }
 };
 
@@ -26,10 +26,10 @@ export const cancelSubscription = async (req: Request, res: Response) => {
     }
 
     const subscription = await stripeService.cancelSubscription(subscriptionId);
-    res.status(200).json({ subscription });
+    return res.status(200).json({ subscription });
   } catch (error) {
     console.error('Error canceling subscription:', error);
-    res.status(500).json({ error: 'Failed to cancel subscription' });
+    return res.status(500).json({ error: 'Failed to cancel subscription' });
   }
 };
 
@@ -43,10 +43,10 @@ export const getSubscriptionStatus = async (req: Request, res: Response) => {
     }
     
     const subscriptions = await stripeService.getCustomerSubscriptions(customerId);
-    res.status(200).json({ subscriptions });
+    return res.status(200).json({ subscriptions });
   } catch (error) {
     console.error('Error fetching subscription status:', error);
-    res.status(500).json({ error: 'Failed to fetch subscription status' });
+    return res.status(500).json({ error: 'Failed to fetch subscription status' });
   }
 };
 
@@ -59,10 +59,10 @@ export const handleWebhook = async (req: Request, res: Response) => {
 
   try {
     await stripeService.handleWebhookEvent(req.body, signature);
-    res.status(200).json({ received: true });
+    return res.status(200).json({ received: true });
   } catch (error) {
     console.error('Webhook error:', error);
-    res.status(400).json({ error: 'Webhook error' });
+    return res.status(400).json({ error: 'Webhook error' });
   }
 };
 

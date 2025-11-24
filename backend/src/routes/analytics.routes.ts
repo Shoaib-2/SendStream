@@ -43,7 +43,7 @@ router.get('/activity', analyticsController.getRecentActivity);
 
 const TRACKING_PIXEL = Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64');
 // Public route for tracking pixel - no auth/subscription required
-router.get('/track-open/:newsletterId/:subscriberId', async (req: Request, res: Response, next: NextFunction) => {
+router.get('/track-open/:newsletterId/:subscriberId', async (req: Request, res: Response, _next: NextFunction) => {
   const { newsletterId, subscriberId } = req.params;
   logger.info('Received open tracking request', { newsletterId, subscriberId }); 
 

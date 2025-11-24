@@ -14,7 +14,8 @@ interface IUser extends Document {
   stripeSubscriptionId?: string;
   subscriptionStatus?: 'active' | 'trialing' | 'past_due' | 'canceled' | 'unpaid' | null;
   trialEndsAt?: Date;
-  cancelAtPeriodEndPreference?: boolean; 
+  cancelAtPeriodEndPreference?: boolean;
+  hasActiveAccess?: boolean;
   comparePassword(candidatePassword: string): Promise<boolean>;
   generateToken(): string;
   passwordResetToken?: string;
@@ -49,6 +50,10 @@ const userSchema = new mongoose.Schema({
     default: () => new Date()
   },
   cancelAtPeriodEndPreference: {
+    type: Boolean,
+    default: false
+  },
+  hasActiveAccess: {
     type: Boolean,
     default: false
   },

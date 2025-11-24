@@ -35,7 +35,7 @@ export class SettingsController {
       res.json({ status: 'success', data: sanitizedSettings });
     } catch (error) {
       logger.error('Error fetching settings:', error);
-      next(error);
+      return next(error);
     }
   }
 
@@ -79,11 +79,11 @@ export class SettingsController {
       res.json({ status: 'success', data: sanitizedSettings });
     } catch (error) {
       logger.error('Error updating settings:', error);
-      next(error);
+      return next(error);
     }
   }
 
-  async testIntegration(req: Request, res: Response, next: NextFunction) {
+  async testIntegration(req: Request, res: Response, _next: NextFunction) {
     try {
       const { type } = req.params;
       
@@ -252,7 +252,7 @@ export class SettingsController {
       });
     } catch (error) {
       logger.error('Error enabling integration:', error);
-      next(error);
+      return next(error);
     }
   }
 

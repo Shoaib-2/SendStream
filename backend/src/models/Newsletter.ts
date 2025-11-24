@@ -1,11 +1,12 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
+/*
 interface DailyStats {
   date: string;
   opens: number;
   clicks: number;
 }
-
+*/
 
 interface ContentQuality {
   isOriginalContent: boolean;
