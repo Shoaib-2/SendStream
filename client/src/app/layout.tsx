@@ -1,20 +1,36 @@
 // src/app/layout.tsx
 
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { Inter, Manrope } from 'next/font/google'
 import './globals.css'
 import { AuthProvider } from '@/context/authContext';
 import { ToastProvider } from '@/context/toastContext';
 import { DataProvider } from '@/context/dataContext';
 import { SubscriptionProvider } from '@/context/subscriptionContext';
 import EmailProvider from '@/components/EmailRetrieval/EmailProvider';
-// import EmailPrompt from '@/components/EmailRetrieval/EmailPrompt';
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ 
+  subsets: ['latin'],
+  variable: '--font-inter',
+  display: 'swap',
+})
+
+const manrope = Manrope({
+  subsets: ['latin'],
+  variable: '--font-geist',
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
-  title: 'SendStream',
-  description: 'Simplify your newsletter workflow',
+  title: 'AutoSend - Modern Newsletter Automation',
+  description: 'Streamline your newsletter workflow with AI-powered automation, analytics, and subscriber management.',
+  keywords: 'newsletter, automation, email marketing, subscriber management, analytics',
+  authors: [{ name: 'AutoSend Team' }],
+  openGraph: {
+    title: 'AutoSend - Modern Newsletter Automation',
+    description: 'Streamline your newsletter workflow with AI-powered automation',
+    type: 'website',
+  },
 }
 
 export default function RootLayout({
@@ -23,7 +39,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${inter.variable} ${manrope.variable}`}>
       <body className={inter.className}>
         <AuthProvider>
           <ToastProvider>
