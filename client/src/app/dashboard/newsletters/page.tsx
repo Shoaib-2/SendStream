@@ -3,6 +3,10 @@ import React from 'react';
 import { Mail, Send, Plus, Pencil, Clock} from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { newsletterAPI } from '../../../services/api';
+import Container from '@/components/UI/Container';
+import Card from '@/components/UI/Card';
+import Badge from '@/components/UI/Badge';
+import Button from '@/components/UI/Button';
 
 interface Newsletter {
   id?: string;
@@ -91,65 +95,70 @@ React.useEffect(() => {
     return (
       <div className="flex justify-center items-center h-[80vh]">
         <div className="w-16 h-16 relative">
-          <div className="w-16 h-16 rounded-full border-4 border-blue-500/20 border-t-blue-500 animate-spin" />
+          <div className="absolute inset-0 rounded-full border-4 border-primary-500/20" />
+          <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-primary-500 animate-spin" />
+          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-primary-500/20 to-secondary-500/20 blur-xl" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="p-4 sm:p-6 min-h-screen bg-gradient-to-b from-gray-900 via-gray-900 to-gray-900/50">
-      <div className="max-w-6xl mx-auto">
+    <div className="p-4 sm:p-6 min-h-screen">
+      <Container size="xl">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0 mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold font-inter bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold font-display gradient-text">
             Newsletter Dashboard
           </h1>
-          <button
-            className="w-full sm:w-auto bg-blue-500 text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-medium
-              transform transition-all duration-300 hover:scale-105 hover:bg-blue-600 
-              inline-flex items-center justify-center sm:justify-start gap-2"
+          <Button
+            variant="gradient"
+            leftIcon={<Plus className="w-4 h-4" />}
             onClick={handleCreateClick}
+            className="w-full sm:w-auto"
           >
-            <Plus className="w-4 h-4" />
             Create Newsletter
-          </button>
+          </Button>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
           {metrics.map((metric) => (
-            <div 
-              key={metric.id} 
-              className="bg-gray-800/50 backdrop-blur-sm p-4 sm:p-6 rounded-2xl
-                border border-gray-800 hover:border-blue-500/50
-                transition-all duration-300 group"
+            <Card 
+              key={metric.id}
+              variant="hover"
+              padding="lg"
             >
               <div className="flex items-center justify-between mb-3 sm:mb-4">
-                <div className="w-10 sm:w-12 h-10 sm:h-12 rounded-xl bg-blue-500/10 flex items-center justify-center
+                <div className="relative w-10 sm:w-12 h-10 sm:h-12 rounded-xl flex items-center justify-center
                   group-hover:scale-110 transition-all duration-300">
-                  <metric.icon className="w-5 sm:w-6 h-5 sm:h-6 text-blue-500" />
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl blur-md opacity-50" />
+                  <div className="relative w-full h-full bg-gradient-to-br from-primary-500/20 to-primary-600/20 rounded-xl 
+                    flex items-center justify-center border border-primary-500/30">
+                    <metric.icon className="w-5 sm:w-6 h-5 sm:h-6 text-primary-400" />
+                  </div>
                 </div>
               </div>
-              <p className="text-gray-400 text-xs sm:text-sm font-inter">{metric.label}</p>
-              <p className="text-xl sm:text-2xl font-bold mt-1 font-inter">{metric.value}</p>
-            </div>
+              <p className="text-neutral-400 text-xs sm:text-sm font-inter">{metric.label}</p>
+              <p className="text-xl sm:text-2xl font-bold mt-1 font-display text-white">{metric.value}</p>
+            </Card>
           ))}
         </div>
 
-        <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl overflow-hidden
-          border border-gray-800 hover:border-blue-500/50 transition-all duration-300">
-          <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-700/50">
-            <h2 className="text-lg sm:text-xl font-semibold font-inter">Recent Newsletters</h2>
+        <Card variant="glass" padding="none">
+          <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-white/10">
+            <h2 className="text-lg sm:text-xl font-semibold font-display text-white">Recent Newsletters</h2>
           </div>
-          <div className="divide-y divide-gray-700/50">
+          <div className="divide-y divide-white/10">
             {newsletters.map((newsletter) => (
               <div
                 key={newsletter.id || newsletter._id}
-                className="p-4 sm:p-6 hover:bg-blue-500/5 transition-all duration-300 cursor-pointer"
+                className="p-4 sm:p-6 hover:bg-gradient-to-r hover:from-primary-500/5 hover:to-secondary-500/5 
+                  transition-all duration-300 cursor-pointer group"
                 onClick={() => newsletter.status === 'draft' && 
                   router.push(`/dashboard/newsletters/create?id=${newsletter.id || newsletter._id}`)}
               >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0 mb-2">
-                  <h3 className="font-medium font-inter line-clamp-2 sm:line-clamp-1">{newsletter.title}</h3>
+                  <h3 className="font-medium font-inter line-clamp-2 sm:line-clamp-1 text-white group-hover:text-primary-300 
+                    transition-colors">{newsletter.title}</h3>
                   <div className="flex items-center gap-2 sm:gap-4">
                     {(newsletter.status === 'draft' || newsletter.status === 'scheduled') && (
                       <div className="flex gap-2">
@@ -158,29 +167,30 @@ React.useEffect(() => {
                             e.stopPropagation();
                             router.push(`/dashboard/newsletters/create?id=${newsletter.id || newsletter._id}`);
                           }}
-                          className="p-2 text-gray-400 hover:text-blue-400 transition-colors rounded-lg
-                            hover:bg-blue-500/10"
+                          className="p-2 text-neutral-400 hover:text-primary-400 transition-colors rounded-lg
+                            hover:bg-primary-500/10 border border-transparent hover:border-primary-500/30"
                         >
                           <Pencil className="w-4 h-4" />
                         </button>
                       </div>
                     )}
-                    <span className={`px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap ${
-                      newsletter.status === 'sent' 
-                        ? 'bg-green-500/10 text-green-400 border border-green-500/50' 
-                        : newsletter.status === 'scheduled' 
-                          ? 'bg-blue-500/10 text-blue-400 border border-blue-500/50' 
-                          : 'bg-gray-500/10 text-gray-400 border border-gray-500/50'
-                    }`}>
+                    <Badge 
+                      variant={
+                        newsletter.status === 'sent' ? 'success' : 
+                        newsletter.status === 'scheduled' ? 'primary' : 
+                        'default'
+                      }
+                      size="sm"
+                    >
                       {newsletter.status === 'scheduled' ? 'Scheduled' : 
                         newsletter.status.charAt(0).toUpperCase() + newsletter.status.slice(1)}
-                    </span>
+                    </Badge>
                   </div>
                 </div>
-                <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 text-xs sm:text-sm text-gray-400 font-inter">
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 text-xs sm:text-sm text-neutral-400 font-inter">
                   {newsletter.scheduledDate && (
                     <span className="flex items-center gap-2">
-                      <Clock className="w-3 sm:w-4 h-3 sm:h-4 text-blue-400" />
+                      <Clock className="w-3 sm:w-4 h-3 sm:h-4 text-primary-400" />
                       <span className="truncate">
                         Scheduled: {new Date(newsletter.scheduledDate).toLocaleString()}
                       </span>
@@ -188,7 +198,7 @@ React.useEffect(() => {
                   )}
                   {newsletter.sentDate && (
                     <span className="flex items-center gap-2">
-                      <Send className="w-3 sm:w-4 h-3 sm:h-4 text-green-400" />
+                      <Send className="w-3 sm:w-4 h-3 sm:h-4 text-success-400" />
                       <span className="truncate">
                         Sent: {new Date(newsletter.sentDate).toLocaleString()}
                       </span>
@@ -198,8 +208,8 @@ React.useEffect(() => {
               </div>
             ))}
           </div>
-        </div>
-      </div>
+        </Card>
+      </Container>
     </div>
   );
 };

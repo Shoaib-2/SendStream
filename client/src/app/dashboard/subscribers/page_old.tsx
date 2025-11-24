@@ -109,51 +109,53 @@ export default function SubscribersPage() {
     };
 
     return (
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fade-in">
-        <div className="glass-strong p-5 sm:p-6 rounded-2xl w-full max-w-md border border-white/20 
-          shadow-2xl max-h-[90vh] overflow-y-auto animate-scale-in">
-          <h2 className="text-xl sm:text-2xl font-bold font-display gradient-text mb-5">Add New Subscriber</h2>
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="bg-gray-800 p-5 sm:p-6 rounded-lg w-full max-w-md border border-gray-700 
+          shadow-lg shadow-black/20 max-h-[90vh] overflow-y-auto">
+          <h2 className="text-xl sm:text-2xl font-bold mb-5">Add New Subscriber</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
-              <label className="block font-medium text-sm text-neutral-200">Email</label>
+              <label className="block font-medium text-sm text-gray-200">Email</label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-neutral-900/50 rounded-lg border border-neutral-700
-                  focus:border-primary-500 focus:ring-2 focus:ring-primary-500/50 focus:outline-none text-sm
-                  transition-all duration-200 text-white placeholder:text-neutral-500"
+                className="w-full px-3.5 py-2.5 bg-gray-700/50 rounded-lg border border-gray-600
+                  focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none text-sm
+                  transition-colors duration-200"
                 placeholder="Enter email address"
               />
-              {errors.email && <p className="text-error-400 text-xs">{errors.email}</p>}
+              {errors.email && <p className="text-red-500 text-xs">{errors.email}</p>}
             </div>
             <div className="space-y-1.5">
-              <label className="block font-medium text-sm text-neutral-200">Name</label>
+              <label className="block font-medium text-sm text-gray-200">Name</label>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-neutral-900/50 rounded-lg border border-neutral-700
-                  focus:border-primary-500 focus:ring-2 focus:ring-primary-500/50 focus:outline-none text-sm
-                  transition-all duration-200 text-white placeholder:text-neutral-500"
+                className="w-full px-3.5 py-2.5 bg-gray-700/50 rounded-lg border border-gray-600
+                  focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none text-sm
+                  transition-colors duration-200"
                 placeholder="Enter name"
               />
-              {errors.name && <p className="text-error-400 text-xs">{errors.name}</p>}
+              {errors.name && <p className="text-red-500 text-xs">{errors.name}</p>}
             </div>
             <div className="flex justify-end gap-3 pt-4">
-              <Button
+              <button
                 type="button"
-                variant="ghost"
                 onClick={() => setShowSubscribeModal(false)}
+                className="px-4 py-2.5 bg-gray-700/50 rounded-lg hover:bg-gray-600/50 transition-colors
+                  text-sm font-medium min-w-[80px]"
               >
                 Cancel
-              </Button>
-              <Button
+              </button>
+              <button
                 type="submit"
-                variant="primary"
+                className="px-4 py-2.5 bg-blue-500 rounded-lg hover:bg-blue-600 transition-colors
+                  text-sm font-medium min-w-[100px]"
               >
                 Add Subscriber
-              </Button>
+              </button>
             </div>
           </form>
         </div>
@@ -165,8 +167,7 @@ export default function SubscribersPage() {
     <div className="flex justify-center">
       <button
         onClick={() => removeSubscriber(subscriber.id)}
-        className="text-neutral-400 hover:text-error-400 transition-colors p-2 hover:bg-error-500/10 
-          rounded-lg border border-transparent hover:border-error-500/30"
+        className="text-gray-400 hover:text-red-400 transition-colors p-2 hover:bg-red-500/10 rounded-lg"
         aria-label="Delete subscriber"
       >
         <Trash2 className="w-4 h-4" />
@@ -191,7 +192,7 @@ export default function SubscribersPage() {
               <Badge 
                 variant={notificationType === 'success' ? 'success' : 'error'}
                 size="lg"
-                className="shadow-glow-lg px-4 py-2"
+                className="shadow-glow-lg"
               >
                 {notificationMessage}
               </Badge>
@@ -200,54 +201,53 @@ export default function SubscribersPage() {
 
           <div className="flex flex-col space-y-4 sm:space-y-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <div className="flex items-center gap-3 w-full sm:w-auto">
-                <h1 className="text-2xl sm:text-3xl font-bold font-display gradient-text">
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <h1 className="text-2xl sm:text-3xl font-bold font-inter bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
                   Subscribers
                 </h1>
-                <Badge variant="default" size="md">
-                  {filteredSubscribers.length}
-                </Badge>
+                <span className="text-gray-400 font-inter text-lg sm:text-xl">({filteredSubscribers.length})</span>
               </div>
               
               <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 w-full sm:w-auto">
-                <Button
-                  variant="gradient"
+                <button
                   onClick={() => setShowSubscribeModal(true)}
-                  className="col-span-2"
+                  className="col-span-2 bg-blue-500 hover:bg-blue-600 px-4 py-2.5 rounded-lg font-medium
+                    transform transition-all duration-200 hover:scale-[1.02] text-sm sm:text-base
+                    flex items-center justify-center gap-2 min-w-[140px] sm:min-w-0"
                 >
                   Add Subscriber
-                </Button>
+                </button>
                 
-                <label className="cursor-pointer col-span-1">
-                  <Button
-                    variant="secondary"
-                    leftIcon={<Upload className="w-4 h-4" />}
-                    as="div"
-                    className="w-full"
-                  >
-                    Import
-                  </Button>
+                <label className="cursor-pointer bg-gray-800/50 hover:bg-gray-700/50 px-4 py-2.5 rounded-lg
+                  flex items-center justify-center gap-2 backdrop-blur-sm border border-gray-700 hover:border-blue-500/50
+                  transition-all duration-200 text-sm sm:text-base min-w-[120px]"
+                >
+                  <Upload className="w-4 h-4" />
+                  <span>Import</span>
                   <input type="file" className="hidden" accept=".csv" onChange={handleImport} />
                 </label>
                 
-                <Button
-                  variant="secondary"
-                  leftIcon={<Download className="w-4 h-4" />}
+                <button
                   onClick={handleExport}
-                  className="col-span-1"
+                  className="bg-gray-800/50 hover:bg-gray-700/50 px-4 py-2.5 rounded-lg
+                    flex items-center justify-center gap-2 backdrop-blur-sm border border-gray-700 hover:border-blue-500/50
+                    transition-all duration-200 text-sm sm:text-base min-w-[120px]"
                 >
-                  Export
-                </Button>
+                  <Download className="w-4 h-4" />
+                  <span>Export</span>
+                </button>
                 
                 {role === 'admin' && selectedSubscribers.length > 0 && (
-                  <Button
-                    variant="danger"
-                    leftIcon={<Trash2 className="w-4 h-4" />}
+                  <button
                     onClick={handleBulkDelete}
-                    className="col-span-2"
+                    className="col-span-2 px-4 py-2.5 rounded-lg text-sm sm:text-base
+                      bg-red-500/10 hover:bg-red-500/20 backdrop-blur-sm border border-red-500/50
+                      transition-all duration-200 text-red-500 hover:text-red-400
+                      flex items-center justify-center gap-2 min-w-[140px]"
                   >
+                    <Trash2 className="w-4 h-4" />
                     Bulk Delete ({selectedSubscribers.length})
-                  </Button>
+                  </button>
                 )}
               </div>
             </div>
@@ -258,18 +258,19 @@ export default function SubscribersPage() {
                 placeholder="Search subscribers..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-4 py-2.5 glass rounded-lg border border-white/10
-                  focus:border-primary-500/50 focus:ring-2 focus:ring-primary-500/50 transition-all duration-200 pr-10 text-sm sm:text-base
-                  text-white placeholder:text-neutral-500"
+                className="w-full px-4 py-2.5 bg-gray-800/50 rounded-lg
+                  backdrop-blur-sm border border-gray-700 focus:border-blue-500/50
+                  transition-all duration-200 pr-10 text-sm sm:text-base"
               />
-              <Search className="absolute top-1/2 transform -translate-y-1/2 right-3 w-4 h-4 text-neutral-400" />
+              <Search className="absolute top-1/2 transform -translate-y-1/2 right-3 w-4 h-4 text-gray-400" />
             </div>
           </div>
 
-          <Card variant="glass" padding="none">
+          <div className="bg-gray-800/50 backdrop-blur-sm rounded-lg border border-gray-700 
+            hover:border-blue-500/50 transition-all duration-300 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-neutral-900/50">
+                <thead className="bg-gray-900/50">
                   <tr>
                     <th className="px-3 py-3 sm:px-4 md:px-6 text-left">
                       <input
@@ -285,31 +286,31 @@ export default function SubscribersPage() {
                           }
                         }}
                         checked={selectedSubscribers.length === filteredSubscribers.length && filteredSubscribers.length > 0}
-                        className="rounded border-neutral-600 text-primary-500 focus:ring-primary-500/50 cursor-pointer"
+                        className="rounded border-gray-600 text-blue-500 focus:ring-blue-500/50 cursor-pointer"
                       />
                     </th>
-                    <th className="px-3 py-3 sm:px-4 md:px-6 text-left text-xs font-medium text-neutral-400 uppercase tracking-wider">
+                    <th className="px-3 py-3 sm:px-4 md:px-6 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                       Email
                     </th>
-                    <th className="hidden sm:table-cell px-3 py-3 sm:px-4 md:px-6 text-left text-xs font-medium text-neutral-400 uppercase tracking-wider">
+                    <th className="hidden sm:table-cell px-3 py-3 sm:px-4 md:px-6 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                       Name
                     </th>
-                    <th className="hidden sm:table-cell px-3 py-3 sm:px-4 md:px-6 text-left text-xs font-medium text-neutral-400 uppercase tracking-wider">
+                    <th className="hidden sm:table-cell px-3 py-3 sm:px-4 md:px-6 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                       Subscribed
                     </th>
-                    <th className="px-3 py-3 sm:px-4 md:px-6 text-left text-xs font-medium text-neutral-400 uppercase tracking-wider">
+                    <th className="px-3 py-3 sm:px-4 md:px-6 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                       Status
                     </th>
-                    <th className="px-3 py-3 sm:px-4 md:px-6 text-center text-xs font-medium text-neutral-400 uppercase tracking-wider">
+                    <th className="px-3 py-3 sm:px-4 md:px-6 text-center text-xs font-medium text-gray-400 uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/10">
+                <tbody className="divide-y divide-gray-700/50">
                   {currentSubscribers.length > 0 ? (
                     currentSubscribers.map((subscriber, index) => (
                       <tr key={subscriber.id || `subscriber-${index}`}
-                        className="hover:bg-gradient-to-r hover:from-primary-500/5 hover:to-secondary-500/5 transition-all duration-300">
+                        className="hover:bg-blue-500/5 transition-colors">
                         <td className="px-3 py-3 sm:px-4 md:px-6 whitespace-nowrap">
                           <input
                             type="checkbox"
@@ -321,31 +322,32 @@ export default function SubscribersPage() {
                                 setSelectedSubscribers(selectedSubscribers.filter(id => id !== subscriber.id));
                               }
                             }}
-                            className="rounded border-neutral-600 text-primary-500 focus:ring-primary-500/50 cursor-pointer"
+                            className="rounded border-gray-600 text-blue-500 focus:ring-blue-500/50 cursor-pointer"
                           />
                         </td>
                         <td className="px-3 py-3 sm:px-4 md:px-6 whitespace-nowrap">
                           <div className="flex flex-col sm:hidden mb-1">
-                            <span className="text-sm font-medium text-white">{subscriber.name}</span>
-                            <span className="text-xs text-neutral-400">
+                            <span className="text-sm font-medium">{subscriber.name}</span>
+                            <span className="text-xs text-gray-400">
                               {new Date(subscriber.subscribed).toLocaleDateString()}
                             </span>
                           </div>
-                          <span className="text-sm font-medium text-white">{subscriber.email}</span>
+                          <span className="text-sm font-medium">{subscriber.email}</span>
                         </td>
-                        <td className="hidden sm:table-cell px-3 py-3 sm:px-4 md:px-6 whitespace-nowrap text-neutral-300 text-sm">
+                        <td className="hidden sm:table-cell px-3 py-3 sm:px-4 md:px-6 whitespace-nowrap text-gray-300 text-sm">
                           {subscriber.name}
                         </td>
-                        <td className="hidden sm:table-cell px-3 py-3 sm:px-4 md:px-6 whitespace-nowrap text-neutral-400 text-sm">
+                        <td className="hidden sm:table-cell px-3 py-3 sm:px-4 md:px-6 whitespace-nowrap text-gray-400 text-sm">
                           {new Date(subscriber.subscribed).toLocaleDateString()}
                         </td>
                         <td className="px-3 py-3 sm:px-4 md:px-6 whitespace-nowrap">
-                          <Badge 
-                            variant={subscriber.status === 'active' ? 'success' : 'error'}
-                            size="sm"
-                          >
+                          <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
+                            subscriber.status === 'active'
+                              ? 'bg-green-500/10 text-green-500 border border-green-500/50'
+                              : 'bg-red-500/10 text-red-400 border border-red-500/50'
+                          }`}>
                             {subscriber.status}
-                          </Badge>
+                          </span>
                         </td>
                         <td className="px-3 py-3 sm:px-4 md:px-6 whitespace-nowrap">
                           {renderActions(subscriber)}
@@ -354,7 +356,7 @@ export default function SubscribersPage() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={6} className="px-4 py-8 text-center text-neutral-400 text-sm">
+                      <td colSpan={6} className="px-4 py-8 text-center text-gray-400 text-sm">
                         No subscribers found
                       </td>
                     </tr>
@@ -362,7 +364,7 @@ export default function SubscribersPage() {
                 </tbody>
               </table>
             </div>
-          </Card>
+          </div>
 
           {filteredSubscribers.length > subscribersPerPage && (
             <div className="flex justify-center mt-4 gap-1.5 overflow-x-auto py-2">
@@ -373,10 +375,10 @@ export default function SubscribersPage() {
                     key={`page-${pageNumber}`}
                     onClick={() => handlePageChange(pageNumber)}
                     className={`min-w-[36px] h-[36px] flex items-center justify-center rounded-lg 
-                      transition-all duration-200 text-sm font-medium ${
+                      transition-all duration-200 text-sm ${
                       currentPage === pageNumber
-                        ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-glow'
-                        : 'glass text-neutral-400 hover:bg-white/10 border border-white/10'
+                        ? 'bg-blue-500 text-white font-medium'
+                        : 'bg-gray-800/50 text-gray-400 hover:bg-gray-700/50'
                     }`}
                   >
                     {pageNumber}
