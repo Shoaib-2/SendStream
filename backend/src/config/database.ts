@@ -1,6 +1,7 @@
 // backend/src/config/database.ts
 import mongoose from 'mongoose';
 import { logger } from '../utils/logger';
+import { createDatabaseIndexes } from './database-indexes';
 
 // Connection ready state
 let isConnected = false;
@@ -12,10 +13,16 @@ export const connectDB = async () => {
       return;
     }
 
-    const conn = await mongoose.connect(process.env.MONGODB_URI!, {
+    // Configure connection pooling for production
+    const options: mongoose.ConnectOptions = {
       serverSelectionTimeoutMS: 5000,
       socketTimeoutMS: 45000,
-    });
+      maxPoolSize: 10, // Maximum number of connections in the pool
+      minPoolSize: 2,  // Minimum number of connections
+      maxIdleTimeMS: 30000, // Close connections after 30 seconds of inactivity
+    };
+
+    const conn = await mongoose.connect(process.env.MONGODB_URI!, options);
 
     isConnected = true;
     logger.info(`MongoDB Connected: ${conn.connection.host}`);
@@ -43,31 +50,25 @@ export const connectDB = async () => {
       }
     });
 
-    // Add indexes
-    await createIndexes();
+    // Enable query performance monitoring in development
+    if (process.env.NODE_ENV === 'development') {
+      mongoose.set('debug', (collectionName, method, query, doc) => {
+        logger.debug(`Mongoose: ${collectionName}.${method}`, { query, doc });
+      });
+    }
+
+    // Create comprehensive database indexes
+    await createDatabaseIndexes();
   } catch (error) {
     logger.error('Error connecting to MongoDB:', error);
     process.exit(1);
   }
 };
 
-const createIndexes = async () => {
-  try {
-    // Subscriber indexes
-    await mongoose.model('Subscriber').collection.createIndexes([
-      { key: { email: 1 }, unique: true },
-      { key: { status: 1 } }
-    ]);
-
-    // Newsletter indexes
-    await mongoose.model('Newsletter').collection.createIndexes([
-      { key: { status: 1 } },
-      { key: { scheduledDate: 1 } },
-      { key: { createdAt: -1 } }
-    ]);
-
-    logger.info('Database indexes created successfully');
-  } catch (error) {
-    logger.error('Error creating indexes:', error);
-  }
-};
+// Export connection status for health checks
+export const getConnectionStatus = () => ({
+  isConnected,
+  readyState: mongoose.connection.readyState,
+  host: mongoose.connection.host,
+  name: mongoose.connection.name
+});

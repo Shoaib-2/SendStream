@@ -152,7 +152,7 @@ interface ForgotPasswordResponse {
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
-// console.log("API URL:", API_URL); // Debug log
+console.log("API URL:", API_URL); // Debug log
 
 export class APIError extends Error {
   constructor(public status: number, message: string, public data?: unknown) {
@@ -629,6 +629,7 @@ export const newsletterAPI = {
       return response.data.data;
     } catch (error) {
       handleError(error as AxiosError);
+      throw error;
     }
   },
   update: async (id: string, data: Partial<Newsletter>) => {
@@ -640,6 +641,7 @@ export const newsletterAPI = {
       return response.data.data;
     } catch (error) {
       handleError(error as AxiosError);
+      throw error;
     }
   },
   delete: async (id: string) => {
@@ -660,6 +662,7 @@ export const newsletterAPI = {
       return response.data.data;
     } catch (error) {
       handleError(error as AxiosError);
+      throw error;
     }
   },
   send: async (id: string) => {
@@ -763,6 +766,7 @@ export const subscriberAPI = {
     } catch (error) {
       console.error("Error fetching subscribers:", error);
       handleError(error as AxiosError);
+      throw error;
     }
   },
   create: async (data: Omit<Subscriber, "id" | "subscribedDate">) => {
@@ -774,6 +778,7 @@ export const subscriberAPI = {
       return response.data.data;
     } catch (error) {
       handleError(error as AxiosError);
+      throw error;
     }
   },
   // Updated to use updateStatus for proper mailchimp sync
@@ -790,6 +795,7 @@ export const subscriberAPI = {
       }
       console.error("Error removing subscriber:", error);
       handleError(error as AxiosError);
+      throw error;
     }
   },
 
@@ -812,6 +818,7 @@ export const subscriberAPI = {
       return response.data.data;
     } catch (error) {
       handleError(error as AxiosError);
+      throw error;
     }
   },
 
@@ -828,6 +835,7 @@ export const subscriberAPI = {
       return response.data;
     } catch (error) {
       handleError(error as AxiosError);
+      throw error;
     }
   },
   syncMailchimp: async () => {
@@ -894,6 +902,7 @@ export const analyticsAPI = {
       return response.data.data;
     } catch (error) {
       handleError(error as AxiosError);
+      throw error;
     }
   },
 
@@ -921,6 +930,7 @@ export const analyticsAPI = {
       return response.data.data;
     } catch (error) {
       handleError(error as AxiosError);
+      throw error;
     }
   },
 };
@@ -1457,20 +1467,6 @@ export const emailAPI = {
 };
 
 // src/app/api/auth/route.ts logic moved here
-export interface Credentials {
-  username: string;
-  password: string;
-}
-
-export async function login(credentials: Credentials) {
-  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(credentials)
-  });
-  return response.json();
-}
-
 // Error response interface
 interface ErrorResponseData {
   message?: string;

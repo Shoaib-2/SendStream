@@ -1,20 +1,21 @@
-import express from 'express';
+import express, { RequestHandler } from 'express';
 import { register, login, logout, forgotPassword, resetPassword, checkTrialEligibility } from '../controllers/auth.controller';
+import { rateLimiters } from '../middleware/rateLimiter.middleware';
 
 const router = express.Router();
 
-// Existing routes - wrapped to ensure proper typing
-router.post('/register', (req, res, next) => { register(req, res, next); });
-router.post('/login', (req, res, next) => { login(req, res, next); });
-router.post('/logout', (req, res) => { logout(req, res); });
-router.get('/check-trial-eligibility', (req, res, next) => { checkTrialEligibility(req, res, next); });
+// Apply stricter rate limiting to auth routes
+router.post('/register', rateLimiters.auth as RequestHandler, register as RequestHandler);
+router.post('/login', rateLimiters.auth as RequestHandler, login as RequestHandler);
+router.post('/logout', logout);
+router.get('/check-trial-eligibility', rateLimiters.api as RequestHandler, checkTrialEligibility as RequestHandler);
 
-// Make sure these routes are added and match your API calls
-router.post('/forgot-password', (req, res, next) => { forgotPassword(req, res, next); });
-router.post('/reset-password/:token', (req, res, next) => { resetPassword(req, res, next); });
+// Password reset with auth rate limiting
+router.post('/forgot-password', rateLimiters.auth as RequestHandler, forgotPassword as RequestHandler);
+router.post('/reset-password/:token', rateLimiters.auth as RequestHandler, resetPassword as RequestHandler);
 
 // Add route for verifying cookie authentication
-router.get('/me', (req, res) => {
+router.get('/me', rateLimiters.api as RequestHandler, (req, res) => {
   // The protect middleware will handle authentication
   // This route is just for verifying the cookie
   res.status(200).json({

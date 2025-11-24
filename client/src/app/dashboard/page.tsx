@@ -1,13 +1,22 @@
 "use client";
 import React, { useEffect, useState } from 'react';
 import { Users, Mail, Star, BookOpen, Send } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import { useData } from '@/context/dataContext';
 import { newsletterAPI } from '@/services/api';
-import { ResponsivePie } from '@nivo/pie';
 import type { Newsletter } from '@/types';
 import ExpiredSubscription from '@/components/subscription/ExpiredSubscription';
 import { emailAPI } from '@/services/api';
 import { useSubscription } from '@/context/subscriptionContext';
+
+// Lazy load heavy chart component
+const ResponsivePie = dynamic(
+  () => import('@nivo/pie').then(mod => mod.ResponsivePie),
+  { 
+    ssr: false,
+    loading: () => <div className="h-64 flex items-center justify-center">Loading chart...</div>
+  }
+);
 
 const COLORS = ['#3B82F6', '#10B981', '#EF4444', '#F59E0B'];
 

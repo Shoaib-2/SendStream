@@ -5,6 +5,7 @@ import { analyticsService } from '../services/analytics.service';
 import { logger } from '../utils/logger';
 import Newsletter from '../models/Newsletter';
 import Subscriber from '../models/Subscriber';
+import { cacheService, CacheKeys } from '../services/cache.service';
 
 export class AnalyticsController {
   /**
@@ -31,51 +32,61 @@ export class AnalyticsController {
 
   async getGrowthData(req: Request, res: Response, next: NextFunction) {
     try {
-      // Get ALL subscribers, not just from the last 6 months
-      const allSubscribers = await Subscriber.find({
-        createdBy: req.user?._id,
-      }).sort('subscribed').lean();
-  
-      // Create a map to store monthly subscriber counts
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      const currentMonth = new Date().getMonth();
-      const currentYear = new Date().getFullYear();
+      if (!req.user?._id) return next(new Error('Authentication required'));
       
-      // Create ordered array of the last 6 months with year info for accurate comparison
-      const lastSixMonths = [];
-      for (let i = 5; i >= 0; i--) {
-        const monthIndex = (currentMonth - i + 12) % 12;
-        const yearOffset = (currentMonth - i < 0) ? -1 : 0;
-        const year = currentYear + yearOffset;
-        lastSixMonths.push({
-          monthIndex,
-          monthName: months[monthIndex],
-          year
-        });
-      }
+      // Cache growth data for 30 minutes
+      const cacheKey = CacheKeys.analyticsGrowth(req.user._id, '6');
+      const growthData = await cacheService.getOrSet(
+        cacheKey,
+        async () => {
+          // Get ALL subscribers, not just from the last 6 months
+          const allSubscribers = await Subscriber.find({
+            createdBy: req.user?._id,
+          }).sort('subscribed').lean();
       
-      // Calculate cumulative subscriber count for each month
-      const growthData = lastSixMonths.map((monthInfo) => {
-        // For each month, count subscribers who joined on or before this month
-        const count = allSubscribers.filter(sub => {
-          const subDate = new Date(sub.subscribed);
-          const subMonth = subDate.getMonth();
-          const subYear = subDate.getFullYear();
+          // Create a map to store monthly subscriber counts
+          const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+          const currentMonth = new Date().getMonth();
+          const currentYear = new Date().getFullYear();
           
-          // Include if the subscription is from an earlier year
-          if (subYear < monthInfo.year) return true;
+          // Create ordered array of the last 6 months with year info for accurate comparison
+          const lastSixMonths = [];
+          for (let i = 5; i >= 0; i--) {
+            const monthIndex = (currentMonth - i + 12) % 12;
+            const yearOffset = (currentMonth - i < 0) ? -1 : 0;
+            const year = currentYear + yearOffset;
+            lastSixMonths.push({
+              monthIndex,
+              monthName: months[monthIndex],
+              year
+            });
+          }
           
-          // Or if it's the same year and earlier/same month
-          if (subYear === monthInfo.year && subMonth <= monthInfo.monthIndex) return true;
-          
-          return false;
-        }).length;
-        
-        return {
-          month: monthInfo.monthName,
-          subscribers: count
-        };
-      });
+          // Calculate cumulative subscriber count for each month
+          return lastSixMonths.map((monthInfo) => {
+            // For each month, count subscribers who joined on or before this month
+            const count = allSubscribers.filter(sub => {
+              const subDate = new Date(sub.subscribed);
+              const subMonth = subDate.getMonth();
+              const subYear = subDate.getFullYear();
+              
+              // Include if the subscription is from an earlier year
+              if (subYear < monthInfo.year) return true;
+              
+              // Or if it's the same year and earlier/same month
+              if (subYear === monthInfo.year && subMonth <= monthInfo.monthIndex) return true;
+              
+              return false;
+            }).length;
+            
+            return {
+              month: monthInfo.monthName,
+              subscribers: count
+            };
+          });
+        },
+        30 * 60 * 1000 // Cache for 30 minutes
+      );
   
       res.json({
         status: 'success',
