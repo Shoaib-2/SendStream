@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Send, Users, ChartBar, Globe, Sparkles, Zap, Mail, BarChart3, Clock, Shield } from 'lucide-react';
+import { Send, Users, Globe, Sparkles, Zap, BarChart3, Shield } from 'lucide-react';
 import Card from '../UI/Card';
 import Container from '../UI/Container';
 import Badge from '../UI/Badge';
