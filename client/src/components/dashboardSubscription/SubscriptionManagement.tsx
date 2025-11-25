@@ -20,23 +20,23 @@ const CancelModal: React.FC<CancelModalProps> = ({ isOpen, onClose, onConfirm, i
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-gray-800/80 backdrop-blur-sm p-6 rounded-xl w-full max-w-md
-        border border-gray-700 shadow-lg">
-        <div className="flex items-center gap-3 mb-4 text-red-400">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-fade-in">
+      <div className="glass-strong p-6 rounded-2xl w-full max-w-md
+        border border-white/20 shadow-2xl animate-scale-in">
+        <div className="flex items-center gap-3 mb-4 text-error-400">
           <ExclamationCircleIcon className="w-6 h-6" />
           <h3 className="text-xl font-bold">Cancel Subscription</h3>
         </div>
 
-        <p className="text-gray-300 mb-6">
+        <p className="text-neutral-300 mb-6">
           Are you sure you want to cancel your subscription? You&apos;ll still have access until the end of your current billing period.
         </p>
 
         <div className="flex gap-3 justify-end">
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-gray-300
-              transition-colors"
+            className="px-4 py-2 rounded-lg glass hover:bg-white/10 text-neutral-200 border border-white/10
+              hover:border-primary-500/50 transition-all font-medium"
             disabled={isLoading}
           >
             Keep Subscription
@@ -44,8 +44,8 @@ const CancelModal: React.FC<CancelModalProps> = ({ isOpen, onClose, onConfirm, i
 
           <button
             onClick={onConfirm}
-            className="px-4 py-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400
-              border border-red-500/50 transition-colors flex items-center gap-2"
+            className="px-4 py-2 rounded-lg bg-error-500/20 hover:bg-error-500/30 text-error-400
+              border border-error-500/50 transition-all flex items-center gap-2 font-medium shadow-glow"
             disabled={isLoading}
           >
             {isLoading ? (
@@ -232,19 +232,24 @@ const SubscriptionManagement = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center p-6">
-        <ArrowPathIcon className="w-6 h-6 animate-spin text-blue-500" />
+        <div className="w-12 h-12 relative">
+          <div className="absolute inset-0 rounded-full border-4 border-primary-500/20" />
+          <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-primary-500 animate-spin" />
+          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-primary-500/20 to-secondary-500/20 blur-xl" />
+        </div>
       </div>
     );
   }
 
   if (authError) {
     return (
-      <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700">
-        <h3 className="text-xl font-bold mb-2">Subscription</h3>
-        <p className="text-gray-400 mb-4">You need to log in to view your subscription details</p>
+      <div className="glass p-6 rounded-2xl border border-white/10">
+        <h3 className="text-xl font-bold mb-2 text-white">Subscription</h3>
+        <p className="text-neutral-400 mb-4">You need to log in to view your subscription details</p>
         <button
           onClick={handleLogin}
-          className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg"
+          className="bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700
+            text-white px-4 py-2 rounded-lg transition-all shadow-glow font-medium"
         >
           Log in
         </button>
@@ -254,9 +259,9 @@ const SubscriptionManagement = () => {
 
   if (!subscription) {
     return (
-      <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700">
-        <h3 className="text-xl font-bold mb-2">Subscription</h3>
-        <p className="text-gray-400">You don&apos;t have an active subscription</p>
+      <div className="glass p-6 rounded-2xl border border-white/10">
+        <h3 className="text-xl font-bold mb-2 text-white">Subscription</h3>
+        <p className="text-neutral-400">You don&apos;t have an active subscription</p>
       </div>
     );
   }
@@ -274,20 +279,20 @@ const SubscriptionManagement = () => {
     new Date(subscription.currentPeriodEnd ?? '') < new Date();
 
   return (
-    <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700">
-      <h3 className="text-xl font-bold mb-4">Subscription Management</h3>
+    <div>
+      <h3 className="text-xl font-bold mb-4 text-white">Subscription Management</h3>
 
       {error && (
-        <div className="bg-red-500/10 border border-red-500/50 text-red-400 
-          px-4 py-3 rounded-lg mb-4 flex items-start gap-2">
+        <div className="bg-error-500/10 border border-error-500/50 text-error-400 
+          px-4 py-3 rounded-lg mb-4 flex items-start gap-2 shadow-soft">
           <ExclamationCircleIcon className="w-5 h-5 mt-0.5 flex-shrink-0" />
           <span>{error}</span>
         </div>
       )}
 
       {successMessage && (
-        <div className="bg-green-500/10 border border-green-500/50 text-green-400 
-          px-4 py-3 rounded-lg mb-4 flex items-start gap-2">
+        <div className="bg-success-500/10 border border-success-500/50 text-success-400 
+          px-4 py-3 rounded-lg mb-4 flex items-start gap-2 shadow-soft">
           <CheckCircleIcon className="w-5 h-5 mt-0.5 flex-shrink-0" />
           <span>{successMessage}</span>
         </div>
@@ -295,16 +300,16 @@ const SubscriptionManagement = () => {
 
       {/* Expired warning */}
       {isExpired && (
-        <div className="bg-amber-500/10 border border-amber-500/50 text-amber-400 
-          px-4 py-3 rounded-lg mb-4">
+        <div className="bg-warning-500/10 border border-warning-500/50 text-warning-400 
+          px-4 py-3 rounded-lg mb-4 shadow-soft">
           Your subscription has expired. Please renew to continue using the service.
         </div>
       )}
 
       <div className="space-y-3 mb-6">
         <div className="flex justify-between">
-          <span className="text-gray-400">Status</span>
-          <span className={`font-medium ${isExpired ? 'text-amber-400' : ''}`}>
+          <span className="text-neutral-400">Status</span>
+          <span className={`font-medium ${isExpired ? 'text-warning-400' : 'text-white'}`}>
             {isExpired ? 'Expired' :
               subscription.status === 'trialing' ? 'Trial' : subscription.status}
           </span>
@@ -312,26 +317,26 @@ const SubscriptionManagement = () => {
 
         {subscription.trialEnd && (
           <div className="flex justify-between">
-            <span className="text-gray-400">Trial ends on</span>
-            <span className="font-medium">{formatDate(subscription.trialEnd)}</span>
+            <span className="text-neutral-400">Trial ends on</span>
+            <span className="font-medium text-white">{formatDate(subscription.trialEnd)}</span>
           </div>
         )}
 
         {subscription.currentPeriodEnd && (
           <div className="flex justify-between">
-            <span className="text-gray-400">
+            <span className="text-neutral-400">
               {subscription.cancelAtPeriodEnd ? 'Access until' : 'Current period ends'}
             </span>
-            <span className="font-medium">{formatDate(subscription.currentPeriodEnd)}</span>
+            <span className="font-medium text-white">{formatDate(subscription.currentPeriodEnd)}</span>
           </div>
         )}
 
         {/* Auto-renew toggle - always show this row */}
         <div className="flex justify-between items-center">
-          <span className="text-gray-400">Auto renew</span>
+          <span className="text-neutral-400">Auto renew</span>
 
           <div className="flex items-center gap-2">
-            <span className="font-medium">
+            <span className="font-medium text-white">
               {subscription.cancelAtPeriodEnd ? 'No' : 'Yes'}
             </span>
 
@@ -342,11 +347,11 @@ const SubscriptionManagement = () => {
               aria-label={subscription.cancelAtPeriodEnd ? "Enable auto-renewal" : "Disable auto-renewal"}
             >
               {updatingAutoRenew ? (
-                <ArrowPathIcon className="w-5 h-5 animate-spin text-gray-300" />
+                <ArrowPathIcon className="w-5 h-5 animate-spin text-primary-400" />
               ) : (
-                <div className={`w-11 h-6 rounded-full transition-colors ${subscription.cancelAtPeriodEnd
-                    ? 'bg-gray-700'
-                    : 'bg-blue-500'
+                <div className={`w-11 h-6 rounded-full transition-all duration-300 ${subscription.cancelAtPeriodEnd
+                    ? 'bg-neutral-700'
+                    : 'bg-gradient-to-r from-primary-500 to-primary-600 shadow-glow'
                   } relative`}>
                   <div className={`absolute top-[2px] left-[2px] bg-white rounded-full h-5 w-5 transition-transform ${subscription.cancelAtPeriodEnd
                       ? 'translate-x-0'
@@ -363,18 +368,19 @@ const SubscriptionManagement = () => {
       {!subscription.cancelAtPeriodEnd && !isExpired && (
         <button
           onClick={handleCancelButton}
-          className="w-full bg-red-500/20 hover:bg-red-500/30 text-red-400 
-            border border-red-500/50 px-4 py-2 rounded-lg transition-colors
-            flex items-center justify-center gap-2"
+          className="w-full bg-error-500/20 hover:bg-error-500/30 text-white
+            border border-error-500/50 hover:border-error-500/70 px-4 py-2.5 rounded-lg transition-all
+            flex items-center justify-center gap-2 font-medium shadow-soft hover:shadow-glow"
         >
-          <XCircleIcon className="w-4 h-4" />
+          <XCircleIcon className="w-5 h-5" />
           Cancel Subscription
         </button>
       )}
 
       {subscription.cancelAtPeriodEnd && !isExpired && (
-        <div className="text-gray-400 text-sm flex items-start gap-2">
-          <CheckCircleIcon className="w-4 h-4 mt-0.5 text-amber-400 flex-shrink-0" />
+        <div className="text-neutral-400 text-sm flex items-start gap-2 bg-warning-500/10 
+          border border-warning-500/30 rounded-lg p-3">
+          <CheckCircleIcon className="w-4 h-4 mt-0.5 text-warning-400 flex-shrink-0" />
           <span>
             Your subscription has been cancelled and will end on {formatDate(subscription.currentPeriodEnd)}.
             You&apos;ll continue to have full access until this date.
@@ -385,9 +391,10 @@ const SubscriptionManagement = () => {
       {isExpired && (
         <button
           onClick={() => router.push('/pricing')}
-          className="w-full bg-blue-500 hover:bg-blue-600 text-white 
-            px-4 py-2 rounded-lg transition-colors mt-4
-            flex items-center justify-center gap-2"
+          className="w-full bg-gradient-to-r from-primary-500 to-primary-600 
+            hover:from-primary-600 hover:to-primary-700 text-white 
+            px-4 py-2 rounded-lg transition-all mt-4 shadow-glow
+            flex items-center justify-center gap-2 font-medium"
         >
           Renew Subscription
         </button>

@@ -140,14 +140,18 @@ export default function AnalyticsDashboard() {
                 transition-all duration-300 group"
             >
               <div className="flex items-center justify-between mb-4">
-                <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center
+                <div className="relative w-12 h-12 rounded-xl flex items-center justify-center
                   group-hover:scale-110 transition-all duration-300">
-                  <metric.icon className="w-6 h-6 text-blue-500" />
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl blur-md opacity-50" />
+                  <div className="relative w-full h-full bg-gradient-to-br from-primary-500/20 to-primary-600/20 rounded-xl 
+                    flex items-center justify-center border border-primary-500/30">
+                    <metric.icon className="w-6 h-6 text-primary-400" />
+                  </div>
                 </div>
                 <span className={`text-sm px-3 py-1 rounded-full ${
                   metric.change >= 0 
-                    ? 'text-green-400 bg-green-500/10' 
-                    : 'text-red-400 bg-red-500/10'
+                    ? 'text-success-400 bg-success-500/10 border border-success-500/50' 
+                    : 'text-error-400 bg-error-500/10 border border-error-500/50'
                 }`}>
                   {metric.change > 0 ? '+' : ''}{metric.change.toFixed(1)}%
                 </span>
@@ -241,7 +245,7 @@ export default function AnalyticsDashboard() {
                 <div className="text-sm">
                   <strong>{String(slice.points[0].data.x)}</strong>
                   <div className="flex items-center gap-2 mt-1">
-                    <div className="w-2 h-2 rounded-full bg-blue-500" />
+                    <div className="w-2 h-2 rounded-full bg-primary-500" />
                     <span>{slice.points[0].data.y != null ? Number(slice.points[0].data.y).toLocaleString() : '0'} subscribers</span>
                   </div>
                 </div>

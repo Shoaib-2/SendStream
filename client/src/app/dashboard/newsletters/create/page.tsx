@@ -79,10 +79,16 @@ const CreateNewsletter: React.FC = () => {
   const saveDraft = async () => {
     setLoading(true);
     try {
+      const newsletterData = {
+        ...newsletter,
+        status: 'draft' as const,
+        scheduledDate: newsletter.scheduledDate instanceof Date ? newsletter.scheduledDate.toISOString() : newsletter.scheduledDate,
+        sentDate: newsletter.sentDate instanceof Date ? newsletter.sentDate.toISOString() : newsletter.sentDate,
+      };
       if (draftId) {
-        await newsletterAPI.update(draftId, { ...newsletter, status: 'draft' });
+        await newsletterAPI.update(draftId, newsletterData);
       } else {
-        await newsletterAPI.create({ ...newsletter, status: 'draft' });
+        await newsletterAPI.create(newsletterData);
       }
       showNotificationMessage('Draft saved successfully!', 'success');
       router.push('/dashboard/newsletters');
@@ -126,10 +132,13 @@ const CreateNewsletter: React.FC = () => {
   const sendNow = async () => {
     setLoading(true);
     try {
-      const response = await newsletterAPI.create({
+      const newsletterData = {
         ...newsletter,
-        status: 'sent'
-      });
+        status: 'sent' as const,
+        scheduledDate: newsletter.scheduledDate instanceof Date ? newsletter.scheduledDate.toISOString() : newsletter.scheduledDate,
+        sentDate: newsletter.sentDate instanceof Date ? newsletter.sentDate.toISOString() : newsletter.sentDate,
+      };
+      const response = await newsletterAPI.create(newsletterData);
 
       if (response) {
         if ('id' in response) {
@@ -184,30 +193,32 @@ const CreateNewsletter: React.FC = () => {
   };
 
   return (
-    <div className="p-4 sm:p-6 min-h-screen bg-gradient-to-b from-gray-900 via-gray-900 to-gray-900/50">
+    <div className="p-4 sm:p-6 min-h-screen">
       <div className="max-w-4xl mx-auto">
         {showNotification && (
-          <div className={`fixed top-4 right-4 p-4 rounded-xl backdrop-blur-sm z-50 ${
-            notificationType === 'success' 
-              ? 'bg-green-500/10 border border-green-500/50 text-green-500' 
-              : 'bg-red-500/10 border border-red-500/50 text-red-500'
-          }`}>
-            {notificationMessage}
+          <div className="fixed top-4 right-4 z-50 animate-fade-in">
+            <div className={`px-4 py-3 rounded-lg backdrop-blur-sm shadow-glow-lg ${
+              notificationType === 'success' 
+                ? 'bg-success-500/10 border border-success-500/50 text-success-400' 
+                : 'bg-error-500/10 border border-error-500/50 text-error-400'
+            }`}>
+              {notificationMessage}
+            </div>
           </div>
         )}
 
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6 mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold font-inter bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold font-display gradient-text">
             Create Newsletter
           </h1>
           <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-3 sm:gap-4">
             <button
               onClick={saveDraft}
               disabled={loading}
-              className="w-full sm:w-auto bg-gray-800/50 hover:bg-gray-700/50 px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg 
-                flex items-center justify-center gap-2 backdrop-blur-sm border border-gray-700 
-                hover:border-blue-500/50 transition-all duration-300
-                disabled:opacity-50 disabled:hover:border-gray-700"
+              className="w-full sm:w-auto glass hover:bg-white/10 px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg 
+                flex items-center justify-center gap-2 border border-white/10 
+                hover:border-primary-500/50 transition-all duration-300
+                disabled:opacity-50 text-white font-medium"
             >
               <Save className="w-4 h-4" />
               {loading ? 'Saving...' : 'Save Draft'}
@@ -216,19 +227,19 @@ const CreateNewsletter: React.FC = () => {
             {!showScheduler ? (
               <button
                 onClick={() => setShowScheduler(true)}
-                className="w-full sm:w-auto bg-blue-500/20 hover:bg-blue-500/30 px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg
-                  flex items-center justify-center gap-2 backdrop-blur-sm border border-blue-500/50
-                  text-blue-400 hover:text-blue-300 transition-all duration-300"
+                className="w-full sm:w-auto bg-primary-500/20 hover:bg-primary-500/30 px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg
+                  flex items-center justify-center gap-2 backdrop-blur-sm border border-primary-500/50
+                  text-primary-400 hover:text-primary-300 transition-all duration-300 font-medium"
               >
                 <Calendar className="w-4 h-4" />
                 Schedule
               </button>
             ) : (              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto 
-                bg-gray-800/50 p-2 rounded-lg backdrop-blur-sm border border-gray-700">                <input
+                glass p-2 rounded-lg border border-white/10">                <input
                   type="datetime-local"
-                  className="w-full sm:w-auto px-3 py-2 bg-gray-700/50 rounded-lg border border-gray-600 
-                    focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50
-                    text-gray-200 text-sm"
+                  className="w-full sm:w-auto px-3 py-2 bg-neutral-900/50 rounded-lg border border-neutral-700 
+                    focus:border-primary-500 focus:ring-2 focus:ring-primary-500/50
+                    text-white text-sm"
                   defaultValue={(() => {
                     const now = new Date();
                     // Add 2 minutes to current time and format as local datetime string
@@ -267,8 +278,8 @@ const CreateNewsletter: React.FC = () => {
                 />
                 <button
                   onClick={() => setShowScheduler(false)}
-                  className="w-full sm:w-auto text-gray-400 hover:text-white p-2 rounded-lg hover:bg-gray-700/50
-                    transition-colors text-center"
+                  className="w-full sm:w-auto text-neutral-400 hover:text-white p-2 rounded-lg hover:bg-white/10
+                    transition-colors text-center font-medium"
                 >
                   Cancel
                 </button>
@@ -289,52 +300,52 @@ const CreateNewsletter: React.FC = () => {
         </div>
 
         <div className="space-y-4 sm:space-y-6">
-          <div className="bg-gray-800/50 backdrop-blur-sm p-4 sm:p-8 rounded-2xl
-            border border-gray-700 hover:border-blue-500/50 transition-all duration-300">
+          <div className="glass p-4 sm:p-8 rounded-2xl
+            border border-white/10 hover:border-primary-500/50 transition-all duration-300">
             <div className="space-y-4 sm:space-y-6">
               <div>
-                <label className="block text-sm font-medium mb-2 text-gray-300">Newsletter Title</label>
+                <label className="block text-sm font-medium mb-2 text-neutral-200">Newsletter Title</label>
                 <input
                   type="text"
                   value={newsletter.title}
                   onChange={(e) => setNewsletter({ ...newsletter, title: e.target.value })}
-                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-700/50 rounded-lg border border-gray-600
-                    focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50
-                    placeholder-gray-500 text-sm sm:text-base"
+                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-neutral-900/50 rounded-lg border border-neutral-700
+                    focus:border-primary-500 focus:ring-2 focus:ring-primary-500/50
+                    placeholder-neutral-500 text-sm sm:text-base text-white"
                   placeholder="Enter newsletter title"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2 text-gray-300">Email Subject</label>
+                <label className="block text-sm font-medium mb-2 text-neutral-200">Email Subject</label>
                 <input
                   type="text"
                   value={newsletter.subject}
                   onChange={(e) => setNewsletter({ ...newsletter, subject: e.target.value })}
-                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-700/50 rounded-lg border border-gray-600
-                    focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50
-                    placeholder-gray-500 text-sm sm:text-base"
+                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-neutral-900/50 rounded-lg border border-neutral-700
+                    focus:border-primary-500 focus:ring-2 focus:ring-primary-500/50
+                    placeholder-neutral-500 text-sm sm:text-base text-white"
                   placeholder="Enter email subject"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2 text-gray-300">Content</label>
+                <label className="block text-sm font-medium mb-2 text-neutral-200">Content</label>
                 <textarea
                   value={newsletter.content}
                   onChange={(e) => setNewsletter({ ...newsletter, content: e.target.value })}
-                  className="w-full h-64 sm:h-96 px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-700/50 rounded-lg border border-gray-600
-                    focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50
-                    placeholder-gray-500 resize-none text-sm sm:text-base"
+                  className="w-full h-64 sm:h-96 px-3 sm:px-4 py-2.5 sm:py-3 bg-neutral-900/50 rounded-lg border border-neutral-700
+                    focus:border-primary-500 focus:ring-2 focus:ring-primary-500/50
+                    placeholder-neutral-500 resize-none text-sm sm:text-base text-white"
                   placeholder="Write your newsletter content here..."
                 />
               </div>
             </div>
           </div>
 
-          <div className="bg-gray-800/50 backdrop-blur-sm p-4 sm:p-8 rounded-2xl
-            border border-gray-700 hover:border-blue-500/50 transition-all duration-300">
-            <h2 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-6">Content Quality Metrics</h2>
+          <div className="glass p-4 sm:p-8 rounded-2xl
+            border border-white/10 hover:border-primary-500/50 transition-all duration-300">
+            <h2 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-6 text-white">Content Quality Metrics</h2>
             
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -352,13 +363,13 @@ const CreateNewsletter: React.FC = () => {
                       })}
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer 
+                    <div className="w-11 h-6 bg-neutral-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary-500/50 rounded-full peer 
                       peer-checked:after:translate-x-full peer-checked:after:border-white after:content-['']
                       after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full
-                      after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+                      after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-primary-500 peer-checked:to-primary-600"></div>
                   </label>
-                  <span className="flex items-center gap-2 text-sm sm:text-base">
-                    <FileCheck className="w-5 h-5 text-blue-500" />
+                  <span className="flex items-center gap-2 text-sm sm:text-base text-white">
+                    <FileCheck className="w-5 h-5 text-primary-400" />
                     Original Content
                   </span>
                 </div>
@@ -377,13 +388,13 @@ const CreateNewsletter: React.FC = () => {
                       })}
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer 
+                    <div className="w-11 h-6 bg-neutral-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary-500/50 rounded-full peer 
                       peer-checked:after:translate-x-full peer-checked:after:border-white after:content-['']
                       after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full
-                      after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+                      after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-primary-500 peer-checked:to-primary-600"></div>
                   </label>
-                  <span className="flex items-center gap-2 text-sm sm:text-base">
-                    <BookOpen className="w-5 h-5 text-green-500" />
+                  <span className="flex items-center gap-2 text-sm sm:text-base text-white">
+                    <BookOpen className="w-5 h-5 text-secondary-400" />
                     Research Backed
                   </span>
                 </div>
@@ -402,34 +413,34 @@ const CreateNewsletter: React.FC = () => {
                       })}
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer 
+                    <div className="w-11 h-6 bg-neutral-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary-500/50 rounded-full peer 
                       peer-checked:after:translate-x-full peer-checked:after:border-white after:content-['']
                       after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full
-                      after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+                      after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-primary-500 peer-checked:to-primary-600"></div>
                   </label>
-                  <span className="flex items-center gap-2 text-sm sm:text-base">
-                    <Lightbulb className="w-5 h-5 text-yellow-500" />
+                  <span className="flex items-center gap-2 text-sm sm:text-base text-white">
+                    <Lightbulb className="w-5 h-5 text-accent-400" />
                     Actionable Insights
                   </span>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-300">Sources</label>
+                <label className="block text-sm font-medium text-neutral-200">Sources</label>
                 <div className="flex flex-col sm:flex-row gap-2">
                   <input
                     type="text"
                     value={currentSource}
                     onChange={(e) => setCurrentSource(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && addSource()}
-                    className="flex-1 px-3 sm:px-4 py-2 bg-gray-700/50 rounded-lg border border-gray-600
-                      focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 text-sm sm:text-base"
+                    className="flex-1 px-3 sm:px-4 py-2 bg-neutral-900/50 rounded-lg border border-neutral-700
+                      focus:border-primary-500 focus:ring-2 focus:ring-primary-500/50 text-sm sm:text-base text-white placeholder:text-neutral-500"
                     placeholder="Add a source..."
                   />
                   <button
                     onClick={addSource}
-                    className="w-full sm:w-auto px-4 py-2 bg-blue-500/20 text-blue-400 rounded-lg
-                      hover:bg-blue-500/30 transition-colors flex items-center justify-center gap-2"
+                    className="w-full sm:w-auto px-4 py-2 bg-primary-500/20 text-primary-400 rounded-lg
+                      hover:bg-primary-500/30 transition-colors flex items-center justify-center gap-2 font-medium border border-primary-500/30"
                   >
                     <Link className="w-4 h-4" />
                     <span className="sm:hidden">Add Source</span>
@@ -439,7 +450,7 @@ const CreateNewsletter: React.FC = () => {
                   {newsletter.contentQuality?.sources.map((source, index) => (
                     <span
                       key={index}
-                      className="px-3 py-1 bg-blue-500/20 text-blue-400 rounded-full text-sm break-all"
+                      className="px-3 py-1 bg-primary-500/20 text-primary-400 rounded-full text-sm break-all border border-primary-500/30"
                     >
                       {source}
                     </span>
@@ -448,21 +459,21 @@ const CreateNewsletter: React.FC = () => {
               </div>
 
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-300">Key Takeaways</label>
+                <label className="block text-sm font-medium text-neutral-200">Key Takeaways</label>
                 <div className="flex flex-col sm:flex-row gap-2">
                   <input
                     type="text"
                     value={currentTakeaway}
                     onChange={(e) => setCurrentTakeaway(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && addTakeaway()}
-                    className="flex-1 px-3 sm:px-4 py-2 bg-gray-700/50 rounded-lg border border-gray-600
-                      focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 text-sm sm:text-base"
+                    className="flex-1 px-3 sm:px-4 py-2 bg-neutral-900/50 rounded-lg border border-neutral-700
+                      focus:border-primary-500 focus:ring-2 focus:ring-primary-500/50 text-sm sm:text-base text-white placeholder:text-neutral-500"
                     placeholder="Add a key takeaway..."
                   />
                   <button
                     onClick={addTakeaway}
-                    className="w-full sm:w-auto px-4 py-2 bg-green-500/20 text-green-400 rounded-lg
-                      hover:bg-green-500/30 transition-colors flex items-center justify-center gap-2"
+                    className="w-full sm:w-auto px-4 py-2 bg-success-500/20 text-success-400 rounded-lg
+                      hover:bg-success-500/30 transition-colors flex items-center justify-center gap-2 font-medium border border-success-500/30"
                   >
                     <Lightbulb className="w-4 h-4" />
                     <span className="sm:hidden">Add Takeaway</span>
@@ -472,7 +483,7 @@ const CreateNewsletter: React.FC = () => {
                   {newsletter.contentQuality?.keyTakeaways.map((takeaway, index) => (
                     <span
                       key={index}
-                      className="px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-sm break-all"
+                      className="px-3 py-1 bg-success-500/20 text-success-400 rounded-full text-sm break-all border border-success-500/30"
                     >
                       {takeaway}
                     </span>

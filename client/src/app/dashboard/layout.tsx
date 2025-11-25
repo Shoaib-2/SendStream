@@ -5,7 +5,6 @@ import {
 } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/context/authContext';
-import Container from '@/components/UI/Container';
 import Button from '@/components/UI/Button';
 
 interface LogoutModalProps {
@@ -160,9 +159,9 @@ export default function DashboardLayout({
               <div className="pt-4 mt-4 border-t border-white/10">
                 <button 
                   onClick={() => setShowLogoutModal(true)}
-                  className="w-full flex items-center gap-3 px-4 py-3 text-error-400 hover:text-error-300
-                    hover:bg-error-500/10 rounded-xl transition-all duration-300 group border border-transparent
-                    hover:border-error-500/30"
+                  className="w-full flex items-center gap-3 px-4 py-3 text-white
+                    hover:bg-error-500/20 rounded-xl transition-all duration-300 group border border-error-500/30
+                    hover:border-error-500/50 shadow-soft hover:shadow-glow"
                 >
                   <LogOut size={20} className="group-hover:scale-110 transition-transform" />
                   <span className="font-medium">Logout</span>

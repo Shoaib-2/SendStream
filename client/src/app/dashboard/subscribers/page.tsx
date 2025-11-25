@@ -219,14 +219,15 @@ export default function SubscribersPage() {
                 </Button>
                 
                 <label className="cursor-pointer col-span-1">
-                  <Button
-                    variant="secondary"
-                    leftIcon={<Upload className="w-4 h-4" />}
-                    as="div"
-                    className="w-full"
-                  >
-                    Import
-                  </Button>
+                  <div className="w-full">
+                    <Button
+                      variant="secondary"
+                      leftIcon={<Upload className="w-4 h-4" />}
+                      className="w-full pointer-events-none"
+                    >
+                      Import
+                    </Button>
+                  </div>
                   <input type="file" className="hidden" accept=".csv" onChange={handleImport} />
                 </label>
                 
