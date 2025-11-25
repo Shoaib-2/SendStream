@@ -1200,30 +1200,27 @@ export const authAPI = {
 // Stripe methods for handling payments and subscriptions
 let stripePromise: Promise<Stripe | null>;
 
-// Hardcoded fallback for production (same key set in Vercel)
-const STRIPE_PK_FALLBACK = 'pk_test_51QyeEHGfclTFWug1IEyUj4jhpKMvsw7g5XV84MMO24hzIHF3M31ydHK3PgorqCOVCgRRBA6CKkULwTqG2dnyBDpu00hpQrKVNl';
-
 const getStripe = () => {
   if (!stripePromise) {
-    let key = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+    const key = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
     
-    // Fallback if environment variable is not set
-    if (!key || key.trim() === '' || key === 'undefined') {
-      console.warn('NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY not found in env, using fallback');
-      key = STRIPE_PK_FALLBACK;
-    }
-    
-    console.log('Stripe key loaded:', { 
-      source: key === STRIPE_PK_FALLBACK ? 'fallback' : 'env',
-      keyPrefix: key?.substring(0, 7),
-      keyLength: key?.length 
+    console.log('Stripe environment check:', { 
+      hasKey: !!key,
+      keyType: typeof key,
+      keyValue: key ? `${key.substring(0, 7)}...` : 'undefined',
+      allEnvKeys: Object.keys(process.env).filter(k => k.startsWith('NEXT_PUBLIC_'))
     });
     
-    if (!key || key.trim() === '') {
-      console.error('No Stripe publishable key available');
+    if (!key || key.trim() === '' || key === 'undefined') {
+      const errorMsg = 'NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is not properly configured in Vercel. Please check environment variables.';
+      console.error(errorMsg);
+      console.error('Available NEXT_PUBLIC_ variables:', Object.keys(process.env).filter(k => k.startsWith('NEXT_PUBLIC_')));
       stripePromise = Promise.resolve(null);
     } else {
-      stripePromise = loadStripe(key);
+      // Load Stripe with explicit locale to prevent module errors
+      stripePromise = loadStripe(key, {
+        locale: 'en'
+      });
     }
   }
   return stripePromise;
