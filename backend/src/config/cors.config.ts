@@ -7,7 +7,7 @@ import { CorsOptions } from 'cors';
 const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:3001',
-  'https://send-stream-fkyw.vercel.app',
+  'https://send-stream.vercel.app',
   'https://backend-9h3q.onrender.com'
 ];
 
