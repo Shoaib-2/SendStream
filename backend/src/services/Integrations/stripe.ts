@@ -75,7 +75,17 @@ export const getCustomerSubscriptions = async (customerId: string) => {
  * Retrieve a specific subscription
  */
 export const retrieveSubscription = async (subscriptionId: string) => {
-  return await stripe.subscriptions.retrieve(subscriptionId);
+  try {
+    return await stripe.subscriptions.retrieve(subscriptionId);
+  } catch (error: any) {
+    if (error.type === 'StripeInvalidRequestError' && error.code === 'resource_missing') {
+      // Log brief message, not full error (already handled upstream)
+      logger.warn(`Subscription ${subscriptionId} not found in Stripe`);
+    } else {
+      logger.error('Error retrieving Stripe subscription:', error.message);
+    }
+    throw error;
+  }
 };
 
 /**

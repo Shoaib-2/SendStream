@@ -1202,11 +1202,18 @@ let stripePromise: Promise<Stripe | null>;
 const getStripe = () => {
   if (!stripePromise) {
     const key = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
-    if (!key) {
-      console.error('NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is not defined');
-      return Promise.resolve(null);
+    console.log('Stripe publishable key check:', { 
+      hasKey: !!key, 
+      keyPrefix: key?.substring(0, 7),
+      keyLength: key?.length 
+    });
+    
+    if (!key || key.trim() === '') {
+      console.error('NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is not defined or empty');
+      stripePromise = Promise.resolve(null);
+    } else {
+      stripePromise = loadStripe(key);
     }
-    stripePromise = loadStripe(key);
   }
   return stripePromise;
 };

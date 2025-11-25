@@ -22,7 +22,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import { getSubscriptionStatus } from '@/services/api';
 
 const logger = {
-  info: (msg: string) => console.log(`[SubscriptionContext] ${msg}`),
+  info: (msg: string, data?: any) => console.log(`[SubscriptionContext] ${msg}`, data || ''),
   warn: (msg: string) => console.warn(`[SubscriptionContext] ${msg}`),
   error: (msg: string, err?: unknown) => console.error(`[SubscriptionContext] ${msg}`, err)
 };
@@ -76,13 +76,20 @@ export const SubscriptionProvider = ({ children }: { children: React.ReactNode }
         setLoading(false);
         return;
       }
+      
+      // Add cache busting to force fresh data
       const result = await getSubscriptionStatus();
-      // Example: result.data?.subscription?.status
+      logger.info('Subscription check result:', result);
+      
       const sub = result?.data?.subscription;
       if (!sub) {
+        logger.info('No subscription found, status: EXPIRED');
         setStatus(SubscriptionStatus.EXPIRED);
         return;
       }
+      
+      logger.info('Subscription found:', { status: sub.status, id: sub.id });
+      
       if (sub.status === 'active') {
         setStatus(SubscriptionStatus.ACTIVE);
       } else if (sub.status === 'trialing') {
@@ -92,7 +99,8 @@ export const SubscriptionProvider = ({ children }: { children: React.ReactNode }
       } else {
         setStatus(SubscriptionStatus.EXPIRED);
       }
-    } catch {
+    } catch (err) {
+      logger.error('Error checking subscription:', err);
       // Suppress error if user is not authenticated
       if (typeof window !== 'undefined' && !localStorage.getItem('token')) {
         setStatus(SubscriptionStatus.UNKNOWN);
