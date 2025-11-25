@@ -1202,20 +1202,24 @@ let stripePromise: Promise<Stripe | null>;
 
 const getStripe = () => {
   if (!stripePromise) {
-    const key = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+    // Try multiple sources for the Stripe key
+    const key = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || 
+                (typeof window !== 'undefined' && (window as any).__NEXT_DATA__?.props?.pageProps?.stripePublishableKey);
     
     console.log('Stripe environment check:', { 
       hasKey: !!key,
-      keyType: typeof key,
-      keyValue: key ? `${key.substring(0, 7)}...` : 'undefined',
+      keySource: key ? (process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ? 'process.env' : 'runtime') : 'none',
+      keyPrefix: key ? `${key.substring(0, 7)}...` : 'undefined',
       allEnvKeys: Object.keys(process.env).filter(k => k.startsWith('NEXT_PUBLIC_'))
     });
     
     if (!key || key.trim() === '' || key === 'undefined') {
-      const errorMsg = 'NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is not properly configured in Vercel. Please check environment variables.';
+      const errorMsg = 'NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is not available. Check Vercel environment variables and redeploy.';
       console.error(errorMsg);
-      console.error('Available NEXT_PUBLIC_ variables:', Object.keys(process.env).filter(k => k.startsWith('NEXT_PUBLIC_')));
-      stripePromise = Promise.resolve(null);
+      console.error('Process env keys:', Object.keys(process.env).filter(k => k.startsWith('NEXT_PUBLIC_')));
+      
+      // Don't set promise yet, let it retry
+      return Promise.resolve(null);
     } else {
       // Load Stripe with explicit locale to prevent module errors
       stripePromise = loadStripe(key, {
