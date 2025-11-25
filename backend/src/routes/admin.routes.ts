@@ -191,6 +191,126 @@ const refreshTrialStatus: RequestHandler = async (req: Request, res: Response): 
 };
 
 /**
+ * POST /api/admin/refresh-subscription-status
+ * Manually refresh subscription status from Stripe for a specific user
+ */
+const refreshSubscriptionStatus: RequestHandler = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      res.status(400).json({ status: 'error', message: 'Email is required' });
+      return;
+    }
+    
+    const user = await User.findOne({ email });
+    if (!user) {
+      res.status(404).json({ status: 'error', message: 'User not found' });
+      return;
+    }
+    
+    logger.info(`Refreshing subscription status for user: ${email}`);
+    
+    // Get customer ID from user or search Stripe
+    let customerId = user.stripeCustomerId;
+    
+    if (!customerId) {
+      const customers = await stripe.customers.list({ email, limit: 1 });
+      if (customers.data.length > 0) {
+        customerId = customers.data[0].id;
+        logger.info(`Found Stripe customer: ${customerId}`);
+      } else {
+        res.status(404).json({ 
+          status: 'error', 
+          message: 'No Stripe customer found for this email' 
+        });
+        return;
+      }
+    }
+    
+    // Get all subscriptions for this customer
+    const subscriptions = await stripe.subscriptions.list({
+      customer: customerId,
+      limit: 100,
+      status: 'all'
+    });
+    
+    logger.info(`Found ${subscriptions.data.length} subscriptions for customer ${customerId}`);
+    
+    // Find the most recent active subscription
+    const activeSubscription = subscriptions.data.find(
+      sub => sub.status === 'active' || sub.status === 'trialing'
+    );
+    
+    const updateData: Record<string, unknown> = {
+      stripeCustomerId: customerId,
+      updatedAt: new Date()
+    };
+    
+    if (activeSubscription) {
+      updateData.stripeSubscriptionId = activeSubscription.id;
+      updateData.subscriptionStatus = activeSubscription.status;
+      updateData.status = 'active';
+      
+      logger.info(`Active subscription found: ${activeSubscription.id}, status: ${activeSubscription.status}`);
+      
+      const updatedUser = await User.findOneAndUpdate(
+        { email },
+        updateData,
+        { new: true }
+      );
+      
+      res.status(200).json({
+        status: 'success',
+        message: 'Subscription status refreshed successfully',
+        data: {
+          email: updatedUser?.email,
+          stripeCustomerId: updatedUser?.stripeCustomerId,
+          stripeSubscriptionId: updatedUser?.stripeSubscriptionId,
+          subscriptionStatus: updatedUser?.subscriptionStatus,
+          hasActiveAccess: updatedUser?.hasActiveAccess
+        }
+      });
+    } else {
+      // No active subscription found
+      updateData.subscriptionStatus = 'canceled';
+      
+      logger.info('No active subscription found');
+      
+      const updatedUser = await User.findOneAndUpdate(
+        { email },
+        updateData,
+        { new: true }
+      );
+      
+      res.status(200).json({
+        status: 'success',
+        message: 'No active subscription found',
+        data: {
+          email: updatedUser?.email,
+          stripeCustomerId: updatedUser?.stripeCustomerId,
+          subscriptionStatus: updatedUser?.subscriptionStatus,
+          hasActiveAccess: updatedUser?.hasActiveAccess,
+          totalSubscriptions: subscriptions.data.length,
+          subscriptionStatuses: subscriptions.data.map(s => ({
+            id: s.id,
+            status: s.status,
+            created: new Date(s.created * 1000)
+          }))
+        }
+      });
+    }
+  } catch (error) {
+    logger.error('Error refreshing subscription status:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to refresh subscription status',
+      error: (error as Error).message
+    });
+  }
+};
+
+/**
  * POST /api/admin/fix-trial-records
  * Fix trial records for all users (Admin only)
  */
@@ -287,7 +407,11 @@ const fixTrialRecords: RequestHandler = async (req: Request, res: Response): Pro
   }
 };
 
-// Route definitions (protected routes)
+// Route definitions
+// Unauthenticated routes (must come BEFORE protect middleware)
+router.post('/refresh-subscription-status', refreshSubscriptionStatus);
+
+// Protected routes
 router.use(protect as RequestHandler);
 router.get('/check-trial-eligibility', checkTrialEligibility);
 router.post('/refresh-trial-status', refreshTrialStatus);
