@@ -132,7 +132,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         setWs(null);
       }
     };
-  }, [MAX_FETCH_ATTEMPTS, ws]); 
+  }, [MAX_FETCH_ATTEMPTS, ws, wsReconnectAttempts]); 
 
   // Handle token changes
   useEffect(() => {

@@ -22,7 +22,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import { getSubscriptionStatus } from '@/services/api';
 
 const logger = {
-  info: (msg: string, data?: any) => console.log(`[SubscriptionContext] ${msg}`, data || ''),
+  info: (msg: string, data?: unknown) => console.log(`[SubscriptionContext] ${msg}`, data || ''),
   warn: (msg: string) => console.warn(`[SubscriptionContext] ${msg}`),
   error: (msg: string, err?: unknown) => console.error(`[SubscriptionContext] ${msg}`, err)
 };
