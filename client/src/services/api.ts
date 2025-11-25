@@ -1199,17 +1199,28 @@ export const authAPI = {
 
 // Stripe methods for handling payments and subscriptions
 let stripePromise: Promise<Stripe | null>;
+
+// Hardcoded fallback for production (same key set in Vercel)
+const STRIPE_PK_FALLBACK = 'pk_test_51QyeEHGfclTFWug1IEyUj4jhpKMvsw7g5XV84MMO24hzIHF3M31ydHK3PgorqCOVCgRRBA6CKkULwTqG2dnyBDpu00hpQrKVNl';
+
 const getStripe = () => {
   if (!stripePromise) {
-    const key = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
-    console.log('Stripe publishable key check:', { 
-      hasKey: !!key, 
+    let key = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+    
+    // Fallback if environment variable is not set
+    if (!key || key.trim() === '' || key === 'undefined') {
+      console.warn('NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY not found in env, using fallback');
+      key = STRIPE_PK_FALLBACK;
+    }
+    
+    console.log('Stripe key loaded:', { 
+      source: key === STRIPE_PK_FALLBACK ? 'fallback' : 'env',
       keyPrefix: key?.substring(0, 7),
       keyLength: key?.length 
     });
     
     if (!key || key.trim() === '') {
-      console.error('NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is not defined or empty');
+      console.error('No Stripe publishable key available');
       stripePromise = Promise.resolve(null);
     } else {
       stripePromise = loadStripe(key);
