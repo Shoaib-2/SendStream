@@ -1,5 +1,6 @@
 import mongoose, { Document, Schema } from 'mongoose';
 import { encrypt, decrypt } from '../utils/encryption';
+import { logger } from '../utils/logger';
 
 export interface ISettings extends Document {
   userId: mongoose.Types.ObjectId;
@@ -82,7 +83,8 @@ settingsSchema.methods.getDecryptedMailchimpApiKey = function(): string | undefi
   try {
     return decrypt(this.mailchimp.apiKey);
   } catch (error) {
-    console.error('Failed to decrypt Mailchimp API key:', error);
+    logger.error('Decryption failed:', error);
+    logger.warn('Failed to decrypt Mailchimp API key - encryption key may have changed');
     return undefined;
   }
 };
