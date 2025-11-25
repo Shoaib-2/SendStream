@@ -55,10 +55,12 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       }
 
       try {
-        const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'wss://backend-9h3q.onrender.com/ws';
-        // console.log('Attempting WebSocket connection to:', wsUrl);
+        const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'wss://backend-9h3q.onrender.com';
+        // Ensure the WebSocket URL includes the /ws path
+        const wsEndpoint = wsUrl.endsWith('/ws') ? wsUrl : `${wsUrl}/ws`;
+        console.log('Attempting WebSocket connection to:', wsEndpoint);
 
-        const socket = new WebSocket(`${wsUrl}?token=${token}`);
+        const socket = new WebSocket(`${wsEndpoint}?token=${token}`);
 
         socket.onopen = () => {
           // console.log('WebSocket connected successfully');

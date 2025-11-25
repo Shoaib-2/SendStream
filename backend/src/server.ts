@@ -36,13 +36,14 @@ app.use(helmet(helmetConfig));
 // CORS configuration
 app.use(cors(corsConfig));
 
-// Add body parsing middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Cookie parser (needed before routes)
 app.use(cookieParser());
 
 const server = createServer(app);
-const wss = new WebSocketServer({ server });
+const wss = new WebSocketServer({ 
+  server,
+  path: '/ws' // Explicitly set WebSocket path
+});
 
 wss.on('connection', (ws, req) => {
   try {
@@ -104,16 +105,18 @@ wss.on('headers', (headers) => {
   }
 });
 
+// Add non-protected routes first (BEFORE body parsers for Stripe webhook raw body)
+app.use('/api/stripe', stripeRoutes); // Stripe routes MUST be before express.json() for webhook raw body
 
+// NOW add body parsing middleware (AFTER Stripe routes)
 app.use(express.json());
-app.use(cookieParser()); // Added cookie-parser middleware
+app.use(express.urlencoded({ extended: true }));
 
-// Add non-protected routes first
+// Other non-protected routes
 app.use('/api/auth', authRoutes);
 app.use('/api/health', healthRoutes);
-app.use('/api/subscription', subscriptionRoutes); // Add subscription routes before protection
-app.use('/api/stripe', stripeRoutes); // Add Stripe routes (webhook must be raw body)
-app.use('/api/admin', adminRoutes); // Add admin routes
+app.use('/api/subscription', subscriptionRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Apply protection middleware to all other routes
 const protectedRouter = express.Router();
@@ -149,12 +152,14 @@ const PORT = process.env.PORT || 5000;
 connectDB().then(() => {
   server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
-    console.log('WebSocket server initialized on port', PORT);
+    console.log(`WebSocket server available at ws://localhost:${PORT}/ws`);
     console.log('Available routes:');
+    console.log(' - /api/stripe (webhook, checkout)');
     console.log(' - /api/auth');
     console.log(' - /api/subscribers');
     console.log(' - /api/newsletters');
-    console.log(' - /api/subscription'); 
+    console.log(' - /api/subscription');
+    console.log(' - /api/admin');
   });
 }).catch(err => {
   console.error('Failed to connect to MongoDB:', err);
