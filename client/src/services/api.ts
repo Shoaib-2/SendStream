@@ -152,6 +152,9 @@ interface ForgotPasswordResponse {
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
+if (!API_URL) {
+  console.error('NEXT_PUBLIC_API_URL is not defined!');
+}
 console.log("API URL:", API_URL); // Debug log
 
 export class APIError extends Error {
