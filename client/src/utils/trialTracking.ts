@@ -150,18 +150,19 @@ interface TrialHistory {
         }
       }
       
-      // Check with API
-      const response = await fetch(`/api/check-trial-eligibility?email=${encodeURIComponent(email)}`);
+      // Check with backend API
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://backend-9h3q.onrender.com/api';
+      const response = await fetch(`${API_URL}/admin/check-trial-eligibility?email=${encodeURIComponent(email)}`);
       if (response.ok) {
         const data = await response.json();
         console.log('Trial eligibility API response:', data);
         
         // Record result in history
-        if (data.status === 'success' && !data.eligibleForTrial) {
+        if (data.status === 'success' && !data.eligible) {
           recordTrialAttempt(email);
         }
         
-        return data.status === 'success' && data.eligibleForTrial;
+        return data.status === 'success' && data.eligible;
       }
     } catch (e) {
       console.error('Error checking trial eligibility:', e);

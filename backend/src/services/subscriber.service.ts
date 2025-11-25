@@ -13,7 +13,16 @@ function getDecryptedMailchimpKey(settings: any): string {
   if (!settings.mailchimp?.apiKey) {
     throw new Error('Mailchimp API key not found');
   }
-  return settings.getDecryptedMailchimpApiKey() || settings.mailchimp.apiKey;
+  
+  try {
+    return settings.getDecryptedMailchimpApiKey() || settings.mailchimp.apiKey;
+  } catch (error) {
+    logger.error('Failed to decrypt Mailchimp API key:', error);
+    // If decryption fails, it might be because the encryption key changed
+    // Return the value as-is (it might not be encrypted)
+    logger.warn('Using API key without decryption - may be unencrypted or using different encryption key');
+    return settings.mailchimp.apiKey;
+  }
 }
 
 interface MailchimpSubscriber {
