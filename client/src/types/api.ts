@@ -1,12 +1,12 @@
 // API types for frontend
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   status: 'success' | 'error';
   data?: T;
   message?: string;
   error?: {
     message: string;
     code?: string;
-    details?: any;
+    details?: unknown;
   };
   pagination?: {
     page: number;

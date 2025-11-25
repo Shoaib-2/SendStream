@@ -6,9 +6,7 @@ import { useData } from '../../../context/dataContext';
 import { subscriberAPI } from '../../../services/api';
 import { Subscriber } from '../../../types';
 import Container from '@/components/UI/Container';
-import Card from '@/components/UI/Card';
 import Badge from '@/components/UI/Badge';
-import Button from '@/components/UI/Button';
 
 export default function SubscribersPage() {
   const { subscribers, addSubscriber, removeSubscriber, isLoading } = useData();

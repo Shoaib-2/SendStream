@@ -119,7 +119,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         setWs(null);
       }
     };
-  }, [MAX_FETCH_ATTEMPTS]); 
+  }, [MAX_FETCH_ATTEMPTS, ws]); 
 
   // Handle token changes
   useEffect(() => {
@@ -198,7 +198,15 @@ useEffect(() => {
 
   const addSubscriber = async (subscriberData: Omit<Subscriber, 'id'>) => {
     try {
-      const response = await subscriberAPI.create(subscriberData);
+      // Convert Date to string if present
+      const payload = {
+        ...subscriberData,
+        subscribed: subscriberData.subscribed instanceof Date 
+          ? subscriberData.subscribed.toISOString() 
+          : subscriberData.subscribed
+      };
+      
+      const response = await subscriberAPI.create(payload);
 
       if (response) {
         const newSubscriber: Subscriber = {
@@ -266,7 +274,18 @@ useEffect(() => {
 
   const addNewsletter = async (newsletter: Omit<Newsletter, 'id'>) => {
     try {
-      const response = await newsletterAPI.create(newsletter);
+      // Convert Date fields to strings if present
+      const payload = {
+        ...newsletter,
+        scheduledDate: newsletter.scheduledDate instanceof Date
+          ? newsletter.scheduledDate.toISOString()
+          : newsletter.scheduledDate,
+        sentDate: newsletter.sentDate instanceof Date
+          ? newsletter.sentDate.toISOString()
+          : newsletter.sentDate
+      };
+      
+      const response = await newsletterAPI.create(payload);
       if (response) {
         const formattedNewsletter: Newsletter = {
           ...response,
@@ -282,7 +301,18 @@ useEffect(() => {
 
   const updateNewsletter = async (id: string, data: Partial<Newsletter>) => {
     try {
-      const response = await newsletterAPI.update(id, data);
+      // Convert Date fields to strings if present
+      const payload = {
+        ...data,
+        scheduledDate: data.scheduledDate instanceof Date
+          ? data.scheduledDate.toISOString()
+          : data.scheduledDate,
+        sentDate: data.sentDate instanceof Date
+          ? data.sentDate.toISOString()
+          : data.sentDate
+      };
+      
+      const response = await newsletterAPI.update(id, payload);
       if (response) {
         setNewsletters(prev => prev.map(n => n.id === id ? {
           ...response,

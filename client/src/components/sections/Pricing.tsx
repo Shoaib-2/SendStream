@@ -118,7 +118,7 @@ const Pricing: React.FC<PricingProps> = ({ isRenewal = false }) => {
               {/* Features */}
               <div className="mb-8">
                 <p className="text-sm font-semibold text-neutral-400 uppercase tracking-wider mb-4">
-                  What's Included
+                  What&apos;s Included
                 </p>
                 <ul className="space-y-4">
                   {features.map((feature, i) => (
