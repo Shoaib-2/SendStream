@@ -1199,56 +1199,20 @@ export const authAPI = {
 
 // Stripe methods for handling payments and subscriptions
 let stripePromise: Promise<Stripe | null>;
-let configPromise: Promise<{ stripePublishableKey: string } | null> | null = null;
-
-// Fetch config from server-side endpoint as fallback
-const getConfig = async () => {
-  if (!configPromise) {
-    configPromise = fetch('/api/config')
-      .then(res => res.json())
-      .catch(err => {
-        console.error('Failed to fetch config from server:', err);
-        return null;
-      });
-  }
-  return configPromise;
-};
 
 const getStripe = async () => {
   if (!stripePromise) {
-    // Try multiple sources for the Stripe key
-    let key = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+    const key = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
     
-    console.log('Stripe environment check (initial):', { 
-      hasKey: !!key,
-      keySource: key ? 'process.env' : 'none',
-      keyPrefix: key ? `${key.substring(0, 7)}...` : 'undefined',
-      allEnvKeys: Object.keys(process.env).filter(k => k.startsWith('NEXT_PUBLIC_'))
-    });
-    
-    // If not available from env, try server-side config endpoint
-    if (!key || key.trim() === '' || key === 'undefined') {
-      console.log('Environment variable not available, fetching from server config endpoint...');
-      const config = await getConfig();
-      if (config?.stripePublishableKey) {
-        key = config.stripePublishableKey;
-        console.log('Retrieved Stripe key from server config:', key.substring(0, 7) + '...');
-      }
-    }
-    
-    if (!key || key.trim() === '' || key === 'undefined') {
-      const errorMsg = 'NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is not available from any source. Check Vercel environment variables.';
-      console.error(errorMsg);
-      console.error('Tried sources: process.env, server config endpoint');
-      
-      // Don't set promise yet, let it retry
+    if (!key || key.trim() === '') {
+      console.error('NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is not set');
       return Promise.resolve(null);
-    } else {
-      // Load Stripe with explicit locale to prevent module errors
-      stripePromise = loadStripe(key, {
-        locale: 'en'
-      });
     }
+    
+    console.log('Loading Stripe with key:', key.substring(0, 7) + '...');
+    stripePromise = loadStripe(key, {
+      locale: 'en'
+    });
   }
   return stripePromise;
 };
