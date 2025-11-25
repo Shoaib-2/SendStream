@@ -1204,7 +1204,7 @@ const getStripe = () => {
   if (!stripePromise) {
     // Try multiple sources for the Stripe key
     const key = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || 
-                (typeof window !== 'undefined' && (window as any).__NEXT_DATA__?.props?.pageProps?.stripePublishableKey);
+                (typeof window !== 'undefined' && (window as unknown as { __NEXT_DATA__?: { props?: { pageProps?: { stripePublishableKey?: string } } } }).__NEXT_DATA__?.props?.pageProps?.stripePublishableKey);
     
     console.log('Stripe environment check:', { 
       hasKey: !!key,
