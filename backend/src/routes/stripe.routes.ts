@@ -253,7 +253,7 @@ const checkSubscription: RequestHandler = async (req: Request, res: Response): P
 
 // Route definitions
 router.post('/webhook', express.raw({ type: 'application/json' }), handleWebhook);
-router.post('/checkout', createCheckout);
+router.post('/checkout', express.json(), createCheckout); // Add JSON parsing for checkout
 router.get('/check-subscription', checkSubscription);
 
 export default router;
