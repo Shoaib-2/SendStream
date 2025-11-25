@@ -1332,8 +1332,21 @@ export const startFreeTrial = async (plan: PricingPlan, userEmail?: string) => {
       const isEligible = await checkTrialEligibility(email);
 
       if (!isEligible) {
-        // console.log('User not eligible for trial, forcing renewal flow');
+        console.log('User not eligible for trial, forcing renewal flow');
         forceSkipTrial = true;
+        
+        // Show user a message that they already used trial
+        if (typeof window !== 'undefined') {
+          const confirmed = confirm(
+            'This email has already used a free trial. You will be charged for the subscription. Continue?'
+          );
+          if (!confirmed) {
+            console.log('User cancelled checkout');
+            return;
+          }
+        }
+      } else {
+        console.log('User eligible for free trial');
       }
     } catch (error) {
       console.error("Error checking trial eligibility:", error);
@@ -1341,7 +1354,7 @@ export const startFreeTrial = async (plan: PricingPlan, userEmail?: string) => {
   }
 
   // Final logging before checkout
-  // console.log(`Proceeding to checkout (skipTrial: ${forceSkipTrial})`);
+  console.log(`Proceeding to checkout (skipTrial: ${forceSkipTrial})`);
 
   // Create checkout session with or without trial
   try {
@@ -1351,27 +1364,15 @@ export const startFreeTrial = async (plan: PricingPlan, userEmail?: string) => {
     });
   } catch (error) {
     console.error("Failed to create checkout session:", error);
+    throw error;
   }
 };
 
 // Get subscription status
 export const getSubscriptionStatus = async () => {
   try {
-    // Get token from localStorage
-    const token = localStorage.getItem("token");
-
-    const response = await fetch("/api/stripe/status", {
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: token ? `Bearer ${token}` : "",
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to fetch subscription status");
-    }
-
-    return await response.json();
+    const response = await api.get("/subscription/status");
+    return response.data;
   } catch (error) {
     console.error("Error fetching subscription status:", error);
     throw error;

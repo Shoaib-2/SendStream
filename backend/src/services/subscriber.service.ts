@@ -11,17 +11,20 @@ import mongoose from 'mongoose';
  */
 function getDecryptedMailchimpKey(settings: any): string {
   if (!settings.mailchimp?.apiKey) {
-    throw new Error('Mailchimp API key not found');
+    throw new Error('Mailchimp API key not found in settings');
   }
   
   try {
-    return settings.getDecryptedMailchimpApiKey() || settings.mailchimp.apiKey;
+    const decryptedKey = settings.getDecryptedMailchimpApiKey();
+    if (!decryptedKey) {
+      logger.warn('Mailchimp API key exists but decryption returned undefined');
+      logger.warn('This may indicate the encryption key changed between environments');
+      throw new Error('Mailchimp API key decryption failed - please re-enter your API key in settings');
+    }
+    return decryptedKey;
   } catch (error) {
     logger.error('Failed to decrypt Mailchimp API key:', error);
-    // If decryption fails, it might be because the encryption key changed
-    // Return the value as-is (it might not be encrypted)
-    logger.warn('Using API key without decryption - may be unencrypted or using different encryption key');
-    return settings.mailchimp.apiKey;
+    throw new Error('Mailchimp API key decryption failed - please re-enter your API key in settings');
   }
 }
 
