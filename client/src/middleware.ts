@@ -18,10 +18,9 @@ export function middleware(request: NextRequest) {
     const referer = request.headers.get('referer');
     const host = request.headers.get('host');
     
-    // Whitelist for webhooks and public API endpoints
-    const publicApiEndpoints = [
-      '/api/stripe/webhook',
-      '/api/auth/check-trial-eligibility'
+    // Whitelist for public API endpoints (if any remain in client)
+    const publicApiEndpoints: string[] = [
+      // No public endpoints needed anymore - all moved to backend
     ];
     
     const isPublicEndpoint = publicApiEndpoints.some(endpoint => 

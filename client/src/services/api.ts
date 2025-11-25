@@ -1256,7 +1256,7 @@ export const createCheckoutSession = async (
     //   email: email?.substring(0, 3) + "...", // Log just first few chars for privacy
     // });
 
-    const response = await fetch("/api/stripe/checkout", {
+    const response = await fetch(`${API_URL}/stripe/checkout`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

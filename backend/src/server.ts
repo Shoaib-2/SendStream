@@ -19,6 +19,8 @@ import settingsRoutes from './routes/settings.routes';
 import healthRoutes from './routes/health.routes';
 import jwt from 'jsonwebtoken';
 import subscriptionRoutes from './routes/subscription.routes';
+import stripeRoutes from './routes/stripe.routes';
+import adminRoutes from './routes/admin.routes';
 import { protect } from './middleware/auth/auth.middleware';
 import { checkSubscription } from './middleware/susbcription.middleware';
 import emailRoutes from './routes/email.routes';
@@ -110,6 +112,8 @@ app.use(cookieParser()); // Added cookie-parser middleware
 app.use('/api/auth', authRoutes);
 app.use('/api/health', healthRoutes);
 app.use('/api/subscription', subscriptionRoutes); // Add subscription routes before protection
+app.use('/api/stripe', stripeRoutes); // Add Stripe routes (webhook must be raw body)
+app.use('/api/admin', adminRoutes); // Add admin routes
 
 // Apply protection middleware to all other routes
 const protectedRouter = express.Router();
