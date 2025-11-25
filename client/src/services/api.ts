@@ -151,9 +151,9 @@ interface ForgotPasswordResponse {
   message: string;
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
-if (!API_URL) {
-  console.error('NEXT_PUBLIC_API_URL is not defined!');
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://backend-9h3q.onrender.com/api';
+if (!process.env.NEXT_PUBLIC_API_URL) {
+  console.warn('NEXT_PUBLIC_API_URL is not defined! Using fallback:', API_URL);
 }
 console.log("API URL:", API_URL); // Debug log
 
