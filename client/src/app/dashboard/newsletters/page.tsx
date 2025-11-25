@@ -52,7 +52,8 @@ const NewsletterDashboard = () => {
 React.useEffect(() => {
     fetchNewsletterStats();
 
-    const ws = new WebSocket(`${process.env.NEXT_PUBLIC_WS_URL}`);
+    const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'wss://backend-9h3q.onrender.com/ws';
+    const ws = new WebSocket(`${wsUrl}`);
     
     // Only set up the message listener after the connection is open
     ws.onopen = () => {
