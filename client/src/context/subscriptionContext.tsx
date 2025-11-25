@@ -54,6 +54,17 @@ export const SubscriptionProvider = ({ children }: { children: React.ReactNode }
   const [error, setError] = useState<string | null>(null);
   const [returnPath, setReturnPath] = useState<string | null>(null);
 
+  // Centralized renewal redirect (defined first to avoid dependency issues)
+  const triggerRenewalRedirect = useCallback(() => {
+    if (typeof window !== 'undefined') {
+      // Store current path for post-renewal navigation
+      if (!localStorage.getItem('returnPath')) {
+        localStorage.setItem('returnPath', window.location.pathname);
+      }
+      window.location.href = '/?renew=true';
+    }
+  }, []);
+
   // Centralized subscription check
   const checkSubscription = useCallback(async () => {
     setLoading(true);
@@ -131,17 +142,6 @@ export const SubscriptionProvider = ({ children }: { children: React.ReactNode }
       triggerRenewalRedirect();
     }
   }, [status, loading, triggerRenewalRedirect]);
-
-  // Centralized renewal redirect
-  const triggerRenewalRedirect = useCallback(() => {
-    if (typeof window !== 'undefined') {
-      // Store current path for post-renewal navigation
-      if (!localStorage.getItem('returnPath')) {
-        localStorage.setItem('returnPath', window.location.pathname);
-      }
-      window.location.href = '/?renew=true';
-    }
-  }, []);
 
   // Determine if renewal is required
   const isRenewalRequired = status === SubscriptionStatus.EXPIRED;
