@@ -1201,7 +1201,12 @@ export const authAPI = {
 let stripePromise: Promise<Stripe | null>;
 const getStripe = () => {
   if (!stripePromise) {
-    stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
+    const key = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+    if (!key) {
+      console.error('NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is not defined');
+      return Promise.resolve(null);
+    }
+    stripePromise = loadStripe(key);
   }
   return stripePromise;
 };
@@ -1287,7 +1292,10 @@ export const createCheckoutSession = async (
     const stripe = await getStripe();
 
     if (!stripe) {
-      throw new Error("Failed to initialize Stripe");
+      const errorMsg = 'Stripe is not properly configured. Please check NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY environment variable.';
+      console.error(errorMsg);
+      alert(errorMsg);
+      throw new Error(errorMsg);
     }
 
     if (!data.sessionId) {
@@ -1301,6 +1309,7 @@ export const createCheckoutSession = async (
 
     if (error) {
       console.error("Stripe checkout error:", error);
+      alert(`Stripe checkout failed: ${error.message}`);
       throw error;
     }
   } catch (error) {

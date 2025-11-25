@@ -146,7 +146,6 @@ const Hero: React.FC<HeroProps> = ({ isRenewal = false }) => {
                     muted
                     loop
                     className="w-full aspect-video object-cover"
-                    poster="/video-poster.jpg"
                   />
                 </div>
 

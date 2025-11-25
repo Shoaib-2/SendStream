@@ -121,7 +121,6 @@ export const SubscriptionProvider = ({ children }: { children: React.ReactNode }
     if (typeof window === 'undefined') return;
     
     const isAuthenticated = !!localStorage.getItem('token');
-    const isOnLandingPage = window.location.pathname === '/';
     const isOnRenewalPage = window.location.search.includes('renew=true');
     const isOnAuthPage = window.location.pathname.includes('/login') || 
                          window.location.pathname.includes('/signup');
@@ -136,8 +135,7 @@ export const SubscriptionProvider = ({ children }: { children: React.ReactNode }
         status === SubscriptionStatus.EXPIRED && 
         !isOnRenewalPage && 
         !isOnAuthPage && 
-        !loading &&
-        !isOnLandingPage) {
+        !loading) {
       logger.info('Subscription expired, redirecting to renewal page');
       triggerRenewalRedirect();
     }
