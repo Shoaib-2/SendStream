@@ -7,6 +7,7 @@ console.log('NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL ? 'SET' : 'N
 console.log('NEXT_PUBLIC_WS_URL:', process.env.NEXT_PUBLIC_WS_URL ? 'SET' : 'NOT SET');
 console.log('NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY:', process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ? `SET (${process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY.substring(0, 7)}...)` : 'NOT SET');
 console.log('NEXT_PUBLIC_STRIPE_PRICE_ID:', process.env.NEXT_PUBLIC_STRIPE_PRICE_ID ? 'SET' : 'NOT SET');
+console.log('All NEXT_PUBLIC_ keys:', Object.keys(process.env).filter(k => k.startsWith('NEXT_PUBLIC_')));
 console.log('===========================================');
 
 const nextConfig = {
@@ -27,11 +28,11 @@ const nextConfig = {
     removeConsole: process.env.NODE_ENV === 'production' ? { exclude: ['error', 'warn'] } : false,
   },
   
-  // Environment variables - explicitly expose to client
+  // Environment variables - explicitly expose to client with hardcoded fallbacks
   env: {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'https://backend-9h3q.onrender.com/api',
     NEXT_PUBLIC_WS_URL: process.env.NEXT_PUBLIC_WS_URL || 'wss://backend-9h3q.onrender.com/ws',
-    NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '',
+    NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || 'pk_test_51QyeEHGfclTFWug1IEyUj4jhpKMvsw7g5XV84MMO24hzIHF3M31ydHK3PgorqCOVCgRRBA6CKkULwTqG2dnyBDpu00hpQrKVNl',
     NEXT_PUBLIC_STRIPE_PRICE_ID: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID || 'price_1QzeqbGfclTFWug124uFjz1g'
   },
   
