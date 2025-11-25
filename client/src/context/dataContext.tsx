@@ -40,6 +40,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [ws, setWs] = useState<WebSocket | null>(null);
   const MAX_FETCH_ATTEMPTS = 3;
+  const [wsReconnectAttempts, setWsReconnectAttempts] = useState(0);
+  const MAX_WS_RECONNECT_ATTEMPTS = 5;
   const { user } = useAuth();
 
   // Initialize WebSocket connection
@@ -60,6 +62,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
         socket.onopen = () => {
           // console.log('WebSocket connected successfully');
+          setWsReconnectAttempts(0); // Reset reconnect attempts on successful connection
         };
 
         socket.onmessage = (event: WebSocketEventMap['message']) => {
@@ -85,8 +88,14 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           console.log('WebSocket disconnected:', event.code, event.reason);
           // Only attempt to reconnect if it wasn't closed due to auth failure and we have a token
           if (event.code !== 1008 && localStorage.getItem('token')) {
-            // console.log('Attempting to reconnect WebSocket in 3 seconds...');
-            setTimeout(connectWebSocket, 3000);
+            // Check if we haven't exceeded max reconnection attempts
+            if (wsReconnectAttempts < MAX_WS_RECONNECT_ATTEMPTS) {
+              // console.log(`Attempting to reconnect WebSocket in 3 seconds... (attempt ${wsReconnectAttempts + 1}/${MAX_WS_RECONNECT_ATTEMPTS})`);
+              setWsReconnectAttempts(prev => prev + 1);
+              setTimeout(connectWebSocket, 3000);
+            } else {
+              console.warn('Max WebSocket reconnection attempts reached. Stopping reconnection.');
+            }
           }
         };
 
