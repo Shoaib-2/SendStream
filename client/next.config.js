@@ -1,9 +1,19 @@
 /** @type {import('next').NextConfig} */
+
+// Log environment variables at build time to debug Vercel issues
+console.log('=== Next.js Build-Time Environment Check ===');
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL ? 'SET' : 'NOT SET');
+console.log('NEXT_PUBLIC_WS_URL:', process.env.NEXT_PUBLIC_WS_URL ? 'SET' : 'NOT SET');
+console.log('NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY:', process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ? `SET (${process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY.substring(0, 7)}...)` : 'NOT SET');
+console.log('NEXT_PUBLIC_STRIPE_PRICE_ID:', process.env.NEXT_PUBLIC_STRIPE_PRICE_ID ? 'SET' : 'NOT SET');
+console.log('===========================================');
+
 const nextConfig = {
   reactStrictMode: true,
   
   // Performance optimizations
-  swcMinify: true, // Use SWC for faster builds and minification
+  swcMinify: true,
   
   // Image optimization
   images: {
@@ -19,18 +29,10 @@ const nextConfig = {
   
   // Environment variables - explicitly expose to client
   env: {
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || '',
-    NEXT_PUBLIC_WS_URL: process.env.NEXT_PUBLIC_WS_URL || '',
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'https://backend-9h3q.onrender.com/api',
+    NEXT_PUBLIC_WS_URL: process.env.NEXT_PUBLIC_WS_URL || 'wss://backend-9h3q.onrender.com/ws',
     NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '',
-    NEXT_PUBLIC_STRIPE_PRICE_ID: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID || ''
-  },
-  
-  // Public runtime config (alternative way to expose env vars)
-  publicRuntimeConfig: {
-    apiUrl: process.env.NEXT_PUBLIC_API_URL,
-    wsUrl: process.env.NEXT_PUBLIC_WS_URL,
-    stripePublishableKey: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
-    stripePriceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID
+    NEXT_PUBLIC_STRIPE_PRICE_ID: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID || 'price_1QzeqbGfclTFWug124uFjz1g'
   },
   
   // Production optimizations
