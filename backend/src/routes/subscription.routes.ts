@@ -131,10 +131,32 @@ const getSubscriptionStatus: RequestHandler = async (req: Request, res: Response
           }
         }
       });
-    } catch (stripeError) {
+    } catch (stripeError: any) {
       logger.error('Error retrieving Stripe subscription:', stripeError);
       
-      // Return cached data from database if Stripe call fails
+      // Handle case where subscription doesn't exist in Stripe
+      if (stripeError.type === 'StripeInvalidRequestError' && 
+          stripeError.code === 'resource_missing') {
+        logger.warn(`Subscription ${user.stripeSubscriptionId} not found in Stripe, clearing from database`);
+        
+        // Clear invalid subscription ID from database
+        await User.findByIdAndUpdate(authReq.user.id, {
+          stripeSubscriptionId: undefined,
+          subscriptionStatus: null
+        });
+        
+        // Return no subscription found
+        res.status(200).json({
+          status: 'success',
+          data: { 
+            hasSubscription: false, 
+            subscription: null 
+          }
+        });
+        return;
+      }
+      
+      // For other errors, return cached data from database
       res.status(200).json({
         status: 'success',
         data: {

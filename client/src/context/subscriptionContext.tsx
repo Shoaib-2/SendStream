@@ -21,6 +21,12 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { getSubscriptionStatus } from '@/services/api';
 
+const logger = {
+  info: (msg: string) => console.log(`[SubscriptionContext] ${msg}`),
+  warn: (msg: string) => console.warn(`[SubscriptionContext] ${msg}`),
+  error: (msg: string, err?: unknown) => console.error(`[SubscriptionContext] ${msg}`, err)
+};
+
 // Subscription status state machine
 export enum SubscriptionStatus {
   UNKNOWN = 'UNKNOWN',
@@ -98,6 +104,33 @@ export const SubscriptionProvider = ({ children }: { children: React.ReactNode }
       if (stored) setReturnPath(stored);
     }
   }, [checkSubscription]);
+
+  // Auto-redirect to renewal page if subscription expired and user is authenticated
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    const isAuthenticated = !!localStorage.getItem('token');
+    const isOnLandingPage = window.location.pathname === '/';
+    const isOnRenewalPage = window.location.search.includes('renew=true');
+    const isOnAuthPage = window.location.pathname.includes('/login') || 
+                         window.location.pathname.includes('/signup');
+    
+    // Only redirect if:
+    // 1. User is authenticated
+    // 2. Subscription is expired
+    // 3. Not already on renewal page
+    // 4. Not on auth pages
+    // 5. Not still loading
+    if (isAuthenticated && 
+        status === SubscriptionStatus.EXPIRED && 
+        !isOnRenewalPage && 
+        !isOnAuthPage && 
+        !loading &&
+        !isOnLandingPage) {
+      logger.info('Subscription expired, redirecting to renewal page');
+      triggerRenewalRedirect();
+    }
+  }, [status, loading, triggerRenewalRedirect]);
 
   // Centralized renewal redirect
   const triggerRenewalRedirect = useCallback(() => {

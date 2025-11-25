@@ -111,7 +111,8 @@ export class AuthService {
         user: {
           id: updatedUser?._id || user._id,
           email: user.email,
-          hasActiveSubscription: true
+          hasActiveSubscription: true,
+          subscriptionStatus: 'trialing'
         },
         token
       };
@@ -170,7 +171,9 @@ export class AuthService {
         email: user.email,
         name: (user as any).name,
         role: user.role,
-        hasActiveSubscription: !!(user as any).stripeSubscriptionId,
+        hasActiveSubscription: !!(user as any).stripeSubscriptionId && 
+                               ['active', 'trialing'].includes((user as any).subscriptionStatus),
+        subscriptionStatus: (user as any).subscriptionStatus || null,
         trialEndsAt: (user as any).trialEndsAt
       },
       token
@@ -255,7 +258,9 @@ export class AuthService {
         _id: user._id,
         email: user.email,
         role: user.role,
-        hasActiveSubscription: !!(user as any).stripeSubscriptionId,
+        hasActiveSubscription: !!(user as any).stripeSubscriptionId && 
+                               ['active', 'trialing'].includes((user as any).subscriptionStatus),
+        subscriptionStatus: (user as any).subscriptionStatus || null,
         trialEndsAt: (user as any).trialEndsAt
       },
       token: jwtToken
