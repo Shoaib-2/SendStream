@@ -36,18 +36,40 @@ const handleWebhook: RequestHandler = async (req: Request, res: Response): Promi
           const session = event.data.object as Stripe.Checkout.Session;
           const email = session.customer_email;
           const customerId = session.customer as string;
+          const subscriptionId = session.subscription as string;
+
+          logger.info('Checkout session completed:', {
+            email,
+            customerId,
+            subscriptionId,
+            sessionId: session.id
+          });
 
           if (email) {
-            await User.findOneAndUpdate(
+            const updateData: Record<string, unknown> = {
+              stripeCustomerId: customerId,
+              stripeCheckoutSessionId: session.id,
+              subscriptionStatus: 'active',
+              status: 'active',
+              updatedAt: new Date()
+            };
+
+            // Add subscription ID if present
+            if (subscriptionId) {
+              updateData.stripeSubscriptionId = subscriptionId;
+            }
+
+            const updatedUser = await User.findOneAndUpdate(
               { email },
-              { 
-                stripeCustomerId: customerId,
-                stripeCheckoutSessionId: session.id,
-                subscriptionStatus: 'active',
-                status: 'active',
-              },
+              updateData,
               { new: true }
             );
+
+            logger.info('User updated after checkout:', {
+              email: updatedUser?.email,
+              stripeSubscriptionId: updatedUser?.stripeSubscriptionId,
+              subscriptionStatus: updatedUser?.subscriptionStatus
+            });
           }
           break;
 
@@ -60,8 +82,15 @@ const handleWebhook: RequestHandler = async (req: Request, res: Response): Promi
           
           const isCanceled = subscription.cancel_at_period_end;
           const canceled = isCanceled ? 'canceled' : subscription.status;
+
+          logger.info('Subscription updated:', {
+            subscriptionId: subscription.id,
+            customerId: customerId2,
+            status: canceled,
+            trialEnd
+          });
           
-          await User.findOneAndUpdate(
+          const updatedSubUser = await User.findOneAndUpdate(
             { stripeCustomerId: customerId2 },
             {
               subscriptionStatus: canceled,
@@ -70,8 +99,15 @@ const handleWebhook: RequestHandler = async (req: Request, res: Response): Promi
               subscribed: new Date().toISOString(),
               ...(trialEnd && { trialEndsAt: trialEnd }),
               updatedAt: new Date()
-            }
+            },
+            { new: true }
           );
+
+          logger.info('User updated after subscription update:', {
+            email: updatedSubUser?.email,
+            stripeSubscriptionId: updatedSubUser?.stripeSubscriptionId,
+            subscriptionStatus: updatedSubUser?.subscriptionStatus
+          });
           break;
         
         case 'customer.subscription.deleted':
