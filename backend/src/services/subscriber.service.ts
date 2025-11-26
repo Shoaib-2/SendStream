@@ -76,8 +76,8 @@ export class SubscriberService {
       });
     });
     
-    const mailchimpUpdates = [];
-    const operations = [];
+    const mailchimpUpdates: { email: string; status: string }[] = [];
+    const operations: any[] = [];
     
     for (const mcSub of mailchimpSubscribers) {
       const email = mcSub.email.toLowerCase();

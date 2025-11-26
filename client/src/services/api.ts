@@ -1475,6 +1475,90 @@ export const emailAPI = {
   },
 };
 
+// AI Content Generation API
+export interface AIGeneratedContent {
+  title: string;
+  subject: string;
+  content: string;
+  keyTakeaways: string[];
+  sources: string[];
+}
+
+export interface SmartScheduleRecommendation {
+  recommendedTime: string;
+  recommendedDay: string;
+  reasoning: string;
+  alternativeSlots: { day: string; time: string; score: number }[];
+}
+
+export const aiAPI = {
+  // Generate newsletter content using AI
+  generateContent: async (request: {
+    topic: string;
+    tone?: 'professional' | 'casual' | 'friendly' | 'authoritative';
+    length?: 'short' | 'medium' | 'long';
+    targetAudience?: string;
+    includeCallToAction?: boolean;
+  }): Promise<AIGeneratedContent> => {
+    try {
+      const response = await api.post<ResponseData<AIGeneratedContent>>('/ai/generate-content', request);
+      return response.data.data;
+    } catch (error) {
+      handleError(error as AxiosError);
+      throw error;
+    }
+  },
+
+  // Improve existing content
+  improveContent: async (content: string, instructions?: string): Promise<string> => {
+    try {
+      const response = await api.post<ResponseData<{ content: string }>>('/ai/improve-content', { content, instructions });
+      return response.data.data.content;
+    } catch (error) {
+      handleError(error as AxiosError);
+      throw error;
+    }
+  },
+
+  // Generate subject line suggestions
+  generateSubjects: async (topic: string, content?: string): Promise<string[]> => {
+    try {
+      const response = await api.post<ResponseData<{ subjects: string[] }>>('/ai/generate-subjects', { topic, content });
+      return response.data.data.subjects;
+    } catch (error) {
+      handleError(error as AxiosError);
+      throw error;
+    }
+  },
+
+  // Get smart schedule recommendation
+  getSmartSchedule: async (engagementData?: {
+    openRates?: { hour: number; rate: number }[];
+    clickRates?: { hour: number; rate: number }[];
+    subscriberTimezones?: string[];
+    historicalBestTimes?: string[];
+  }): Promise<SmartScheduleRecommendation> => {
+    try {
+      const response = await api.post<ResponseData<SmartScheduleRecommendation>>('/ai/smart-schedule', { engagementData });
+      return response.data.data;
+    } catch (error) {
+      handleError(error as AxiosError);
+      throw error;
+    }
+  },
+
+  // Generate title from content
+  generateTitle: async (content: string): Promise<string> => {
+    try {
+      const response = await api.post<ResponseData<{ title: string }>>('/ai/generate-title', { content });
+      return response.data.data.title;
+    } catch (error) {
+      handleError(error as AxiosError);
+      throw error;
+    }
+  },
+};
+
 // src/app/api/auth/route.ts logic moved here
 // Error response interface
 interface ErrorResponseData {

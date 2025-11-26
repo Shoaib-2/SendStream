@@ -68,7 +68,7 @@ const checkTrialEligibility: RequestHandler = async (req: Request, res: Response
     
     const eligibleForTrial = !hasActiveTrial && !hasPastSubscription && !isMarkedTrialUsed;
     
-    let reason = null;
+    let reason: string | null = null;
     if (!eligibleForTrial) {
       if (hasActiveTrial) {
         reason = 'User has an active trial';

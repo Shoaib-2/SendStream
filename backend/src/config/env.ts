@@ -34,6 +34,9 @@ interface EnvironmentConfig {
   // Mailchimp
   mailchimpApiKey?: string;
   
+  // AI (OpenAI)
+  openaiApiKey?: string;
+  
   // Client
   clientUrl: string;
 }
@@ -97,6 +100,8 @@ class ConfigService {
       stripePriceId: process.env.STRIPE_PRICE_ID || '',
       
       mailchimpApiKey: process.env.MAILCHIMP_API_KEY,
+      
+      openaiApiKey: process.env.OPENAI_API_KEY,
       
       clientUrl: process.env.CLIENT_URL!
     };

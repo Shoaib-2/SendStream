@@ -255,7 +255,7 @@ export class NewsletterService {
       return { isValid: false, error: "Reply-To email format is invalid. Please provide a valid email address." };
     }
 
-    const missingVars = [];
+    const missingVars: string[] = [];
     if (!process.env.EMAIL_HOST) missingVars.push('EMAIL_HOST');
     if (!process.env.EMAIL_PORT) missingVars.push('EMAIL_PORT');
     if (!process.env.EMAIL_USER) missingVars.push('EMAIL_USER');

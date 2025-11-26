@@ -1,9 +1,9 @@
 "use client";
 import React, { useState, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Save, Calendar, Send, BookOpen, Lightbulb, FileCheck, Link, ArrowLeft, X, CheckCircle } from 'lucide-react';
+import { Save, Calendar, Send, BookOpen, Lightbulb, FileCheck, Link, ArrowLeft, X, CheckCircle, Sparkles, Clock, Wand2, RefreshCw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { APIError, newsletterAPI } from '../../../../services/api';
+import { APIError, newsletterAPI, aiAPI, SmartScheduleRecommendation } from '../../../../services/api';
 import { Newsletter } from '../../../../types/index';
 import { useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -40,6 +40,15 @@ const CreateNewsletterContent: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [currentSource, setCurrentSource] = useState('');
   const [currentTakeaway, setCurrentTakeaway] = useState('');
+
+  // AI State
+  const [showAIPanel, setShowAIPanel] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiTopic, setAiTopic] = useState('');
+  const [aiTone, setAiTone] = useState<'professional' | 'casual' | 'friendly' | 'authoritative'>('professional');
+  const [aiLength, setAiLength] = useState<'short' | 'medium' | 'long'>('medium');
+  const [smartSchedule, setSmartSchedule] = useState<SmartScheduleRecommendation | null>(null);
+  const [subjectSuggestions, setSubjectSuggestions] = useState<string[]>([]);
 
   const [newsletter, setNewsletter] = useState<CreateNewsletterInput>({
     title: '',
@@ -237,6 +246,127 @@ const CreateNewsletterContent: React.FC = () => {
     }
   };
 
+  // AI Functions
+  const generateAIContent = async () => {
+    if (!aiTopic.trim()) {
+      showNotificationMessage('Please enter a topic for AI generation', 'error');
+      return;
+    }
+
+    setAiLoading(true);
+    try {
+      const generated = await aiAPI.generateContent({
+        topic: aiTopic,
+        tone: aiTone,
+        length: aiLength,
+        includeCallToAction: true
+      });
+
+      setNewsletter({
+        ...newsletter,
+        title: generated.title,
+        subject: generated.subject,
+        content: generated.content,
+        contentQuality: {
+          ...newsletter.contentQuality!,
+          isOriginalContent: true,
+          hasResearchBacked: true,
+          hasActionableInsights: true,
+          sources: generated.sources,
+          keyTakeaways: generated.keyTakeaways,
+          qualityScore: 85
+        }
+      });
+
+      setShowAIPanel(false);
+      showNotificationMessage('Content generated successfully!', 'success');
+    } catch (error) {
+      console.error('AI generation error:', error);
+      showNotificationMessage('Failed to generate content. Please try again.', 'error');
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const improveExistingContent = async () => {
+    if (!newsletter.content.trim()) {
+      showNotificationMessage('Please add some content first', 'error');
+      return;
+    }
+
+    setAiLoading(true);
+    try {
+      const improved = await aiAPI.improveContent(newsletter.content);
+      setNewsletter({ ...newsletter, content: improved });
+      showNotificationMessage('Content improved!', 'success');
+    } catch (error) {
+      console.error('AI improvement error:', error);
+      showNotificationMessage('Failed to improve content', 'error');
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const generateSubjectSuggestions = async () => {
+    const topic = newsletter.title || aiTopic;
+    if (!topic.trim()) {
+      showNotificationMessage('Please add a title first', 'error');
+      return;
+    }
+
+    setAiLoading(true);
+    try {
+      const suggestions = await aiAPI.generateSubjects(topic, newsletter.content);
+      setSubjectSuggestions(suggestions);
+    } catch (error) {
+      console.error('Subject generation error:', error);
+      showNotificationMessage('Failed to generate subjects', 'error');
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const getSmartScheduleRecommendation = async () => {
+    setAiLoading(true);
+    try {
+      const recommendation = await aiAPI.getSmartSchedule();
+      setSmartSchedule(recommendation);
+    } catch (error) {
+      console.error('Smart schedule error:', error);
+      showNotificationMessage('Failed to get schedule recommendation', 'error');
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const applySmartSchedule = () => {
+    if (!smartSchedule) return;
+    
+    // Calculate the next occurrence of the recommended day/time
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const targetDayIndex = days.indexOf(smartSchedule.recommendedDay);
+    const [hours, minutes] = smartSchedule.recommendedTime.split(':').map(Number);
+    
+    const now = new Date();
+    const targetDate = new Date();
+    const currentDayIndex = now.getDay();
+    
+    let daysUntilTarget = targetDayIndex - currentDayIndex;
+    if (daysUntilTarget <= 0) daysUntilTarget += 7;
+    
+    targetDate.setDate(now.getDate() + daysUntilTarget);
+    targetDate.setHours(hours, minutes, 0, 0);
+    
+    // If the target time is in the past today, move to next week
+    if (targetDate <= now) {
+      targetDate.setDate(targetDate.getDate() + 7);
+    }
+
+    setNewsletter({ ...newsletter, scheduledDate: targetDate });
+    setSmartSchedule(null);
+    showNotificationMessage(`Scheduled for ${smartSchedule.recommendedDay} at ${smartSchedule.recommendedTime}`, 'success');
+  };
+
   return (
     <Container size="lg" className="py-8 min-h-screen">
       <motion.div
@@ -285,6 +415,15 @@ const CreateNewsletterContent: React.FC = () => {
           </div>
           
           <div className="flex flex-wrap gap-3 w-full lg:w-auto">
+            <Button
+              onClick={() => setShowAIPanel(!showAIPanel)}
+              variant="secondary"
+              leftIcon={<Sparkles className="w-4 h-4" />}
+              className="flex-1 lg:flex-none bg-gradient-to-r from-purple-500/20 to-pink-500/20 border-purple-500/30 hover:border-purple-500/50"
+            >
+              AI Assistant
+            </Button>
+            
             <Button
               onClick={saveDraft}
               disabled={loading}
@@ -367,6 +506,182 @@ const CreateNewsletterContent: React.FC = () => {
             </Button>
           </div>
         </motion.div>
+
+        {/* AI Assistant Panel */}
+        <AnimatePresence>
+          {showAIPanel && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              variants={itemVariants}
+            >
+              <GlassCard variant="strong" padding="lg" className="border-purple-500/30 bg-gradient-to-br from-purple-500/5 to-pink-500/5">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500/30 to-pink-500/30 
+                      flex items-center justify-center border border-purple-500/40">
+                      <Sparkles className="w-5 h-5 text-purple-400" />
+                    </div>
+                    <div>
+                      <h2 className="text-lg font-semibold font-display text-white">AI Content Assistant</h2>
+                      <p className="text-sm text-neutral-400">Generate engaging, research-backed content</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setShowAIPanel(false)}
+                    className="p-2 text-neutral-400 hover:text-white rounded-lg hover:bg-white/10 transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Generate New Content */}
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-medium text-neutral-200 flex items-center gap-2">
+                      <Wand2 className="w-4 h-4 text-purple-400" />
+                      Generate New Content
+                    </h3>
+                    
+                    <input
+                      type="text"
+                      value={aiTopic}
+                      onChange={(e) => setAiTopic(e.target.value)}
+                      placeholder="Enter your newsletter topic..."
+                      className="w-full px-4 py-3 bg-neutral-900/50 rounded-xl border border-white/10
+                        focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/30
+                        placeholder-neutral-500 text-sm text-white transition-all duration-200"
+                    />
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <select
+                        value={aiTone}
+                        onChange={(e) => setAiTone(e.target.value as typeof aiTone)}
+                        className="px-3 py-2 bg-neutral-900/50 rounded-lg border border-white/10 
+                          focus:border-purple-500/50 text-sm text-white"
+                      >
+                        <option value="professional">Professional</option>
+                        <option value="casual">Casual</option>
+                        <option value="friendly">Friendly</option>
+                        <option value="authoritative">Authoritative</option>
+                      </select>
+
+                      <select
+                        value={aiLength}
+                        onChange={(e) => setAiLength(e.target.value as typeof aiLength)}
+                        className="px-3 py-2 bg-neutral-900/50 rounded-lg border border-white/10 
+                          focus:border-purple-500/50 text-sm text-white"
+                      >
+                        <option value="short">Short (300-500 words)</option>
+                        <option value="medium">Medium (500-800 words)</option>
+                        <option value="long">Long (800-1200 words)</option>
+                      </select>
+                    </div>
+
+                    <Button
+                      onClick={generateAIContent}
+                      disabled={aiLoading || !aiTopic.trim()}
+                      variant="primary"
+                      leftIcon={aiLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                      className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                    >
+                      {aiLoading ? 'Generating...' : 'Generate Content'}
+                    </Button>
+                  </div>
+
+                  {/* Smart Scheduling & Tools */}
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-medium text-neutral-200 flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-purple-400" />
+                      Smart Tools
+                    </h3>
+
+                    <Button
+                      onClick={improveExistingContent}
+                      disabled={aiLoading || !newsletter.content.trim()}
+                      variant="secondary"
+                      leftIcon={aiLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
+                      className="w-full"
+                    >
+                      Improve Existing Content
+                    </Button>
+
+                    <Button
+                      onClick={generateSubjectSuggestions}
+                      disabled={aiLoading || (!newsletter.title.trim() && !aiTopic.trim())}
+                      variant="secondary"
+                      leftIcon={aiLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Lightbulb className="w-4 h-4" />}
+                      className="w-full"
+                    >
+                      Generate Subject Lines
+                    </Button>
+
+                    <Button
+                      onClick={getSmartScheduleRecommendation}
+                      disabled={aiLoading}
+                      variant="secondary"
+                      leftIcon={aiLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Clock className="w-4 h-4" />}
+                      className="w-full"
+                    >
+                      Get Optimal Send Time
+                    </Button>
+
+                    {/* Subject Suggestions */}
+                    {subjectSuggestions.length > 0 && (
+                      <div className="space-y-2 mt-4">
+                        <p className="text-xs text-neutral-400">Click to use:</p>
+                        {subjectSuggestions.map((subject, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => {
+                              setNewsletter({ ...newsletter, subject });
+                              setSubjectSuggestions([]);
+                            }}
+                            className="w-full text-left px-3 py-2 text-sm text-white bg-white/5 hover:bg-white/10 
+                              rounded-lg border border-white/10 hover:border-purple-500/30 transition-all"
+                          >
+                            {subject}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Smart Schedule Recommendation */}
+                    {smartSchedule && (
+                      <div className="p-4 bg-purple-500/10 rounded-xl border border-purple-500/30 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium text-purple-300">Recommended Time</span>
+                          <Badge variant="success" size="sm">
+                            {smartSchedule.recommendedDay} {smartSchedule.recommendedTime}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-neutral-400">{smartSchedule.reasoning}</p>
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={applySmartSchedule}
+                            variant="primary"
+                            size="sm"
+                            className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500"
+                          >
+                            Apply Schedule
+                          </Button>
+                          <Button
+                            onClick={() => setSmartSchedule(null)}
+                            variant="secondary"
+                            size="sm"
+                          >
+                            Dismiss
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </GlassCard>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Main Content */}
         <motion.div variants={itemVariants}>

@@ -1,16 +1,13 @@
-import { Express } from 'express-serve-static-core'
+import 'express';
 
-// Declare global namespace to modify existing Express types
+// Extend Express types for custom user property
 declare global {
-  // Extend Express namespace
   namespace Express {
-    // Extend the Request interface
     interface Request {
-      // Add user property that might be undefined
       user?: {
-        _id: string;      // MongoDB user ID
-        email: string;    // User's email
-        role: string;     // User's role (e.g., 'admin', 'user')
+        _id: string;
+        email: string;
+        role: string;
       }
     }
   }

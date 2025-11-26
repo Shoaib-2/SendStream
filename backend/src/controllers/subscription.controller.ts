@@ -2,12 +2,6 @@ import Stripe from 'stripe';
 import User from '../models/User';
 import { Request, Response } from 'express';
 
-
-// Define custom request type with user property
-interface AuthenticatedRequest extends Request {
-    user?: any;
-  }
-
 // Initialize Stripe
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-02-24.acacia' // Use the latest API version,
@@ -16,10 +10,10 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 /**
  * Get subscription status for the authenticated user
  */
-export const getStatus = async (req: AuthenticatedRequest, res: Response) => {
+export const getStatus = async (req: Request, res: Response) => {
   try {
     // Get user with Stripe fields
-    const user = await User.findById(req.user.id);
+    const user = await User.findById(req.user?._id);
     
     if (!user) {
       return res.status(404).json({
@@ -90,10 +84,10 @@ export const getStatus = async (req: AuthenticatedRequest, res: Response) => {
 /**
  * Cancel the user's subscription (at period end)
  */
-export const cancelSubscription = async (req: AuthenticatedRequest, res: Response) => {
+export const cancelSubscription = async (req: Request, res: Response) => {
   try {
     // Get user with Stripe fields
-    const user = await User.findById(req.user.id);
+    const user = await User.findById(req.user?._id);
     
     if (!user) {
       return res.status(404).json({
@@ -187,7 +181,7 @@ export const cancelSubscription = async (req: AuthenticatedRequest, res: Respons
 };
 
 
-export const updateRenewal = async (req: AuthenticatedRequest, res: Response) => {
+export const updateRenewal = async (req: Request, res: Response) => {
   try {
     const { subscriptionId, cancelAtPeriodEnd } = req.body;
     
@@ -207,7 +201,7 @@ export const updateRenewal = async (req: AuthenticatedRequest, res: Response) =>
     }
     
     // Get user from request
-    const user = await User.findById(req.user.id);
+    const user = await User.findById(req.user?._id);
     
     if (!user) {
       return res.status(404).json({

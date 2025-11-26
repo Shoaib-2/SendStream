@@ -50,7 +50,7 @@ export class AnalyticsController {
           const currentYear = new Date().getFullYear();
           
           // Create ordered array of the last 6 months with year info for accurate comparison
-          const lastSixMonths = [];
+          const lastSixMonths: { monthIndex: number; monthName: string; year: number }[] = [];
           for (let i = 5; i >= 0; i--) {
             const monthIndex = (currentMonth - i + 12) % 12;
             const yearOffset = (currentMonth - i < 0) ? -1 : 0;

@@ -1,5 +1,5 @@
 // services/integrations/mailchimp.ts
-import axios from 'axios';
+import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import { withRetry } from '../../utils/retry';
 import { mailchimpRateLimiter } from '../../utils/rateLimiter';
 import { 
@@ -20,7 +20,7 @@ interface MailchimpMember {
 }
 
 export class MailchimpService {
-  private client;
+  private client: AxiosInstance;
   private listId!: string;
 
   constructor(apiKey: string, serverPrefix: string) {
@@ -39,7 +39,7 @@ export class MailchimpService {
     return withRetry(async () => {
       const response = await mailchimpRateLimiter.withRateLimit(() => 
         this.client.get('/lists')
-      );
+      ) as AxiosResponse;
       
       const validatedResponse = validateApiResponse(
         response.data,
@@ -60,7 +60,7 @@ export class MailchimpService {
     return withRetry(async () => {
       const response = await mailchimpRateLimiter.withRateLimit(() => 
         this.client.get(`/lists/${this.listId}/`)
-      );
+      ) as AxiosResponse;
       
       const validatedResponse = validateApiResponse(
         response.data,
@@ -110,7 +110,7 @@ export class MailchimpService {
           this.client.patch(`/lists/${this.listId}/members/${emailMD5}`, {
             status: status
           })
-        );
+        ) as AxiosResponse;
         
         logger.info(`Successfully updated ${email} status to ${status}`);
         return response.data;
@@ -123,7 +123,7 @@ export class MailchimpService {
               email_address: email,
               status: status
             })
-          );
+          ) as AxiosResponse;
           return response.data;
         }
         throw error;
@@ -142,7 +142,7 @@ export class MailchimpService {
       try {
         const response = await mailchimpRateLimiter.withRateLimit(() => 
           this.client.get(`/lists/${this.listId}/members/${emailMD5}`)
-        );
+        ) as AxiosResponse;
         
         logger.info(`Current Mailchimp status for ${email}: ${response.data.status}`);
         return {
@@ -268,7 +268,7 @@ export class MailchimpService {
           reply_to: 'newsletter@yourdomain.com'
         }
       })
-    );
+    ) as AxiosResponse;
 
     return validateApiResponse(
       response.data,
@@ -306,7 +306,7 @@ export class MailchimpService {
             fields: 'members.email_address,members.merge_fields,members.status,members.timestamp_signup'
           }
         })
-      );
+      ) as AxiosResponse;
 
       const validatedResponse = validateApiResponse(
         response.data,
@@ -338,7 +338,7 @@ export class MailchimpService {
     return withRetry(async () => {
       const response = await mailchimpRateLimiter.withRateLimit(() => 
         this.client.get(`/campaigns/${campaignId}/content`)
-      );
+      ) as AxiosResponse;
 
       return {
         opens: response.data.opens,
@@ -371,7 +371,7 @@ export class MailchimpService {
       logger.info('🔍 Testing Mailchimp connection...');
       const response = await mailchimpRateLimiter.withRateLimit(() => 
         this.client.get('/lists')
-      );
+      ) as AxiosResponse;
 
       const validatedResponse = validateApiResponse(
         response.data,

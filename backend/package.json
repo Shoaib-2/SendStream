@@ -39,6 +39,7 @@
     "mongodb": "^6.13.0",
     "mongoose": "^8.9.5",
     "node-cron": "^3.0.3",
+    "openai": "^4.104.0",
     "papaparse": "^5.5.2",
     "stripe": "^17.7.0",
     "winston": "^3.17.0",

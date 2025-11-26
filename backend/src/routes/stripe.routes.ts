@@ -257,7 +257,7 @@ const createCheckout: RequestHandler = async (req: Request, res: Response): Prom
       return;
     }
 
-    let existingUser = null;
+    let existingUser: IUser | null = null;
     if (email && email.includes('@')) {
       existingUser = await User.findOne({ email }).lean() as IUser | null;
     }

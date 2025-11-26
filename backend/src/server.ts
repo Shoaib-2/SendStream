@@ -24,6 +24,7 @@ import adminRoutes from './routes/admin.routes';
 import { protect } from './middleware/auth/auth.middleware';
 import { checkSubscription } from './middleware/susbcription.middleware';
 import emailRoutes from './routes/email.routes';
+import aiRoutes from './routes/ai.routes';
 import mongoose from 'mongoose';
 
 dotenv.config();
@@ -129,6 +130,7 @@ protectedRouter.use('/subscribers', subscriberRoutes);
 protectedRouter.use('/analytics', analyticsRoutes);
 protectedRouter.use('/settings', settingsRoutes);
 protectedRouter.use('/email', emailRoutes);
+protectedRouter.use('/ai', aiRoutes);
 
 // Mount the protected router under /api
 app.use('/api', protectedRouter);
