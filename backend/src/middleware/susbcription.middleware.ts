@@ -74,33 +74,41 @@ export const checkSubscription = async (req: Request, res: Response, next: NextF
         }
       }
       
-      // Also check if user recently renewed
+      // Also check if user recently renewed or has a newer subscription
       // This handles the case where they have a new subscription that hasn't been linked yet
       try {
         if (user.stripeCustomerId) {
+          // Check for any valid subscription (active or trialing)
           const customerSubscriptions = await stripe.subscriptions.list({
             customer: user.stripeCustomerId,
-            status: 'active',
-            limit: 1
+            limit: 10  // Get more to find any valid subscription
           });
           
-          if (customerSubscriptions.data.length > 0) {
-            const latestSubscription = customerSubscriptions.data[0];
-            
-            // If there's a newer subscription than what we have saved
-            if (latestSubscription.id !== user.stripeSubscriptionId) {
-              console.log(`User ${user.email} has a new subscription ${latestSubscription.id}`);
+          // Find the most recent active or trialing subscription
+          const validSubscription = customerSubscriptions.data.find(
+            sub => sub.status === 'active' || sub.status === 'trialing'
+          );
+          
+          if (validSubscription) {
+            // If this is a different subscription than what we have saved, or if our saved status is wrong
+            if (validSubscription.id !== user.stripeSubscriptionId || 
+                user.subscriptionStatus !== validSubscription.status ||
+                !user.hasActiveAccess) {
+              console.log(`User ${user.email} has a valid subscription ${validSubscription.id} (${validSubscription.status})`);
               
-              // Update user with new subscription details
+              // Update user with correct subscription details
               await User.findByIdAndUpdate(user._id, {
-                stripeSubscriptionId: latestSubscription.id,
-                subscriptionStatus: latestSubscription.status,
+                stripeSubscriptionId: validSubscription.id,
+                subscriptionStatus: validSubscription.status,
                 hasActiveAccess: true,
                 updatedAt: new Date()
               });
               
               return next();
             }
+            
+            // Subscription matches what we have and is valid
+            return next();
           }
         }
       } catch (listError) {

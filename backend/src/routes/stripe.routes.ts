@@ -50,7 +50,7 @@ const handleWebhook: RequestHandler = async (req: Request, res: Response): Promi
               stripeCustomerId: customerId,
               stripeCheckoutSessionId: session.id,
               subscriptionStatus: 'active',
-              status: 'active',
+              hasActiveAccess: true,
               updatedAt: new Date()
             };
 
@@ -68,7 +68,8 @@ const handleWebhook: RequestHandler = async (req: Request, res: Response): Promi
             logger.info('User updated after checkout:', {
               email: updatedUser?.email,
               stripeSubscriptionId: updatedUser?.stripeSubscriptionId,
-              subscriptionStatus: updatedUser?.subscriptionStatus
+              subscriptionStatus: updatedUser?.subscriptionStatus,
+              hasActiveAccess: updatedUser?.hasActiveAccess
             });
           }
           break;
@@ -80,23 +81,28 @@ const handleWebhook: RequestHandler = async (req: Request, res: Response): Promi
             ? new Date(subscription.trial_end * 1000) 
             : undefined;
           
-          const isCanceled = subscription.cancel_at_period_end;
-          const canceled = isCanceled ? 'canceled' : subscription.status;
+          // Use actual Stripe status - don't override based on cancel_at_period_end
+          // The subscription is still active until the period actually ends
+          const subscriptionStatus = subscription.status;
+          const hasActiveAccess = ['active', 'trialing'].includes(subscription.status);
 
           logger.info('Subscription updated:', {
             subscriptionId: subscription.id,
             customerId: customerId2,
-            status: canceled,
+            status: subscriptionStatus,
+            cancelAtPeriodEnd: subscription.cancel_at_period_end,
+            hasActiveAccess,
             trialEnd
           });
           
           const updatedSubUser = await User.findOneAndUpdate(
             { stripeCustomerId: customerId2 },
             {
-              subscriptionStatus: canceled,
-              status: 'active',
+              subscriptionStatus: subscriptionStatus,
+              hasActiveAccess: hasActiveAccess,
               stripeSubscriptionId: subscription.id,
               subscribed: new Date().toISOString(),
+              cancelAtPeriodEndPreference: subscription.cancel_at_period_end,
               ...(trialEnd && { trialEndsAt: trialEnd }),
               updatedAt: new Date()
             },
@@ -106,7 +112,8 @@ const handleWebhook: RequestHandler = async (req: Request, res: Response): Promi
           logger.info('User updated after subscription update:', {
             email: updatedSubUser?.email,
             stripeSubscriptionId: updatedSubUser?.stripeSubscriptionId,
-            subscriptionStatus: updatedSubUser?.subscriptionStatus
+            subscriptionStatus: updatedSubUser?.subscriptionStatus,
+            hasActiveAccess: updatedSubUser?.hasActiveAccess
           });
           break;
         
@@ -129,13 +136,50 @@ const handleWebhook: RequestHandler = async (req: Request, res: Response): Promi
           break;
           
         case 'invoice.payment_failed':
-          const invoice = event.data.object as Stripe.Invoice;
-          const customerId4 = invoice.customer as string;
+          const failedInvoice = event.data.object as Stripe.Invoice;
+          const failedCustomerId = failedInvoice.customer as string;
           
           await User.findOneAndUpdate(
-            { stripeCustomerId: customerId4 },
-            { subscriptionStatus: 'past_due' }
+            { stripeCustomerId: failedCustomerId },
+            { 
+              subscriptionStatus: 'past_due',
+              hasActiveAccess: false,
+              updatedAt: new Date()
+            }
           );
+          logger.warn('Payment failed for customer:', failedCustomerId);
+          break;
+
+        case 'invoice.payment_succeeded':
+          const paidInvoice = event.data.object as Stripe.Invoice;
+          const paidCustomerId = paidInvoice.customer as string;
+          const paidSubscriptionId = paidInvoice.subscription as string;
+          
+          // Only process if this is a subscription-related invoice
+          if (paidSubscriptionId) {
+            logger.info('Payment succeeded for subscription renewal:', {
+              customerId: paidCustomerId,
+              subscriptionId: paidSubscriptionId,
+              amountPaid: paidInvoice.amount_paid
+            });
+            
+            const renewedUser = await User.findOneAndUpdate(
+              { stripeCustomerId: paidCustomerId },
+              {
+                subscriptionStatus: 'active',
+                hasActiveAccess: true,
+                stripeSubscriptionId: paidSubscriptionId,
+                updatedAt: new Date()
+              },
+              { new: true }
+            );
+            
+            logger.info('User subscription renewed:', {
+              email: renewedUser?.email,
+              stripeSubscriptionId: renewedUser?.stripeSubscriptionId,
+              subscriptionStatus: renewedUser?.subscriptionStatus
+            });
+          }
           break;
       }
     } catch (processError) {
