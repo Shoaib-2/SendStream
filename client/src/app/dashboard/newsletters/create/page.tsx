@@ -258,6 +258,7 @@ const CreateNewsletterContent: React.FC = () => {
 
     setGenerateLoading(true);
     try {
+      console.log('Generating content for topic:', aiTopic);
       const generated = await aiAPI.generateContent({
         topic: aiTopic,
         tone: aiTone,
@@ -265,27 +266,34 @@ const CreateNewsletterContent: React.FC = () => {
         includeCallToAction: true
       });
 
+      console.log('Generated content received:', generated);
+
+      if (!generated || !generated.content) {
+        throw new Error('Invalid response from AI');
+      }
+
       setNewsletter({
         ...newsletter,
         title: generated.title,
         subject: generated.subject,
         content: generated.content,
         contentQuality: {
-          ...newsletter.contentQuality!,
           isOriginalContent: true,
           hasResearchBacked: true,
           hasActionableInsights: true,
-          sources: generated.sources,
-          keyTakeaways: generated.keyTakeaways,
+          contentLength: generated.content.length,
+          sources: generated.sources || [],
+          keyTakeaways: generated.keyTakeaways || [],
           qualityScore: 85
         }
       });
 
-      showNotificationMessage('✨ Content generated successfully!', 'success');
+      showNotificationMessage('Content generated successfully!', 'success');
       setAiTopic(''); // Clear topic after generation
-    } catch (error) {
+    } catch (error: any) {
       console.error('AI generation error:', error);
-      showNotificationMessage('Failed to generate content. Please try again.', 'error');
+      const message = error?.response?.data?.message || error?.message || 'Failed to generate content';
+      showNotificationMessage(message, 'error');
     } finally {
       setGenerateLoading(false);
     }
@@ -299,12 +307,20 @@ const CreateNewsletterContent: React.FC = () => {
 
     setImproveLoading(true);
     try {
+      console.log('Improving content...');
       const improved = await aiAPI.improveContent(newsletter.content);
+      console.log('Improved content received');
+      
+      if (!improved) {
+        throw new Error('Invalid response from AI');
+      }
+
       setNewsletter({ ...newsletter, content: improved });
-      showNotificationMessage('✨ Content improved successfully!', 'success');
-    } catch (error) {
+      showNotificationMessage('Content improved successfully!', 'success');
+    } catch (error: any) {
       console.error('AI improvement error:', error);
-      showNotificationMessage('Failed to improve content', 'error');
+      const message = error?.response?.data?.message || error?.message || 'Failed to improve content';
+      showNotificationMessage(message, 'error');
     } finally {
       setImproveLoading(false);
     }
@@ -319,12 +335,20 @@ const CreateNewsletterContent: React.FC = () => {
 
     setSubjectLoading(true);
     try {
+      console.log('Generating subject lines for:', topic);
       const suggestions = await aiAPI.generateSubjects(topic, newsletter.content);
+      console.log('Subject suggestions received:', suggestions);
+      
+      if (!suggestions || suggestions.length === 0) {
+        throw new Error('No subject lines generated');
+      }
+
       setSubjectSuggestions(suggestions);
-      showNotificationMessage('✨ Subject lines generated!', 'success');
-    } catch (error) {
+      showNotificationMessage('Subject lines generated!', 'success');
+    } catch (error: any) {
       console.error('Subject generation error:', error);
-      showNotificationMessage('Failed to generate subjects', 'error');
+      const message = error?.response?.data?.message || error?.message || 'Failed to generate subjects';
+      showNotificationMessage(message, 'error');
     } finally {
       setSubjectLoading(false);
     }
@@ -333,12 +357,20 @@ const CreateNewsletterContent: React.FC = () => {
   const getSmartScheduleRecommendation = async () => {
     setScheduleLoading(true);
     try {
+      console.log('Getting smart schedule recommendation...');
       const recommendation = await aiAPI.getSmartSchedule();
+      console.log('Smart schedule received:', recommendation);
+      
+      if (!recommendation || !recommendation.recommendedDay || !recommendation.recommendedTime) {
+        throw new Error('Invalid schedule recommendation');
+      }
+
       setSmartSchedule(recommendation);
-      showNotificationMessage('✨ Optimal send time found!', 'success');
-    } catch (error) {
+      showNotificationMessage(`Best time: ${recommendation.recommendedDay} at ${recommendation.recommendedTime}`, 'success');
+    } catch (error: any) {
       console.error('Smart schedule error:', error);
-      showNotificationMessage('Failed to get schedule recommendation', 'error');
+      const message = error?.response?.data?.message || error?.message || 'Failed to get schedule recommendation';
+      showNotificationMessage(message, 'error');
     } finally {
       setScheduleLoading(false);
     }
@@ -561,34 +593,38 @@ const CreateNewsletterContent: React.FC = () => {
                     />
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div className="relative">
+                      <div className="relative group">
+                        <label className="block text-xs text-neutral-400 mb-1.5 ml-1">Tone</label>
                         <select
                           value={aiTone}
                           onChange={(e) => setAiTone(e.target.value as typeof aiTone)}
                           className="w-full px-4 py-2.5 bg-neutral-900/50 rounded-lg border border-white/10 
                             focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/30 text-sm text-white
-                            appearance-none cursor-pointer transition-all duration-200 hover:border-purple-500/30"
-                          style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`, backgroundPosition: 'right 0.5rem center', backgroundRepeat: 'no-repeat', backgroundSize: '1.5em 1.5em' }}
+                            appearance-none cursor-pointer transition-all duration-200 hover:border-purple-500/30
+                            group-hover:bg-neutral-900/70"
+                          style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%23a78bfa' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`, backgroundPosition: 'right 0.75rem center', backgroundRepeat: 'no-repeat', backgroundSize: '1.25em 1.25em' }}
                         >
-                          <option value="professional">🎯 Professional</option>
-                          <option value="casual">💬 Casual</option>
-                          <option value="friendly">😊 Friendly</option>
-                          <option value="authoritative">📊 Authoritative</option>
+                          <option value="professional">Professional</option>
+                          <option value="casual">Casual</option>
+                          <option value="friendly">Friendly</option>
+                          <option value="authoritative">Authoritative</option>
                         </select>
                       </div>
 
-                      <div className="relative">
+                      <div className="relative group">
+                        <label className="block text-xs text-neutral-400 mb-1.5 ml-1">Length</label>
                         <select
                           value={aiLength}
                           onChange={(e) => setAiLength(e.target.value as typeof aiLength)}
                           className="w-full px-4 py-2.5 bg-neutral-900/50 rounded-lg border border-white/10 
                             focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/30 text-sm text-white
-                            appearance-none cursor-pointer transition-all duration-200 hover:border-purple-500/30"
-                          style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`, backgroundPosition: 'right 0.5rem center', backgroundRepeat: 'no-repeat', backgroundSize: '1.5em 1.5em' }}
+                            appearance-none cursor-pointer transition-all duration-200 hover:border-purple-500/30
+                            group-hover:bg-neutral-900/70"
+                          style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%23a78bfa' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`, backgroundPosition: 'right 0.75rem center', backgroundRepeat: 'no-repeat', backgroundSize: '1.25em 1.25em' }}
                         >
-                          <option value="short">📝 Short (300-500 words)</option>
-                          <option value="medium">📄 Medium (500-800 words)</option>
-                          <option value="long">📚 Long (800-1200 words)</option>
+                          <option value="short">Short (300-500 words)</option>
+                          <option value="medium">Medium (500-800 words)</option>
+                          <option value="long">Long (800-1200 words)</option>
                         </select>
                       </div>
                     </div>
@@ -674,31 +710,52 @@ const CreateNewsletterContent: React.FC = () => {
 
                     {/* Smart Schedule Recommendation */}
                     {smartSchedule && (
-                      <div className="p-4 bg-purple-500/10 rounded-xl border border-purple-500/30 space-y-3">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium text-purple-300">Recommended Time</span>
-                          <Badge variant="success" size="sm">
-                            {smartSchedule.recommendedDay} {smartSchedule.recommendedTime}
-                          </Badge>
-                        </div>
-                        <p className="text-xs text-neutral-400">{smartSchedule.reasoning}</p>
-                        <div className="flex gap-2">
-                          <Button
-                            onClick={applySmartSchedule}
-                            variant="primary"
-                            size="sm"
-                            className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500"
-                          >
-                            Apply Schedule
-                          </Button>
-                          <Button
+                      <div className="p-4 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-xl border border-purple-500/30 space-y-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1">
+                            <span className="text-sm font-medium text-purple-300 block mb-1">Optimal Send Time</span>
+                            <div className="flex items-center gap-2">
+                              <Calendar className="w-4 h-4 text-purple-400" />
+                              <span className="text-white font-semibold">{smartSchedule.recommendedDay}</span>
+                              <Clock className="w-4 h-4 text-purple-400 ml-2" />
+                              <span className="text-white font-semibold">{smartSchedule.recommendedTime}</span>
+                            </div>
+                          </div>
+                          <button
                             onClick={() => setSmartSchedule(null)}
-                            variant="secondary"
-                            size="sm"
+                            className="p-1.5 text-neutral-400 hover:text-white rounded-lg hover:bg-white/10 transition-colors"
                           >
-                            Dismiss
-                          </Button>
+                            <X className="w-4 h-4" />
+                          </button>
                         </div>
+                        
+                        <div className="bg-neutral-900/30 rounded-lg p-3">
+                          <p className="text-xs text-neutral-300 leading-relaxed">{smartSchedule.reasoning}</p>
+                        </div>
+
+                        {smartSchedule.alternativeSlots && smartSchedule.alternativeSlots.length > 0 && (
+                          <div>
+                            <p className="text-xs text-neutral-400 mb-2">Alternative times:</p>
+                            <div className="grid grid-cols-1 gap-1.5">
+                              {smartSchedule.alternativeSlots.slice(0, 2).map((slot, idx) => (
+                                <div key={idx} className="flex items-center justify-between text-xs bg-neutral-900/30 rounded px-2 py-1.5">
+                                  <span className="text-neutral-300">{slot.day} at {slot.time}</span>
+                                  <span className="text-purple-400 font-medium">{Math.round(slot.score * 100)}%</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        
+                        <Button
+                          onClick={applySmartSchedule}
+                          variant="primary"
+                          size="sm"
+                          className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                          leftIcon={<CheckCircle className="w-4 h-4" />}
+                        >
+                          Apply This Schedule
+                        </Button>
                       </div>
                     )}
                   </div>
