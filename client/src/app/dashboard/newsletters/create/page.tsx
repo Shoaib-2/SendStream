@@ -43,7 +43,10 @@ const CreateNewsletterContent: React.FC = () => {
 
   // AI State
   const [showAIPanel, setShowAIPanel] = useState(false);
-  const [aiLoading, setAiLoading] = useState(false);
+  const [generateLoading, setGenerateLoading] = useState(false);
+  const [improveLoading, setImproveLoading] = useState(false);
+  const [subjectLoading, setSubjectLoading] = useState(false);
+  const [scheduleLoading, setScheduleLoading] = useState(false);
   const [aiTopic, setAiTopic] = useState('');
   const [aiTone, setAiTone] = useState<'professional' | 'casual' | 'friendly' | 'authoritative'>('professional');
   const [aiLength, setAiLength] = useState<'short' | 'medium' | 'long'>('medium');
@@ -253,7 +256,7 @@ const CreateNewsletterContent: React.FC = () => {
       return;
     }
 
-    setAiLoading(true);
+    setGenerateLoading(true);
     try {
       const generated = await aiAPI.generateContent({
         topic: aiTopic,
@@ -278,13 +281,13 @@ const CreateNewsletterContent: React.FC = () => {
         }
       });
 
-      setShowAIPanel(false);
-      showNotificationMessage('Content generated successfully!', 'success');
+      showNotificationMessage('✨ Content generated successfully!', 'success');
+      setAiTopic(''); // Clear topic after generation
     } catch (error) {
       console.error('AI generation error:', error);
       showNotificationMessage('Failed to generate content. Please try again.', 'error');
     } finally {
-      setAiLoading(false);
+      setGenerateLoading(false);
     }
   };
 
@@ -294,48 +297,50 @@ const CreateNewsletterContent: React.FC = () => {
       return;
     }
 
-    setAiLoading(true);
+    setImproveLoading(true);
     try {
       const improved = await aiAPI.improveContent(newsletter.content);
       setNewsletter({ ...newsletter, content: improved });
-      showNotificationMessage('Content improved!', 'success');
+      showNotificationMessage('✨ Content improved successfully!', 'success');
     } catch (error) {
       console.error('AI improvement error:', error);
       showNotificationMessage('Failed to improve content', 'error');
     } finally {
-      setAiLoading(false);
+      setImproveLoading(false);
     }
   };
 
   const generateSubjectSuggestions = async () => {
     const topic = newsletter.title || aiTopic;
     if (!topic.trim()) {
-      showNotificationMessage('Please add a title first', 'error');
+      showNotificationMessage('Please add a title or topic first', 'error');
       return;
     }
 
-    setAiLoading(true);
+    setSubjectLoading(true);
     try {
       const suggestions = await aiAPI.generateSubjects(topic, newsletter.content);
       setSubjectSuggestions(suggestions);
+      showNotificationMessage('✨ Subject lines generated!', 'success');
     } catch (error) {
       console.error('Subject generation error:', error);
       showNotificationMessage('Failed to generate subjects', 'error');
     } finally {
-      setAiLoading(false);
+      setSubjectLoading(false);
     }
   };
 
   const getSmartScheduleRecommendation = async () => {
-    setAiLoading(true);
+    setScheduleLoading(true);
     try {
       const recommendation = await aiAPI.getSmartSchedule();
       setSmartSchedule(recommendation);
+      showNotificationMessage('✨ Optimal send time found!', 'success');
     } catch (error) {
       console.error('Smart schedule error:', error);
       showNotificationMessage('Failed to get schedule recommendation', 'error');
     } finally {
-      setAiLoading(false);
+      setScheduleLoading(false);
     }
   };
 
@@ -548,45 +553,54 @@ const CreateNewsletterContent: React.FC = () => {
                       type="text"
                       value={aiTopic}
                       onChange={(e) => setAiTopic(e.target.value)}
-                      placeholder="Enter your newsletter topic..."
+                      onKeyPress={(e) => e.key === 'Enter' && !generateLoading && aiTopic.trim() && generateAIContent()}
+                      placeholder="e.g., Morning routines for productivity"
                       className="w-full px-4 py-3 bg-neutral-900/50 rounded-xl border border-white/10
                         focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/30
                         placeholder-neutral-500 text-sm text-white transition-all duration-200"
                     />
 
-                    <div className="grid grid-cols-2 gap-3">
-                      <select
-                        value={aiTone}
-                        onChange={(e) => setAiTone(e.target.value as typeof aiTone)}
-                        className="px-3 py-2 bg-neutral-900/50 rounded-lg border border-white/10 
-                          focus:border-purple-500/50 text-sm text-white"
-                      >
-                        <option value="professional">Professional</option>
-                        <option value="casual">Casual</option>
-                        <option value="friendly">Friendly</option>
-                        <option value="authoritative">Authoritative</option>
-                      </select>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="relative">
+                        <select
+                          value={aiTone}
+                          onChange={(e) => setAiTone(e.target.value as typeof aiTone)}
+                          className="w-full px-4 py-2.5 bg-neutral-900/50 rounded-lg border border-white/10 
+                            focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/30 text-sm text-white
+                            appearance-none cursor-pointer transition-all duration-200 hover:border-purple-500/30"
+                          style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`, backgroundPosition: 'right 0.5rem center', backgroundRepeat: 'no-repeat', backgroundSize: '1.5em 1.5em' }}
+                        >
+                          <option value="professional">🎯 Professional</option>
+                          <option value="casual">💬 Casual</option>
+                          <option value="friendly">😊 Friendly</option>
+                          <option value="authoritative">📊 Authoritative</option>
+                        </select>
+                      </div>
 
-                      <select
-                        value={aiLength}
-                        onChange={(e) => setAiLength(e.target.value as typeof aiLength)}
-                        className="px-3 py-2 bg-neutral-900/50 rounded-lg border border-white/10 
-                          focus:border-purple-500/50 text-sm text-white"
-                      >
-                        <option value="short">Short (300-500 words)</option>
-                        <option value="medium">Medium (500-800 words)</option>
-                        <option value="long">Long (800-1200 words)</option>
-                      </select>
+                      <div className="relative">
+                        <select
+                          value={aiLength}
+                          onChange={(e) => setAiLength(e.target.value as typeof aiLength)}
+                          className="w-full px-4 py-2.5 bg-neutral-900/50 rounded-lg border border-white/10 
+                            focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/30 text-sm text-white
+                            appearance-none cursor-pointer transition-all duration-200 hover:border-purple-500/30"
+                          style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`, backgroundPosition: 'right 0.5rem center', backgroundRepeat: 'no-repeat', backgroundSize: '1.5em 1.5em' }}
+                        >
+                          <option value="short">📝 Short (300-500 words)</option>
+                          <option value="medium">📄 Medium (500-800 words)</option>
+                          <option value="long">📚 Long (800-1200 words)</option>
+                        </select>
+                      </div>
                     </div>
 
                     <Button
                       onClick={generateAIContent}
-                      disabled={aiLoading || !aiTopic.trim()}
+                      disabled={generateLoading || !aiTopic.trim()}
                       variant="primary"
-                      leftIcon={aiLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                      leftIcon={generateLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
                       className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
                     >
-                      {aiLoading ? 'Generating...' : 'Generate Content'}
+                      {generateLoading ? 'Generating...' : 'Generate Content'}
                     </Button>
                   </div>
 
@@ -599,51 +613,62 @@ const CreateNewsletterContent: React.FC = () => {
 
                     <Button
                       onClick={improveExistingContent}
-                      disabled={aiLoading || !newsletter.content.trim()}
+                      disabled={improveLoading || !newsletter.content.trim()}
                       variant="secondary"
-                      leftIcon={aiLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
+                      leftIcon={improveLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
                       className="w-full"
                     >
-                      Improve Existing Content
+                      {improveLoading ? 'Improving...' : 'Improve Existing Content'}
                     </Button>
 
                     <Button
                       onClick={generateSubjectSuggestions}
-                      disabled={aiLoading || (!newsletter.title.trim() && !aiTopic.trim())}
+                      disabled={subjectLoading || (!newsletter.title.trim() && !aiTopic.trim())}
                       variant="secondary"
-                      leftIcon={aiLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Lightbulb className="w-4 h-4" />}
+                      leftIcon={subjectLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Lightbulb className="w-4 h-4" />}
                       className="w-full"
                     >
-                      Generate Subject Lines
+                      {subjectLoading ? 'Generating...' : 'Generate Subject Lines'}
                     </Button>
 
                     <Button
                       onClick={getSmartScheduleRecommendation}
-                      disabled={aiLoading}
+                      disabled={scheduleLoading}
                       variant="secondary"
-                      leftIcon={aiLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Clock className="w-4 h-4" />}
+                      leftIcon={scheduleLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Clock className="w-4 h-4" />}
                       className="w-full"
                     >
-                      Get Optimal Send Time
+                      {scheduleLoading ? 'Analyzing...' : 'Get Optimal Send Time'}
                     </Button>
 
                     {/* Subject Suggestions */}
                     {subjectSuggestions.length > 0 && (
-                      <div className="space-y-2 mt-4">
-                        <p className="text-xs text-neutral-400">Click to use:</p>
-                        {subjectSuggestions.map((subject, idx) => (
+                      <div className="space-y-2 mt-4 p-4 bg-purple-500/5 rounded-lg border border-purple-500/20">
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs font-medium text-purple-300">Click to use a subject line:</p>
                           <button
-                            key={idx}
-                            onClick={() => {
-                              setNewsletter({ ...newsletter, subject });
-                              setSubjectSuggestions([]);
-                            }}
-                            className="w-full text-left px-3 py-2 text-sm text-white bg-white/5 hover:bg-white/10 
-                              rounded-lg border border-white/10 hover:border-purple-500/30 transition-all"
+                            onClick={() => setSubjectSuggestions([])}
+                            className="p-1 text-neutral-400 hover:text-white rounded transition-colors"
                           >
-                            {subject}
+                            <X className="w-4 h-4" />
                           </button>
-                        ))}
+                        </div>
+                        <div className="space-y-2">
+                          {subjectSuggestions.map((subject, idx) => (
+                            <button
+                              key={idx}
+                              onClick={() => {
+                                setNewsletter({ ...newsletter, subject });
+                                setSubjectSuggestions([]);
+                                showNotificationMessage('Subject line applied!', 'success');
+                              }}
+                              className="w-full text-left px-3 py-2 text-sm text-white bg-white/5 hover:bg-white/10 
+                                rounded-lg border border-white/10 hover:border-purple-500/30 transition-all"
+                            >
+                              {subject}
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     )}
 
