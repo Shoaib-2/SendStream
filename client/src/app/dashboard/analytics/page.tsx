@@ -260,7 +260,7 @@ export default function AnalyticsDashboard() {
               <Badge variant="default" size="sm" className="flex items-center gap-1">
                 <ArrowUpRight className="w-3 h-3" />
                 {growthData.length > 1 
-                  ? `+${growthData[growthData.length - 1].subscribers - growthData[0].subscribers}` 
+                  ? `+${(growthData[growthData.length - 1]?.subscribers ?? 0) - (growthData[0]?.subscribers ?? 0)}` 
                   : '0'} total
               </Badge>
             </div>
