@@ -31,10 +31,10 @@ const GlassCard: React.FC<GlassCardProps> = ({
 
   const paddings = {
     none: '',
-    sm: 'p-4',
-    md: 'p-5',
-    lg: 'p-6',
-    xl: 'p-8',
+    sm: 'p-3 sm:p-4',
+    md: 'p-4 sm:p-5',
+    lg: 'p-4 sm:p-6',
+    xl: 'p-5 sm:p-8',
   };
 
   const hoverStyles = hover 

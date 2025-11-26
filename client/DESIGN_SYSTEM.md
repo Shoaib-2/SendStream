@@ -1,4 +1,4 @@
-# AutoSend Design System
+# SendStream Design System
 
 ## 🎨 Color Palette
 

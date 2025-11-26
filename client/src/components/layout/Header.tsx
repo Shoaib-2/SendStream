@@ -43,10 +43,10 @@ const Header: React.FC = () => {
                 </div>
               </div>
               <div className="flex flex-col">
-                <span className="text-xl font-bold font-display gradient-text">
-                  AutoSend
+                <span className="text-lg sm:text-xl font-bold font-display gradient-text">
+                  SendStream
                 </span>
-                <span className="text-xs text-neutral-400 -mt-1">Newsletter Platform</span>
+                <span className="text-[10px] sm:text-xs text-neutral-400 -mt-1">Newsletter Platform</span>
               </div>
             </button>
 

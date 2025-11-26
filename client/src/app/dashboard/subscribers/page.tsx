@@ -330,7 +330,7 @@ export default function SubscribersPage() {
         </motion.div>
 
         {/* Stats Grid */}
-        <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
           {metrics.map((metric, index) => (
             <motion.div
               key={metric.id}
@@ -343,15 +343,15 @@ export default function SubscribersPage() {
                   group-hover:scale-150 transition-transform duration-500`} />
                 
                 <div className="relative">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${metric.bgGradient} 
+                  <div className="flex items-center justify-between mb-3 sm:mb-4">
+                    <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br ${metric.bgGradient} 
                       flex items-center justify-center border border-white/10
                       group-hover:scale-110 transition-transform duration-300`}>
-                      <metric.icon className={`w-6 h-6 text-white`} />
+                      <metric.icon className={`w-5 h-5 sm:w-6 sm:h-6 text-white`} />
                     </div>
                   </div>
-                  <p className="text-neutral-400 text-sm mb-1">{metric.label}</p>
-                  <p className="text-3xl font-bold font-display text-white">
+                  <p className="text-neutral-400 text-xs sm:text-sm mb-1">{metric.label}</p>
+                  <p className="text-2xl sm:text-3xl font-bold font-display text-white">
                     <AnimatedCounter value={metric.value} />
                   </p>
                 </div>
@@ -363,17 +363,17 @@ export default function SubscribersPage() {
         {/* Actions Row */}
         <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center justify-between">
           {/* Search */}
-          <div className="relative flex-1 max-w-md">
+          <div className="relative flex-1 max-w-full sm:max-w-md">
             <input
               type="text"
               placeholder="Search by name or email..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-4 py-3 pl-11 bg-neutral-900/50 rounded-xl border border-white/10
+              className="w-full px-3 sm:px-4 py-2.5 sm:py-3 pl-10 sm:pl-11 bg-neutral-900/50 rounded-xl border border-white/10
                 focus:border-primary-500/50 focus:ring-2 focus:ring-primary-500/50 transition-all duration-200
-                text-white placeholder:text-neutral-500"
+                text-sm sm:text-base text-white placeholder:text-neutral-500"
             />
-            <Search className="absolute top-1/2 transform -translate-y-1/2 left-4 w-4 h-4 text-neutral-400" />
+            <Search className="absolute top-1/2 transform -translate-y-1/2 left-3 sm:left-4 w-4 h-4 text-neutral-400" />
           </div>
           
           {/* Action Buttons */}

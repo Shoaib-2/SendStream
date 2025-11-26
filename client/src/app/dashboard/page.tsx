@@ -248,9 +248,9 @@ export default function DashboardPage() {
           className="space-y-8"
         >
           {/* Header */}
-          <motion.div variants={itemVariants} className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <motion.div variants={itemVariants} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold font-display gradient-text mb-2">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold font-display gradient-text mb-2">
                 Dashboard
               </h1>
               <p className="text-neutral-400">Track your newsletter performance and content metrics</p>
@@ -301,7 +301,7 @@ export default function DashboardPage() {
           </motion.div>
           
           {/* Metrics Grid */}
-          <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <motion.div variants={itemVariants} className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
             {metrics.map((metric, index) => (
               <GlassCard 
                 key={index}
@@ -318,12 +318,12 @@ export default function DashboardPage() {
                 
                 <div className="relative">
                   <div className="flex items-center justify-between mb-4">
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center 
+                    <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center 
                       transition-transform duration-300 group-hover:scale-110
                       ${metric.color === 'primary' ? 'bg-primary-500/10' : 
                         metric.color === 'secondary' ? 'bg-secondary-500/10' : 
                         metric.color === 'warning' ? 'bg-warning-500/10' : 'bg-accent-500/10'}`}>
-                      <metric.icon className={`w-6 h-6
+                      <metric.icon className={`w-5 h-5 sm:w-6 sm:h-6
                         ${metric.color === 'primary' ? 'text-primary-400' : 
                           metric.color === 'secondary' ? 'text-secondary-400' : 
                           metric.color === 'warning' ? 'text-warning-400' : 'text-accent-400'}`} 
@@ -337,24 +337,24 @@ export default function DashboardPage() {
                       </div>
                     )}
                   </div>
-                  <p className="text-neutral-400 text-sm font-medium mb-1">{metric.label}</p>
-                  <p className="text-3xl font-bold font-display text-white">
+                  <p className="text-neutral-400 text-xs sm:text-sm font-medium mb-1">{metric.label}</p>
+                  <p className="text-2xl sm:text-3xl font-bold font-display text-white">
                     <AnimatedCounter value={metric.value} suffix={metric.suffix} />
                   </p>
-                  <p className="text-xs text-neutral-500 mt-1">{metric.changeLabel}</p>
+                  <p className="text-[10px] sm:text-xs text-neutral-500 mt-1">{metric.changeLabel}</p>
                 </div>
               </GlassCard>
             ))}
           </motion.div>
 
           {/* Bottom Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
             {/* Content Quality Distribution */}
             <motion.div variants={itemVariants}>
               <GlassCard variant="default" className="h-full">
-                <h2 className="text-lg font-semibold font-display text-white mb-6 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-primary-500/10 flex items-center justify-center">
-                    <Star className="w-5 h-5 text-primary-400" />
+                <h2 className="text-base sm:text-lg font-semibold font-display text-white mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-primary-500/10 flex items-center justify-center">
+                    <Star className="w-4 h-4 sm:w-5 sm:h-5 text-primary-400" />
                   </div>
                   Content Quality Breakdown
                 </h2>
@@ -402,9 +402,9 @@ export default function DashboardPage() {
             {/* Latest Newsletters */}
             <motion.div variants={itemVariants}>
               <GlassCard variant="default" className="h-full">
-                <h2 className="text-lg font-semibold font-display text-white mb-6 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-secondary-500/10 flex items-center justify-center">
-                    <Mail className="w-5 h-5 text-secondary-400" />
+                <h2 className="text-base sm:text-lg font-semibold font-display text-white mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-secondary-500/10 flex items-center justify-center">
+                    <Mail className="w-4 h-4 sm:w-5 sm:h-5 text-secondary-400" />
                   </div>
                   Recent Newsletters
                 </h2>

@@ -184,7 +184,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
       <div className="absolute top-20 left-10 w-96 h-96 bg-primary-500/20 rounded-full blur-3xl animate-pulse-slow" />
       <div className="absolute bottom-20 right-10 w-96 h-96 bg-secondary-500/20 rounded-full blur-3xl animate-pulse-slow" style={{ animationDelay: '1s' }} />
       
-      <div className="glass-strong p-8 rounded-2xl w-full max-w-md relative
+      <div className="glass-strong p-5 sm:p-8 rounded-2xl w-full max-w-md relative
         border border-white/20 shadow-2xl animate-scale-in">
         {/* Glow effect */}
         <div className="absolute -inset-1 bg-gradient-to-r from-primary-500 via-accent-500 to-secondary-500 
@@ -199,8 +199,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
           <X className="w-5 h-5" />
         </button>
 
-        <div className="mb-8 text-center relative z-10">
-          <h2 className="text-3xl font-bold font-display gradient-text mb-2">
+        <div className="mb-6 sm:mb-8 text-center relative z-10">
+          <h2 className="text-2xl sm:text-3xl font-bold font-display gradient-text mb-2">
             {mode === 'login' 
               ? 'Welcome Back' 
               : mode === 'signup' 
@@ -294,7 +294,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   autoComplete="new-password"
-                  className={`w-full px-4 py-3 bg-neutral-900/50 rounded-xl text-white
+                  className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-neutral-900/50 rounded-xl text-white text-sm sm:text-base
                     ${errors.newPassword 
                       ? 'border-2 border-error-500/50 focus:border-error-500' 
                       : 'border border-neutral-700 focus:border-primary-500'
@@ -318,7 +318,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   autoComplete="new-password"
-                  className={`w-full px-4 py-3 bg-neutral-900/50 rounded-xl text-white
+                  className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-neutral-900/50 rounded-xl text-white text-sm sm:text-base
                     ${errors.confirmPassword 
                       ? 'border-2 border-error-500/50 focus:border-error-500' 
                       : 'border border-neutral-700 focus:border-primary-500'

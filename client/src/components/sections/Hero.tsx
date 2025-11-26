@@ -41,7 +41,7 @@ const Hero: React.FC<HeroProps> = ({ isRenewal = false }) => {
             </div>
 
             {/* Main Heading */}
-            <h1 className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-bold font-display leading-tight">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold font-display leading-tight">
               <span className="block text-white mb-2">
                 {isRenewal ? 'Continue Your' : 'Newsletter'}
               </span>
@@ -54,7 +54,7 @@ const Hero: React.FC<HeroProps> = ({ isRenewal = false }) => {
             </h1>
 
             {/* Subheading */}
-            <p className="text-xl sm:text-2xl text-neutral-300 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
+            <p className="text-lg sm:text-xl md:text-2xl text-neutral-300 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
               {isRenewal
                 ? 'Renew your subscription to continue enjoying all premium features and unlock unlimited possibilities.'
                 : 'Create, schedule, and send beautiful newsletters that convert. Powered by AI, built for growth.'}
@@ -62,7 +62,7 @@ const Hero: React.FC<HeroProps> = ({ isRenewal = false }) => {
 
             {/* Feature Pills */}
             {!isRenewal && (
-              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 text-sm text-neutral-400">
+              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3 sm:gap-4 text-xs sm:text-sm text-neutral-400">
                 <div className="flex items-center gap-2">
                   <Zap className="w-4 h-4 text-secondary-400" />
                   <span>AI-Powered</span>
@@ -104,7 +104,7 @@ const Hero: React.FC<HeroProps> = ({ isRenewal = false }) => {
 
             {/* Social Proof */}
             {!isRenewal && (
-              <div className="flex items-center justify-center lg:justify-start gap-6 pt-6 text-sm">
+              <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 sm:gap-6 pt-6 text-xs sm:text-sm">
                 <div className="flex items-center gap-2">
                   <div className="flex -space-x-2">
                     {[1, 2, 3, 4].map((i) => (

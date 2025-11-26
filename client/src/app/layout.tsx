@@ -22,12 +22,12 @@ const manrope = Manrope({
 })
 
 export const metadata: Metadata = {
-  title: 'AutoSend - Modern Newsletter Automation',
+  title: 'SendStream - Modern Newsletter Automation',
   description: 'Streamline your newsletter workflow with AI-powered automation, analytics, and subscriber management.',
   keywords: 'newsletter, automation, email marketing, subscriber management, analytics',
-  authors: [{ name: 'AutoSend Team' }],
+  authors: [{ name: 'SendStream Team' }],
   openGraph: {
-    title: 'AutoSend - Modern Newsletter Automation',
+    title: 'SendStream - Modern Newsletter Automation',
     description: 'Streamline your newsletter workflow with AI-powered automation',
     type: 'website',
   },

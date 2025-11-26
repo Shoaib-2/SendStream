@@ -38,10 +38,10 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     };
 
     const sizes = {
-      sm: 'px-4 py-2 text-sm rounded-lg',
-      md: 'px-6 py-3 text-base rounded-xl',
-      lg: 'px-8 py-4 text-lg rounded-xl',
-      xl: 'px-10 py-5 text-xl rounded-2xl',
+      sm: 'px-3 sm:px-4 py-2 text-sm rounded-lg',
+      md: 'px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base rounded-xl',
+      lg: 'px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg rounded-xl',
+      xl: 'px-8 sm:px-10 py-4 sm:py-5 text-lg sm:text-xl rounded-2xl',
     };
 
     return (

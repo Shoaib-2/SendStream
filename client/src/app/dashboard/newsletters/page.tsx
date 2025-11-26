@@ -171,7 +171,7 @@ const NewsletterDashboard = () => {
         </motion.div>
 
         {/* Stats Grid */}
-        <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
           {metrics.map((metric, index) => (
             <motion.div
               key={metric.id}
@@ -184,15 +184,15 @@ const NewsletterDashboard = () => {
                   group-hover:scale-150 transition-transform duration-500`} />
                 
                 <div className="relative">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${metric.bgGradient} 
+                  <div className="flex items-center justify-between mb-3 sm:mb-4">
+                    <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br ${metric.bgGradient} 
                       flex items-center justify-center border border-white/10
                       group-hover:scale-110 transition-transform duration-300`}>
-                      <metric.icon className={`w-6 h-6 text-white`} />
+                      <metric.icon className={`w-5 h-5 sm:w-6 sm:h-6 text-white`} />
                     </div>
                   </div>
-                  <p className="text-neutral-400 text-sm mb-1">{metric.label}</p>
-                  <p className="text-3xl font-bold font-display text-white">
+                  <p className="text-neutral-400 text-xs sm:text-sm mb-1">{metric.label}</p>
+                  <p className="text-2xl sm:text-3xl font-bold font-display text-white">
                     <AnimatedCounter value={metric.value} />
                   </p>
                 </div>
@@ -204,16 +204,16 @@ const NewsletterDashboard = () => {
         {/* Newsletter List */}
         <motion.div variants={itemVariants}>
           <GlassCard variant="strong" padding="none" className="overflow-hidden">
-            <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between">
-              <h2 className="text-xl font-semibold font-display text-white">Recent Newsletters</h2>
+            <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-white/10 flex items-center justify-between">
+              <h2 className="text-lg sm:text-xl font-semibold font-display text-white">Recent Newsletters</h2>
               <Badge variant="default" size="sm">{newsletters.length} total</Badge>
             </div>
             
             {newsletters.length === 0 ? (
-              <div className="p-12 text-center">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-primary-500/20 to-secondary-500/20 
+              <div className="p-8 sm:p-12 text-center">
+                <div className="w-14 h-14 sm:w-16 sm:h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-primary-500/20 to-secondary-500/20 
                   flex items-center justify-center border border-white/10">
-                  <Mail className="w-8 h-8 text-primary-400" />
+                  <Mail className="w-7 h-7 sm:w-8 sm:h-8 text-primary-400" />
                 </div>
                 <h3 className="text-lg font-semibold text-white mb-2">No newsletters yet</h3>
                 <p className="text-neutral-400 mb-6">Create your first newsletter to get started</p>

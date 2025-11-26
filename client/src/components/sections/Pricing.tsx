@@ -50,7 +50,7 @@ const Pricing: React.FC<PricingProps> = ({ isRenewal = false }) => {
             {isRenewal ? 'Renew & Save' : 'Simple Pricing'}
           </Badge>
           
-          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold font-display">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold font-display">
             <span className="block text-white mb-2">
               {isRenewal ? 'Welcome Back!' : 'One Plan'}
             </span>
@@ -59,7 +59,7 @@ const Pricing: React.FC<PricingProps> = ({ isRenewal = false }) => {
             </span>
           </h2>
           
-          <p className="text-xl text-neutral-300 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-base sm:text-lg md:text-xl text-neutral-300 max-w-2xl mx-auto leading-relaxed">
             {isRenewal 
               ? 'Continue accessing all premium features and unlock your newsletter\'s full potential' 
               : 'Start free, upgrade when you\'re ready. No hidden fees. Cancel anytime.'}
@@ -73,7 +73,7 @@ const Pricing: React.FC<PricingProps> = ({ isRenewal = false }) => {
             <div className="absolute -inset-1 bg-gradient-to-r from-primary-500 via-accent-500 to-secondary-500 
               rounded-2xl blur-2xl opacity-20 group-hover:opacity-30 transition-opacity" />
             
-            <div className="relative p-8 sm:p-10 lg:p-12">
+            <div className="relative p-5 sm:p-8 md:p-10 lg:p-12">
               {/* Popular badge */}
               {!isRenewal && (
                 <div className="absolute -top-5 left-1/2 -translate-x-1/2">
@@ -86,16 +86,16 @@ const Pricing: React.FC<PricingProps> = ({ isRenewal = false }) => {
 
               {/* Header */}
               <div className="text-center mb-8 pt-4">
-                <h3 className="text-3xl font-bold font-display text-white mb-3">
+                <h3 className="text-2xl sm:text-3xl font-bold font-display text-white mb-3">
                   {pricingTier.name}
                 </h3>
-                <p className="text-neutral-300 text-lg mb-6">
+                <p className="text-neutral-300 text-base sm:text-lg mb-6">
                   Everything you need to create and grow your newsletter
                 </p>
                 
                 {/* Price */}
                 <div className="flex items-baseline justify-center gap-2 mb-6">
-                  <span className="text-6xl sm:text-7xl font-bold gradient-text">
+                  <span className="text-5xl sm:text-6xl md:text-7xl font-bold gradient-text">
                     {pricingTier.price}
                   </span>
                   <span className="text-2xl text-neutral-400">
@@ -130,7 +130,7 @@ const Pricing: React.FC<PricingProps> = ({ isRenewal = false }) => {
                         } group-hover:scale-110 transition-transform`}>
                         <Check className="w-4 h-4" strokeWidth={3} />
                       </div>
-                      <span className={`text-lg ${feature.highlight ? 'text-white font-medium' : 'text-neutral-300'}`}>
+                      <span className={`text-base sm:text-lg ${feature.highlight ? 'text-white font-medium' : 'text-neutral-300'}`}>
                         {feature.text}
                       </span>
                     </li>
@@ -150,8 +150,8 @@ const Pricing: React.FC<PricingProps> = ({ isRenewal = false }) => {
               </Button>
 
               {/* Trust indicators */}
-              <div className="mt-8 pt-6 border-t border-neutral-800">
-                <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-neutral-400">
+              <div className="mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-neutral-800">
+                <div className="flex flex-col sm:flex-row flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs sm:text-sm text-neutral-400">
                   <div className="flex items-center gap-2">
                     <svg className="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />

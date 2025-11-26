@@ -206,7 +206,7 @@ export default function AnalyticsDashboard() {
         </motion.div>
 
         {/* Stats Grid */}
-        <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
           {metrics.map((metric, index) => (
             <motion.div
               key={metric.id}
@@ -219,11 +219,11 @@ export default function AnalyticsDashboard() {
                   group-hover:scale-150 transition-transform duration-500`} />
                 
                 <div className="relative">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${metric.bgGradient} 
+                  <div className="flex items-center justify-between mb-3 sm:mb-4">
+                    <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br ${metric.bgGradient} 
                       flex items-center justify-center border border-white/10
                       group-hover:scale-110 transition-transform duration-300`}>
-                      <metric.icon className={`w-6 h-6 text-white`} />
+                      <metric.icon className={`w-5 h-5 sm:w-6 sm:h-6 text-white`} />
                     </div>
                     <Badge
                       variant={metric.change >= 0 ? 'success' : 'error'}
@@ -238,8 +238,8 @@ export default function AnalyticsDashboard() {
                       {metric.change > 0 ? '+' : ''}{metric.change.toFixed(1)}%
                     </Badge>
                   </div>
-                  <p className="text-neutral-400 text-sm mb-1">{metric.label}</p>
-                  <p className="text-3xl font-bold font-display text-white">
+                  <p className="text-neutral-400 text-xs sm:text-sm mb-1">{metric.label}</p>
+                  <p className="text-2xl sm:text-3xl font-bold font-display text-white">
                     <AnimatedCounter value={metric.value} />
                     {metric.suffix && <span className="text-xl">{metric.suffix}</span>}
                   </p>
@@ -252,10 +252,10 @@ export default function AnalyticsDashboard() {
         {/* Growth Chart */}
         <motion.div variants={itemVariants}>
           <GlassCard variant="strong" padding="lg">
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0 mb-4 sm:mb-6">
               <div>
-                <h2 className="text-xl font-bold font-display text-white">Subscriber Growth</h2>
-                <p className="text-sm text-neutral-400">Last 6 months performance</p>
+                <h2 className="text-lg sm:text-xl font-bold font-display text-white">Subscriber Growth</h2>
+                <p className="text-xs sm:text-sm text-neutral-400">Last 6 months performance</p>
               </div>
               <Badge variant="default" size="sm" className="flex items-center gap-1">
                 <ArrowUpRight className="w-3 h-3" />
@@ -265,7 +265,7 @@ export default function AnalyticsDashboard() {
               </Badge>
             </div>
             
-            <div className="h-72">
+            <div className="h-56 sm:h-64 md:h-72">
               <ResponsiveLine
                 data={[{
                   id: 'subscribers',
@@ -368,10 +368,10 @@ export default function AnalyticsDashboard() {
         {/* Recent Activity */}
         <motion.div variants={itemVariants}>
           <GlassCard variant="strong" padding="none" className="overflow-hidden">
-            <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between">
+            <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-white/10 flex items-center justify-between">
               <div>
-                <h2 className="text-xl font-semibold font-display text-white">Recent Activity</h2>
-                <p className="text-sm text-neutral-400">Your latest newsletter campaigns</p>
+                <h2 className="text-lg sm:text-xl font-semibold font-display text-white">Recent Activity</h2>
+                <p className="text-xs sm:text-sm text-neutral-400">Your latest newsletter campaigns</p>
               </div>
               <Badge variant="default" size="sm">{recentActivity.length} campaigns</Badge>
             </div>

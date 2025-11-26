@@ -378,9 +378,9 @@ const CreateNewsletterContent: React.FC = () => {
                   type="text"
                   value={newsletter.title}
                   onChange={(e) => setNewsletter({ ...newsletter, title: e.target.value })}
-                  className="w-full px-4 py-3 bg-neutral-900/50 rounded-xl border border-white/10
+                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-neutral-900/50 rounded-xl border border-white/10
                     focus:border-primary-500/50 focus:ring-2 focus:ring-primary-500/50
-                    placeholder-neutral-500 text-white transition-all duration-200"
+                    placeholder-neutral-500 text-sm sm:text-base text-white transition-all duration-200"
                   placeholder="Enter a compelling title..."
                 />
               </div>
@@ -391,9 +391,9 @@ const CreateNewsletterContent: React.FC = () => {
                   type="text"
                   value={newsletter.subject}
                   onChange={(e) => setNewsletter({ ...newsletter, subject: e.target.value })}
-                  className="w-full px-4 py-3 bg-neutral-900/50 rounded-xl border border-white/10
+                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-neutral-900/50 rounded-xl border border-white/10
                     focus:border-primary-500/50 focus:ring-2 focus:ring-primary-500/50
-                    placeholder-neutral-500 text-white transition-all duration-200"
+                    placeholder-neutral-500 text-sm sm:text-base text-white transition-all duration-200"
                   placeholder="Subject line your subscribers will see..."
                 />
               </div>
@@ -403,9 +403,9 @@ const CreateNewsletterContent: React.FC = () => {
                 <textarea
                   value={newsletter.content}
                   onChange={(e) => setNewsletter({ ...newsletter, content: e.target.value })}
-                  className="w-full h-72 sm:h-96 px-4 py-3 bg-neutral-900/50 rounded-xl border border-white/10
+                  className="w-full h-48 sm:h-72 md:h-96 px-3 sm:px-4 py-2.5 sm:py-3 bg-neutral-900/50 rounded-xl border border-white/10
                     focus:border-primary-500/50 focus:ring-2 focus:ring-primary-500/50
-                    placeholder-neutral-500 resize-none text-white transition-all duration-200"
+                    placeholder-neutral-500 resize-none text-sm sm:text-base text-white transition-all duration-200"
                   placeholder="Write your newsletter content here... Use HTML for formatting."
                 />
                 <p className="text-xs text-neutral-500 mt-2">
@@ -419,20 +419,20 @@ const CreateNewsletterContent: React.FC = () => {
         {/* Content Quality Section */}
         <motion.div variants={itemVariants}>
           <GlassCard variant="strong" padding="lg">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-secondary-500/20 to-secondary-600/20 
+            <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-secondary-500/20 to-secondary-600/20 
                 flex items-center justify-center border border-secondary-500/30">
-                <FileCheck className="w-5 h-5 text-secondary-400" />
+                <FileCheck className="w-4 h-4 sm:w-5 sm:h-5 text-secondary-400" />
               </div>
               <div>
-                <h2 className="text-lg font-semibold font-display text-white">Content Quality</h2>
-                <p className="text-sm text-neutral-400">Track and improve your content quality</p>
+                <h2 className="text-base sm:text-lg font-semibold font-display text-white">Content Quality</h2>
+                <p className="text-xs sm:text-sm text-neutral-400">Track and improve your content quality</p>
               </div>
             </div>
             
             <div className="space-y-6">
               {/* Quality Toggles */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
                 {[
                   { key: 'isOriginalContent', label: 'Original Content', icon: FileCheck, color: 'primary' },
                   { key: 'hasResearchBacked', label: 'Research Backed', icon: BookOpen, color: 'secondary' },
@@ -468,14 +468,14 @@ const CreateNewsletterContent: React.FC = () => {
               {/* Sources */}
               <div className="space-y-3">
                 <label className="block text-sm font-medium text-neutral-200">Sources</label>
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2">
                   <input
                     type="text"
                     value={currentSource}
                     onChange={(e) => setCurrentSource(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && addSource()}
-                    className="flex-1 px-4 py-2.5 bg-neutral-900/50 rounded-xl border border-white/10
-                      focus:border-primary-500/50 focus:ring-2 focus:ring-primary-500/50 text-white placeholder:text-neutral-500"
+                    className="flex-1 px-3 sm:px-4 py-2 sm:py-2.5 bg-neutral-900/50 rounded-xl border border-white/10
+                      focus:border-primary-500/50 focus:ring-2 focus:ring-primary-500/50 text-sm sm:text-base text-white placeholder:text-neutral-500"
                     placeholder="Add a source URL or reference..."
                   />
                   <Button onClick={addSource} variant="secondary" leftIcon={<Link className="w-4 h-4" />}>
@@ -506,14 +506,14 @@ const CreateNewsletterContent: React.FC = () => {
               {/* Key Takeaways */}
               <div className="space-y-3">
                 <label className="block text-sm font-medium text-neutral-200">Key Takeaways</label>
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2">
                   <input
                     type="text"
                     value={currentTakeaway}
                     onChange={(e) => setCurrentTakeaway(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && addTakeaway()}
-                    className="flex-1 px-4 py-2.5 bg-neutral-900/50 rounded-xl border border-white/10
-                      focus:border-primary-500/50 focus:ring-2 focus:ring-primary-500/50 text-white placeholder:text-neutral-500"
+                    className="flex-1 px-3 sm:px-4 py-2 sm:py-2.5 bg-neutral-900/50 rounded-xl border border-white/10
+                      focus:border-primary-500/50 focus:ring-2 focus:ring-primary-500/50 text-sm sm:text-base text-white placeholder:text-neutral-500"
                     placeholder="What's the key takeaway for readers?"
                   />
                   <Button onClick={addTakeaway} variant="secondary" leftIcon={<Lightbulb className="w-4 h-4" />}>

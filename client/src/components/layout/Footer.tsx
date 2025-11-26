@@ -15,7 +15,7 @@ const Footer: React.FC = () => {
       
       <Container size="xl" className="relative z-10 py-12">
         {/* Main Footer Content */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-10 lg:gap-12 mb-12">
           {/* Brand Section */}
           <div className="space-y-4">
             <div className="flex items-center gap-3">
@@ -25,7 +25,7 @@ const Footer: React.FC = () => {
                   <Send className="w-5 h-5 text-white" />
                 </div>
               </div>
-              <span className="text-xl font-bold font-display gradient-text">AutoSend</span>
+              <span className="text-lg sm:text-xl font-bold font-display gradient-text">SendStream</span>
             </div>
             <p className="text-neutral-400 text-sm leading-relaxed">
               AI-powered newsletter automation platform for modern creators. Create, schedule, and grow with ease.
@@ -109,11 +109,11 @@ const Footer: React.FC = () => {
               </li>
               <li>
                 <a 
-                  href="mailto:support@autosend.com" 
+                  href="mailto:support@sendstream.com" 
                   className="flex items-center gap-2 text-neutral-400 hover:text-primary-400 transition-colors group"
                 >
                   <Mail className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                  support@autosend.com
+                  support@sendstream.com
                 </a>
               </li>
             </ul>
@@ -124,10 +124,10 @@ const Footer: React.FC = () => {
         </div>
 
         {/* Bottom Bar */}
-        <div className="pt-8 border-t border-white/10">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="pt-6 sm:pt-8 border-t border-white/10">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="text-sm text-neutral-400 text-center md:text-left">
-              &copy; {currentYear} AutoSend. All rights reserved. Developed with{' '}
+              &copy; {currentYear} SendStream. All rights reserved. Developed with{' '}
               <Heart className="w-3 h-3 inline text-accent-500 fill-current" /> by{' '}
               <a 
                 href="https://www.linkedin.com/in/mohammed-shoaib-dev/"

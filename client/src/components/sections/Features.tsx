@@ -73,18 +73,18 @@ const Features = () => {
             Powerful Features
           </Badge>
           
-          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold font-display">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold font-display">
             <span className="block text-white mb-2">Everything You Need</span>
             <span className="gradient-text">To Succeed</span>
           </h2>
           
-          <p className="text-xl text-neutral-300 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-base sm:text-lg md:text-xl text-neutral-300 max-w-3xl mx-auto leading-relaxed">
             Create, manage, and grow your newsletter with our comprehensive suite of tools designed for modern creators.
           </p>
         </div>
 
         {/* Features Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
           {features.map((feature, index) => {
             const Icon = feature.icon;
             return (
@@ -102,9 +102,9 @@ const Features = () => {
                 <div className="relative space-y-4">
                   {/* Icon and Badge */}
                   <div className="flex items-start justify-between">
-                    <div className={`w-14 h-14 rounded-xl ${feature.iconBg} flex items-center justify-center
+                    <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl ${feature.iconBg} flex items-center justify-center
                       group-hover:scale-110 group-hover:rotate-3 transition-all duration-300`}>
-                      <Icon className={`w-7 h-7 ${feature.iconColor}`} />
+                      <Icon className={`w-6 h-6 sm:w-7 sm:h-7 ${feature.iconColor}`} />
                     </div>
                     <Badge variant="outline" size="sm" className="text-xs">
                       {feature.badge}
@@ -113,10 +113,10 @@ const Features = () => {
 
                   {/* Content */}
                   <div className="space-y-2">
-                    <h3 className="text-xl font-bold font-display text-white group-hover:text-primary-300 transition-colors">
+                    <h3 className="text-lg sm:text-xl font-bold font-display text-white group-hover:text-primary-300 transition-colors">
                       {feature.title}
                     </h3>
-                    <p className="text-neutral-400 leading-relaxed">
+                    <p className="text-sm sm:text-base text-neutral-400 leading-relaxed">
                       {feature.description}
                     </p>
                   </div>

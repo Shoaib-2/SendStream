@@ -309,7 +309,7 @@ export default function SettingsPage() {
         </AnimatePresence>
 
         {/* Quick Stats */}
-        <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {[
             { icon: Mail, label: 'Email Provider', value: 'SendGrid', color: 'primary' },
             { icon: LinkIcon, label: 'Mailchimp', value: connectionStatus.mailchimp.connected ? 'Connected' : 'Not Connected', color: connectionStatus.mailchimp.connected ? 'success' : 'warning' },
@@ -317,14 +317,14 @@ export default function SettingsPage() {
             { icon: Zap, label: 'Auto-Sync', value: settings.mailchimp.autoSync ? 'On' : 'Off', color: settings.mailchimp.autoSync ? 'success' : 'neutral' },
           ].map((stat, index) => (
             <GlassCard key={index} variant="default" padding="md" className="group">
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-xl bg-${stat.color}-500/20 flex items-center justify-center
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-${stat.color}-500/20 flex items-center justify-center
                   border border-${stat.color}-500/30 group-hover:scale-105 transition-transform`}>
-                  <stat.icon className={`w-5 h-5 text-${stat.color}-400`} />
+                  <stat.icon className={`w-4 h-4 sm:w-5 sm:h-5 text-${stat.color}-400`} />
                 </div>
                 <div>
-                  <p className="text-xs text-neutral-400">{stat.label}</p>
-                  <p className="font-semibold text-white text-sm">{stat.value}</p>
+                  <p className="text-[10px] sm:text-xs text-neutral-400">{stat.label}</p>
+                  <p className="font-semibold text-white text-xs sm:text-sm">{stat.value}</p>
                 </div>
               </div>
             </GlassCard>
@@ -334,14 +334,14 @@ export default function SettingsPage() {
         {/* Email Configuration */}
         <motion.div variants={itemVariants}>
           <GlassCard variant="strong" padding="lg">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-500/20 to-primary-600/20 
+            <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-primary-500/20 to-primary-600/20 
                 flex items-center justify-center border border-primary-500/30">
-                <EnvelopeIcon className="w-6 h-6 text-primary-400" />
+                <EnvelopeIcon className="w-5 h-5 sm:w-6 sm:h-6 text-primary-400" />
               </div>
               <div>
-                <h2 className="text-xl font-semibold font-display text-white">Email Configuration</h2>
-                <p className="text-sm text-neutral-400">Configure your newsletter sender details</p>
+                <h2 className="text-lg sm:text-xl font-semibold font-display text-white">Email Configuration</h2>
+                <p className="text-xs sm:text-sm text-neutral-400">Configure your newsletter sender details</p>
               </div>
             </div>
             
@@ -355,9 +355,9 @@ export default function SettingsPage() {
                     ...settings,
                     email: { ...settings.email, fromName: e.target.value }
                   })}
-                  className="w-full px-4 py-3 bg-neutral-900/50 rounded-xl border border-white/10
+                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-neutral-900/50 rounded-xl border border-white/10
                     focus:border-primary-500/50 focus:ring-2 focus:ring-primary-500/50
-                    transition-all duration-200 text-white placeholder:text-neutral-500"
+                    transition-all duration-200 text-sm sm:text-base text-white placeholder:text-neutral-500"
                   placeholder="Your Newsletter Name"
                 />
               </div>
@@ -370,9 +370,9 @@ export default function SettingsPage() {
                     ...settings,
                     email: { ...settings.email, replyTo: e.target.value }
                   })}
-                  className="w-full px-4 py-3 bg-neutral-900/50 rounded-xl border border-white/10
+                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-neutral-900/50 rounded-xl border border-white/10
                     focus:border-primary-500/50 focus:ring-2 focus:ring-primary-500/50
-                    transition-all duration-200 text-white placeholder:text-neutral-500"
+                    transition-all duration-200 text-sm sm:text-base text-white placeholder:text-neutral-500"
                   placeholder="reply@example.com"
                 />
               </div>
@@ -385,9 +385,9 @@ export default function SettingsPage() {
                     ...settings,
                     email: { ...settings.email, senderEmail: e.target.value }
                   })}
-                  className="w-full px-4 py-3 bg-neutral-900/50 rounded-xl border border-white/10
+                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-neutral-900/50 rounded-xl border border-white/10
                     focus:border-primary-500/50 focus:ring-2 focus:ring-primary-500/50
-                    transition-all duration-200 text-white placeholder:text-neutral-500"
+                    transition-all duration-200 text-sm sm:text-base text-white placeholder:text-neutral-500"
                   placeholder="sender@yourdomain.com"
                 />
                 <p className="text-xs text-neutral-400 mt-1">
@@ -401,20 +401,20 @@ export default function SettingsPage() {
         {/* Mailchimp Integration */}
         <motion.div variants={itemVariants}>
           <GlassCard variant="strong" padding="lg">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-warning-500/20 to-warning-600/20 
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-warning-500/20 to-warning-600/20 
                   flex items-center justify-center border border-warning-500/30">
-                  <Cog6ToothIcon className="w-6 h-6 text-warning-400" />
+                  <Cog6ToothIcon className="w-5 h-5 sm:w-6 sm:h-6 text-warning-400" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h2 className="text-xl font-semibold font-display text-white">Mailchimp Integration</h2>
+                    <h2 className="text-lg sm:text-xl font-semibold font-display text-white">Mailchimp Integration</h2>
                     {connectionStatus.mailchimp.connected && (
                       <Badge variant="success" size="sm">Connected</Badge>
                     )}
                   </div>
-                  <p className="text-sm text-neutral-400">Sync your subscribers with Mailchimp</p>
+                  <p className="text-xs sm:text-sm text-neutral-400">Sync your subscribers with Mailchimp</p>
                 </div>
               </div>
               <div className="flex flex-wrap gap-2 w-full sm:w-auto">
@@ -468,9 +468,9 @@ export default function SettingsPage() {
                     ...settings,
                     mailchimp: { ...settings.mailchimp, apiKey: e.target.value }
                   })}
-                  className="w-full px-4 py-3 bg-neutral-900/50 rounded-xl border border-white/10
+                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-neutral-900/50 rounded-xl border border-white/10
                     focus:border-primary-500/50 focus:ring-2 focus:ring-primary-500/50
-                    transition-all duration-200 text-white placeholder:text-neutral-500"
+                    transition-all duration-200 text-sm sm:text-base text-white placeholder:text-neutral-500"
                   placeholder="Enter your Mailchimp API key"
                 />
                 <p className="text-xs text-neutral-400">
@@ -486,9 +486,9 @@ export default function SettingsPage() {
                     ...settings,
                     mailchimp: { ...settings.mailchimp, serverPrefix: e.target.value }
                   })}
-                  className="w-full px-4 py-3 bg-neutral-900/50 rounded-xl border border-white/10
+                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-neutral-900/50 rounded-xl border border-white/10
                     focus:border-primary-500/50 focus:ring-2 focus:ring-primary-500/50
-                    transition-all duration-200 text-white placeholder:text-neutral-500"
+                    transition-all duration-200 text-sm sm:text-base text-white placeholder:text-neutral-500"
                   placeholder="e.g., us1, us2"
                 />
                 <p className="text-xs text-neutral-400">
