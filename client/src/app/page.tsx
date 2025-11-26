@@ -7,11 +7,11 @@ import Pricing from '@/components/sections/Pricing'
 import Integration from '@/components/sections/Integration'
 import Footer from '@/components/layout/Footer'
 import { useSearchParams } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import AuthModal from '@/components/auth/authModal'
 import { CheckCircle, ArrowRight } from 'lucide-react'
 
-export default function Home() {
+function HomeContent() {
   const searchParams = useSearchParams();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
@@ -119,5 +119,13 @@ export default function Home() {
       </main>
       <Footer />
     </div>
+  )
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gray-900" />}>
+      <HomeContent />
+    </Suspense>
   )
 }
