@@ -182,11 +182,6 @@ export const SubscriptionProvider = ({ children }: { children: React.ReactNode }
   useEffect(() => {
     if (typeof window === 'undefined') return;
     
-    // Early exit if redirect was already attempted
-    if (redirectAttemptedRef.current) {
-      return;
-    }
-    
     const isAuthenticated = !!localStorage.getItem('token');
     const isOnRenewalPage = window.location.search.includes('renew=true');
     const hasSessionId = window.location.search.includes('session_id=');
@@ -194,6 +189,17 @@ export const SubscriptionProvider = ({ children }: { children: React.ReactNode }
                          window.location.pathname.includes('/signup');
     const isOnHomePage = window.location.pathname === '/';
     const isOnDashboard = window.location.pathname.startsWith('/dashboard');
+    
+    // Reset redirect flag if subscription is active/trial
+    if (status === SubscriptionStatus.ACTIVE || status === SubscriptionStatus.TRIAL) {
+      redirectAttemptedRef.current = false;
+    }
+    
+    // Early exit if redirect was already attempted
+    if (redirectAttemptedRef.current) {
+      logger.warn('Redirect already attempted, skipping');
+      return;
+    }
     
     // Don't redirect if:
     // - User just renewed (check both storage types)
