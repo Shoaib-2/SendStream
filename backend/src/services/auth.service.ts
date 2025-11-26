@@ -33,7 +33,8 @@ export class AuthService {
    */
   generateToken(payload: TokenPayload): string {
     const secret = process.env.JWT_SECRET || 'fallback-secret-for-dev';
-    return jwt.sign(payload, secret, { expiresIn: '24h' });
+    // Extended to 7 days for better UX - users won't need to re-login frequently
+    return jwt.sign(payload, secret, { expiresIn: '7d' });
   }
 
   /**

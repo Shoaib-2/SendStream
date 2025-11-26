@@ -104,6 +104,12 @@ export function decrypt(encryptedData: string): string {
     // Decode the base64 combined data
     const combined = Buffer.from(encryptedData, 'base64');
     
+    // Validate minimum length (IV + AuthTag = 32 bytes minimum)
+    if (combined.length < IV_LENGTH + TAG_LENGTH + 1) {
+      logger.warn('Encrypted data too short - likely invalid or corrupted');
+      return '';
+    }
+    
     // Extract components
     const iv = combined.subarray(0, IV_LENGTH);
     const authTag = combined.subarray(IV_LENGTH, IV_LENGTH + TAG_LENGTH);
@@ -119,8 +125,10 @@ export function decrypt(encryptedData: string): string {
     
     return decrypted;
   } catch (error) {
-    logger.error('Decryption failed:', error);
-    throw new Error('Failed to decrypt data');
+    // Log but don't throw - return empty string for graceful degradation
+    // This happens when encryption key changed between environments
+    logger.warn('Decryption failed - encryption key may have changed. Data needs to be re-encrypted.');
+    return '';
   }
 }
 
