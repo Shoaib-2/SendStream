@@ -57,6 +57,7 @@ export default function DashboardLayout({
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   
   useEffect(() => {
+    console.log('[DashboardLayout] Mounting...');
     setMounted(true);
   }, []);
   
@@ -67,14 +68,23 @@ export default function DashboardLayout({
   
   // Test if clicks work at all
   useEffect(() => {
+    console.log('[DashboardLayout] Setting up click listener');
     const handleClick = (e: MouseEvent) => {
       console.log('[DashboardLayout] Global click detected at:', e.clientX, e.clientY);
     };
     document.addEventListener('click', handleClick);
-    return () => document.removeEventListener('click', handleClick);
+    return () => {
+      console.log('[DashboardLayout] Removing click listener');
+      document.removeEventListener('click', handleClick);
+    };
   }, []);
   
-  if (!mounted) return null;
+  console.log('[DashboardLayout] Render - mounted:', mounted);
+  
+  if (!mounted) {
+    console.log('[DashboardLayout] Not mounted yet, returning null');
+    return null;
+  }
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
