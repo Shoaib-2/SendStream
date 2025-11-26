@@ -4,6 +4,7 @@ import {
   LayoutDashboard, Mail, Users, Settings, LogOut, BarChart, Menu, X, Send 
 } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
+import Link from 'next/link';
 import { useAuth } from '@/context/authContext';
 import Button from '@/components/UI/Button';
 
@@ -140,10 +141,11 @@ export default function DashboardLayout({
               {navigation.map((item) => {
                 const isCurrentPath = pathname === item.href;
                 return (
-                  <button
+                  <Link
                     key={item.name}
+                    href={item.href}
                     onClick={() => {
-                      router.push(item.href);
+                      console.log('[DashboardLayout] Link clicked:', item.href);
                       setIsMobileMenuOpen(false);
                     }}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300
@@ -157,7 +159,7 @@ export default function DashboardLayout({
                     )}
                     <item.icon size={20} className={`relative z-10 ${isCurrentPath ? 'scale-110' : 'group-hover:scale-110'} transition-transform`} />
                     <span className="relative z-10 font-medium">{item.name}</span>
-                  </button>
+                  </Link>
                 );
               })}
 
