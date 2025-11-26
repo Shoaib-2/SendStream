@@ -292,6 +292,20 @@ const CreateNewsletterContent: React.FC = () => {
       setAiTopic(''); // Clear topic after generation
     } catch (error: unknown) {
       console.error('AI generation error:', error);
+      
+      // Check if it's an authentication error
+      if (error instanceof APIError) {
+        if (error.message.includes('Unauthorized') || error.message.includes('401')) {
+          showNotificationMessage('Session expired. Please login again.', 'error');
+          setTimeout(() => router.push('/login'), 2000);
+          return;
+        }
+        if (error.message.includes('429') || error.message.includes('limit reached')) {
+          showNotificationMessage(error.message, 'error');
+          return;
+        }
+      }
+      
       const message = error instanceof Error ? error.message : 'Failed to generate content';
       showNotificationMessage(message, 'error');
     } finally {
@@ -319,6 +333,20 @@ const CreateNewsletterContent: React.FC = () => {
       showNotificationMessage('Content improved successfully!', 'success');
     } catch (error: unknown) {
       console.error('AI improvement error:', error);
+      
+      // Check if it's an authentication error
+      if (error instanceof APIError) {
+        if (error.message.includes('Unauthorized') || error.message.includes('401')) {
+          showNotificationMessage('Session expired. Please login again.', 'error');
+          setTimeout(() => router.push('/login'), 2000);
+          return;
+        }
+        if (error.message.includes('429') || error.message.includes('limit reached')) {
+          showNotificationMessage(error.message, 'error');
+          return;
+        }
+      }
+      
       const message = error instanceof Error ? error.message : 'Failed to improve content';
       showNotificationMessage(message, 'error');
     } finally {
@@ -347,6 +375,19 @@ const CreateNewsletterContent: React.FC = () => {
       showNotificationMessage('Subject lines generated!', 'success');
     } catch (error: unknown) {
       console.error('Subject generation error:', error);
+      
+      if (error instanceof APIError) {
+        if (error.message.includes('Unauthorized') || error.message.includes('401')) {
+          showNotificationMessage('Session expired. Please login again.', 'error');
+          setTimeout(() => router.push('/login'), 2000);
+          return;
+        }
+        if (error.message.includes('429') || error.message.includes('limit reached')) {
+          showNotificationMessage(error.message, 'error');
+          return;
+        }
+      }
+      
       const message = error instanceof Error ? error.message : 'Failed to generate subjects';
       showNotificationMessage(message, 'error');
     } finally {
@@ -369,6 +410,19 @@ const CreateNewsletterContent: React.FC = () => {
       showNotificationMessage(`Best time: ${recommendation.recommendedDay} at ${recommendation.recommendedTime}`, 'success');
     } catch (error: unknown) {
       console.error('Smart schedule error:', error);
+      
+      if (error instanceof APIError) {
+        if (error.message.includes('Unauthorized') || error.message.includes('401')) {
+          showNotificationMessage('Session expired. Please login again.', 'error');
+          setTimeout(() => router.push('/login'), 2000);
+          return;
+        }
+        if (error.message.includes('429') || error.message.includes('limit reached')) {
+          showNotificationMessage(error.message, 'error');
+          return;
+        }
+      }
+      
       const message = error instanceof Error ? error.message : 'Failed to get schedule recommendation';
       showNotificationMessage(message, 'error');
     } finally {
