@@ -28,7 +28,7 @@ export class EmailService {
       }
     });
     
-    logger.info('Gmail transporter created');
+    logger.info('Gmail transporter created with user:', process.env.EMAIL_USER);
   }
 
   async initializeProviders() {
@@ -169,6 +169,16 @@ export class EmailService {
           const results = await Promise.allSettled(emailPromises);
           const successful = results.filter(r => r.status === 'fulfilled').length;
           sentCount += successful;
+          
+          // Log detailed errors for failed emails
+          const failed = results.filter(r => r.status === 'rejected');
+          if (failed.length > 0) {
+            failed.forEach((result, index) => {
+              if (result.status === 'rejected') {
+                logger.error(`Email ${index + 1} failed:`, result.reason);
+              }
+            });
+          }
           
           logger.info(`Batch results: ${successful}/${batch.length} emails sent`);
         } catch (batchError) {
