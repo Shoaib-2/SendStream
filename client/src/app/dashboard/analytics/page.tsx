@@ -3,21 +3,41 @@
 
 "use client";
 import React from 'react';
-import { Users, Mail } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Users, Mail, TrendingUp, TrendingDown, BarChart3, Activity, ArrowUpRight } from 'lucide-react';
 import { ResponsiveLine } from '@nivo/line';
 
 import { analyticsAPI } from '../../../services/api';
 import { useData } from '../../../context/dataContext';
 import type { ApiAnalyticsSummary, GrowthData as AppGrowthData } from '../../../types';
 import Container from '@/components/UI/Container';
-import Card from '@/components/UI/Card';
+import GlassCard from '@/components/UI/GlassCard';
 import Badge from '@/components/UI/Badge';
+import AnimatedCounter from '@/components/UI/AnimatedCounter';
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1, delayChildren: 0.1 }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: { duration: 0.5, ease: "easeOut" as const }
+  }
+};
 
 export default function AnalyticsDashboard() {
   const { subscribers } = useData();
   const [loading, setLoading] = React.useState(true);
   const [summary, setSummary] = React.useState<ApiAnalyticsSummary | null>(null);
-  const [growthData, setGrowthData] = React.useState<AppGrowthData[]>([]);  const [recentActivity, setRecentActivity] = React.useState<Array<{
+  const [growthData, setGrowthData] = React.useState<AppGrowthData[]>([]);
+  const [recentActivity, setRecentActivity] = React.useState<Array<{
     title: string;
     recipients: number;
     time: string;
@@ -46,7 +66,6 @@ export default function AnalyticsDashboard() {
         
         // Simplified growth data fetching with proper error handling
         try {
-          // console.log('Fetching growth data...');
           // Fetch growth data for 6 months
           const growthResponse = await analyticsAPI.getGrowthData('6month');
           
@@ -65,9 +84,8 @@ export default function AnalyticsDashboard() {
                 };
               });
               
-              // console.log('Formatted growth data:', formattedData);
               setGrowthData(formattedData);
-              return; // Exit early after setting growth data
+              return;
             }
           }
           
@@ -83,7 +101,6 @@ export default function AnalyticsDashboard() {
             });
             setGrowthData(formattedData);
           } else {
-            // Only use mock data if no data was returned at all
             throw new Error('No growth data returned from API');
           }
         } catch (error) {
@@ -98,7 +115,6 @@ export default function AnalyticsDashboard() {
             { month: 'May', subscribers: 210 }
           ];
           setGrowthData(mockData);
-          console.log('Using fallback growth data');
         }
       } catch (error) {
         console.error('Analytics fetch error:', error instanceof Error ? error.message : 'Unknown error');
@@ -122,176 +138,296 @@ export default function AnalyticsDashboard() {
     );
   }
 
+  const activeSubscribers = subscribers.filter(s => s.status === 'active').length;
+  const subscriberChange = summary.subscribers?.change || 0;
+  const newsletterChange = summary.newsletters?.change || 0;
+
   const metrics = [
     {
-      label: 'Total Subscribers',
-      value: subscribers.filter(s => s.status === 'active').length.toLocaleString(),
-      change: summary.subscribers?.change || 0,
-      icon: Users
+      id: 'subscribers',
+      label: 'Active Subscribers',
+      value: activeSubscribers,
+      change: subscriberChange,
+      icon: Users,
+      gradient: 'from-primary-500 to-primary-600',
+      bgGradient: 'from-primary-500/20 to-primary-600/20'
     },
     {
+      id: 'newsletters',
       label: 'Newsletters Sent',
-      value: summary.newsletters?.total?.toLocaleString() || '0',
-      change: summary.newsletters?.change || 0,
-      icon: Mail
+      value: summary.newsletters?.total || 0,
+      change: newsletterChange,
+      icon: Mail,
+      gradient: 'from-secondary-500 to-secondary-600',
+      bgGradient: 'from-secondary-500/20 to-secondary-600/20'
+    },
+    {
+      id: 'growth',
+      label: 'Avg. Growth Rate',
+      value: Math.abs(subscriberChange),
+      suffix: '%',
+      change: subscriberChange,
+      icon: BarChart3,
+      gradient: 'from-success-500 to-success-600',
+      bgGradient: 'from-success-500/20 to-success-600/20'
+    },
+    {
+      id: 'engagement',
+      label: 'Engagement Score',
+      value: Math.min(100, Math.round((summary.newsletters?.total || 0) * 10 / Math.max(activeSubscribers, 1) * 100)),
+      suffix: '%',
+      change: 5.2,
+      icon: Activity,
+      gradient: 'from-warning-500 to-warning-600',
+      bgGradient: 'from-warning-500/20 to-warning-600/20'
     }
   ];
 
-  // Get average and maximum values for reference line
+  // Get average value for reference line
   const averageSubscribers = growthData.length 
     ? Math.round(growthData.reduce((sum, item) => sum + (item.subscribers ?? 0), 0) / growthData.length)
     : 0;
 
 
   return (
-    <div className="p-6 min-h-screen">
-      <Container size="xl">
-        <h1 className="text-3xl md:text-4xl font-bold font-display mb-8 gradient-text">
-          Analytics Overview
-        </h1>
+    <Container size="xl" className="py-8 min-h-screen">
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="space-y-8"
+      >
+        {/* Header */}
+        <motion.div variants={itemVariants}>
+          <h1 className="text-3xl sm:text-4xl font-bold font-display gradient-text mb-2">
+            Analytics
+          </h1>
+          <p className="text-neutral-400">Track your newsletter performance and subscriber growth</p>
+        </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          {metrics.map((metric, idx) => (
-            <Card 
-              key={idx}
-              variant="hover"
-              padding="lg"
+        {/* Stats Grid */}
+        <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+          {metrics.map((metric, index) => (
+            <motion.div
+              key={metric.id}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: index * 0.1, duration: 0.4 }}
             >
-              <div className="flex items-center justify-between mb-4">
-                <div className="relative w-12 h-12 rounded-xl flex items-center justify-center
-                  group-hover:scale-110 transition-all duration-300">
-                  <div className="absolute inset-0 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl blur-md opacity-50" />
-                  <div className="relative w-full h-full bg-gradient-to-br from-primary-500/20 to-primary-600/20 rounded-xl 
-                    flex items-center justify-center border border-primary-500/30">
-                    <metric.icon className="w-6 h-6 text-primary-400" />
+              <GlassCard variant="default" padding="lg" className="group relative overflow-hidden">
+                <div className={`absolute -top-10 -right-10 w-24 h-24 bg-gradient-to-br ${metric.bgGradient} rounded-full blur-2xl 
+                  group-hover:scale-150 transition-transform duration-500`} />
+                
+                <div className="relative">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${metric.bgGradient} 
+                      flex items-center justify-center border border-white/10
+                      group-hover:scale-110 transition-transform duration-300`}>
+                      <metric.icon className={`w-6 h-6 text-white`} />
+                    </div>
+                    <Badge
+                      variant={metric.change >= 0 ? 'success' : 'error'}
+                      size="sm"
+                      className="flex items-center gap-1"
+                    >
+                      {metric.change >= 0 ? (
+                        <TrendingUp className="w-3 h-3" />
+                      ) : (
+                        <TrendingDown className="w-3 h-3" />
+                      )}
+                      {metric.change > 0 ? '+' : ''}{metric.change.toFixed(1)}%
+                    </Badge>
                   </div>
+                  <p className="text-neutral-400 text-sm mb-1">{metric.label}</p>
+                  <p className="text-3xl font-bold font-display text-white">
+                    <AnimatedCounter value={metric.value} />
+                    {metric.suffix && <span className="text-xl">{metric.suffix}</span>}
+                  </p>
                 </div>
-                <Badge
-                  variant={metric.change >= 0 ? 'success' : 'error'}
-                  size="sm"
-                >
-                  {metric.change > 0 ? '+' : ''}{metric.change.toFixed(1)}%
-                </Badge>
-              </div>
-              <p className="text-neutral-400 text-sm font-inter">{metric.label}</p>
-              <p className="text-2xl font-bold mt-1 font-display text-white">{metric.value}</p>
-            </Card>
+              </GlassCard>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
 
-        <Card variant="glass" padding="lg" className="mb-8">
-          <h2 className="text-xl font-bold font-display mb-6 text-white">Subscriber Growth</h2>          <div className="h-64">
-            <ResponsiveLine
-              data={[{
-                id: 'subscribers',
-                data: growthData.map(d => ({
-                  x: d.month ?? '',
-                  y: d.subscribers ?? 0
-                }))
-              }]}
-              margin={{ top: 10, right: 40, left: 40, bottom: 30 }}
-              curve="monotoneX"
-              enableArea={true}
-              areaBaselineValue={0}
-              areaOpacity={0.3}
-              enablePoints={true}
-              pointSize={8}
-              pointColor="#fff"
-              pointBorderWidth={2}
-              pointBorderColor="#a855f7"
-              colors={["#a855f7"]}
-              theme={{
-                grid: {
-                  line: {
-                    stroke: "#334155",
-                    strokeWidth: 1,
-                    strokeDasharray: "3 3",
-                    opacity: 0.3
-                  }
-                },
-                axis: {
-                  ticks: {
-                    text: {
-                      fill: "#94a3b8",
-                      fontSize: 12
+        {/* Growth Chart */}
+        <motion.div variants={itemVariants}>
+          <GlassCard variant="strong" padding="lg">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-bold font-display text-white">Subscriber Growth</h2>
+                <p className="text-sm text-neutral-400">Last 6 months performance</p>
+              </div>
+              <Badge variant="default" size="sm" className="flex items-center gap-1">
+                <ArrowUpRight className="w-3 h-3" />
+                {growthData.length > 1 
+                  ? `+${growthData[growthData.length - 1].subscribers - growthData[0].subscribers}` 
+                  : '0'} total
+              </Badge>
+            </div>
+            
+            <div className="h-72">
+              <ResponsiveLine
+                data={[{
+                  id: 'subscribers',
+                  data: growthData.map(d => ({
+                    x: d.month ?? '',
+                    y: d.subscribers ?? 0
+                  }))
+                }]}
+                margin={{ top: 10, right: 40, left: 50, bottom: 40 }}
+                curve="monotoneX"
+                enableArea={true}
+                areaBaselineValue={0}
+                areaOpacity={0.15}
+                enablePoints={true}
+                pointSize={10}
+                pointColor="#1a1a2e"
+                pointBorderWidth={3}
+                pointBorderColor="#a855f7"
+                colors={["#a855f7"]}
+                lineWidth={3}
+                theme={{
+                  grid: {
+                    line: {
+                      stroke: "#334155",
+                      strokeWidth: 1,
+                      strokeDasharray: "4 4",
+                      opacity: 0.2
+                    }
+                  },
+                  axis: {
+                    ticks: {
+                      text: {
+                        fill: "#94a3b8",
+                        fontSize: 12,
+                        fontFamily: 'Inter, sans-serif'
+                      }
+                    }
+                  },
+                  tooltip: {
+                    container: {
+                      background: "transparent",
+                      color: "#F3F4F6",
+                      fontSize: 12,
+                      borderRadius: 12,
+                      boxShadow: "none",
+                      padding: 0
                     }
                   }
-                },
-                tooltip: {
-                  container: {
-                    background: "transparent",
-                    color: "#F3F4F6",
-                    fontSize: 12,
-                    borderRadius: 8,
-                    boxShadow: "none",
-                    padding: 0
+                }}
+                axisLeft={{
+                  tickSize: 0,
+                  tickPadding: 12,
+                  tickRotation: 0
+                }}
+                axisBottom={{
+                  tickSize: 0,
+                  tickPadding: 12,
+                  tickRotation: 0
+                }}
+                gridYValues={5}
+                enableGridX={false}
+                markers={[
+                  {
+                    axis: 'y',
+                    value: averageSubscribers,
+                    lineStyle: { stroke: '#6366f1', strokeDasharray: '6 4', strokeWidth: 2 },
+                    legend: `Avg: ${averageSubscribers}`,
+                    legendPosition: 'right',
+                    legendOrientation: 'vertical',
+                    textStyle: { fill: '#6366f1', fontSize: 11, fontWeight: 600 }
                   }
-                }
-              }}
-              axisLeft={{
-                tickSize: 0,
-                tickPadding: 8,
-                tickRotation: 0
-              }}
-              axisBottom={{
-                tickSize: 0,
-                tickPadding: 8,
-                tickRotation: 0
-              }}
-              gridYValues={5}
-              enableGridX={false}
-              markers={[
-                {
-                  axis: 'y',
-                  value: averageSubscribers,
-                  lineStyle: { stroke: '#64748b', strokeDasharray: '3 3' },
-                  legend: 'Average',
-                  legendPosition: 'right',
-                  legendOrientation: 'vertical',
-                  textStyle: { fill: '#64748b', fontSize: 12 }
-                }
-              ]}
-              useMesh={true}
-              enableSlices="x"
-              sliceTooltip={({ slice }) => (
-                <div className="glass-strong p-4 rounded-lg border border-white/20 shadow-glow">
-                  <p className="text-neutral-300 font-medium mb-1">
-                    {slice.points[0].data.x as string}
-                  </p>
-                  <div className="flex items-center">
-                    <div className="w-3 h-3 rounded-full bg-primary-500 mr-2"></div>
-                    <p className="text-primary-400 font-bold">
-                      {slice.points[0].data.y ? (slice.points[0].data.y as number).toLocaleString() : 0} subscribers
+                ]}
+                useMesh={true}
+                enableSlices="x"
+                sliceTooltip={({ slice }) => (
+                  <div className="backdrop-blur-xl bg-neutral-900/90 p-4 rounded-xl border border-white/20 shadow-2xl">
+                    <p className="text-white font-semibold mb-2">
+                      {slice.points[0].data.x as string}
                     </p>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-gradient-to-r from-primary-500 to-secondary-500"></div>
+                      <p className="text-neutral-200">
+                        <span className="font-bold text-primary-400">
+                          {slice.points[0].data.y ? (slice.points[0].data.y as number).toLocaleString() : 0}
+                        </span> subscribers
+                      </p>
+                    </div>
+                    {(slice.points[0].data.y as number) > averageSubscribers && (
+                      <div className="mt-2 pt-2 border-t border-white/10">
+                        <Badge variant="success" size="sm">Above average</Badge>
+                      </div>
+                    )}
                   </div>
-                  {(slice.points[0].data.y as number) > averageSubscribers && (
-                    <p className="text-success-400 text-xs mt-2">Above average</p>
-                  )}
-                </div>
-              )}
-            />
-          </div>
-        </Card>
+                )}
+              />
+            </div>
+          </GlassCard>
+        </motion.div>
 
-        <Card variant="glass" padding="lg">
-          <h2 className="text-xl font-bold font-display mb-6 text-white">Recent Activity</h2>
-          <div className="space-y-4">
-            {recentActivity.map((activity, idx) => (
-              <div key={idx} 
-                className="flex justify-between items-center py-3 border-b border-white/10 
-                  hover:border-primary-500/20 transition-colors">
-                <div>
-                  <p className="font-medium font-inter text-white">{activity.title}</p>
-                  <p className="text-sm text-neutral-400">{activity.recipients} recipients</p>
-                </div>
-                <span className="text-sm text-neutral-400">
-                  {new Date(activity.time).toLocaleDateString()}
-                </span>
+        {/* Recent Activity */}
+        <motion.div variants={itemVariants}>
+          <GlassCard variant="strong" padding="none" className="overflow-hidden">
+            <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-semibold font-display text-white">Recent Activity</h2>
+                <p className="text-sm text-neutral-400">Your latest newsletter campaigns</p>
               </div>
-            ))}
-          </div>
-        </Card>
-      </Container>
-    </div>
+              <Badge variant="default" size="sm">{recentActivity.length} campaigns</Badge>
+            </div>
+            
+            {recentActivity.length === 0 ? (
+              <div className="p-12 text-center">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-primary-500/20 to-secondary-500/20 
+                  flex items-center justify-center border border-white/10">
+                  <Activity className="w-8 h-8 text-primary-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-white mb-2">No activity yet</h3>
+                <p className="text-neutral-400">Send your first newsletter to see activity here</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-white/5">
+                {recentActivity.map((activity, idx) => (
+                  <motion.div 
+                    key={idx}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: idx * 0.05 }}
+                    className="p-4 sm:p-6 hover:bg-gradient-to-r hover:from-primary-500/5 hover:to-transparent 
+                      transition-all duration-300 group"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500/20 to-secondary-500/20 
+                          flex items-center justify-center border border-white/10 flex-shrink-0
+                          group-hover:scale-105 transition-transform duration-300">
+                          <Mail className="w-5 h-5 text-primary-400" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-white group-hover:text-primary-300 transition-colors">
+                            {activity.title}
+                          </p>
+                          <p className="text-sm text-neutral-400 flex items-center gap-2">
+                            <Users className="w-3.5 h-3.5" />
+                            {activity.recipients.toLocaleString()} recipients
+                          </p>
+                        </div>
+                      </div>
+                      <span className="text-sm text-neutral-500">
+                        {new Date(activity.time).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric'
+                        })}
+                      </span>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </GlassCard>
+        </motion.div>
+      </motion.div>
+    </Container>
   );
 }

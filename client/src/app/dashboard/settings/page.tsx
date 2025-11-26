@@ -1,17 +1,39 @@
 "use client";
 import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowDownIcon, 
   ArrowPathIcon,
+  CheckCircleIcon,
+  Cog6ToothIcon,
+  EnvelopeIcon,
+  LinkIcon,
 } from '@heroicons/react/24/outline';
 
 import { settingsAPI } from '@/services/api';
 import SubscriptionManagement from '@/components/dashboardSubscription/SubscriptionManagement';
-import { Save } from 'lucide-react';
+import { Save, Mail, Settings, Zap, RefreshCw, Shield } from 'lucide-react';
 import Container from '@/components/UI/Container';
-import Card from '@/components/UI/Card';
+import GlassCard from '@/components/UI/GlassCard';
 import Badge from '@/components/UI/Badge';
 import Button from '@/components/UI/Button';
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1, delayChildren: 0.1 }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: { duration: 0.5, ease: "easeOut" as const }
+  }
+};
 
 // Custom local interface for Settings that enforces required fields
 interface LocalSettings {
@@ -48,8 +70,7 @@ export default function SettingsPage() {
   const [testing, setTesting] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [message, setMessage] = useState({ text: '', type: '' });
-  // Define a proper type that matches what we expect from the API
-  // Match our local types with what we get from the API
+  
   interface ConnectionStatus {
     mailchimp: {
       connected: boolean;
@@ -58,18 +79,10 @@ export default function SettingsPage() {
     }
   }
 
-  // Specify what we expect from the API
-  // interface ApiTestResponse {
-  //   success: boolean;
-  //   message: boolean;
-  //   listId?: string;
-  // }
-
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>({
     mailchimp: { connected: false, message: '', listId: '' }
   });
 
-  // Move loadSettings inside useEffect to avoid dependency warning
   useEffect(() => {
     const loadSettings = async () => {
       try {
@@ -95,7 +108,7 @@ export default function SettingsPage() {
       }
     };
     loadSettings();
-  }, []); // Remove loadSettings from dependency array
+  }, []);
 
   const handleSave = async () => {
     setSaving(true);
@@ -105,7 +118,6 @@ export default function SettingsPage() {
         mailchimp: settings.mailchimp
       });
 
-      // Properly handle the response by ensuring required fields exist
       setSettings({
         email: {
           fromName: updatedSettings.email.fromName || '',
@@ -137,7 +149,6 @@ export default function SettingsPage() {
         [type]: { ...prev[type], message: 'Testing connection...' }
       }));
 
-      // Pass proper credentials to test API
       const result = await settingsAPI.testIntegration(
         type,
         {
@@ -147,7 +158,6 @@ export default function SettingsPage() {
       );
 
       if (result) {
-        // Now result is properly typed with ExtendedIntegrationResponse
         const success = result.success;
         const message = result.message || 'Connection test completed';
 
@@ -177,7 +187,6 @@ export default function SettingsPage() {
 
   const toggleIntegration = async (type: 'mailchimp', enabled: boolean) => {
     try {
-      // Pass the current autoSync value as the third parameter
       await settingsAPI.enableIntegration(type, enabled, settings.mailchimp.autoSync);
 
       setSettings(prev => ({
@@ -214,25 +223,19 @@ export default function SettingsPage() {
   const syncSubscribers = async () => {
     setSyncing(true);
     try {
-      // Call the backend sync API
       await settingsAPI.syncSubscribers();
       
-      // Show success message
       showMessage('Sync completed. Some duplicates may have been skipped.', 'success');
       
-      // Force a complete app reload to refresh all data from server
       setTimeout(() => {
         window.location.href = '/dashboard';
-        // Add a short delay before redirecting to subscribers page
         setTimeout(() => {
           window.location.href = '/dashboard/subscribers';
         }, 500);
       }, 1000);
     } catch {
-      // Still show partial success since some records likely synced
       showMessage('Sync completed with some issues. Refreshing data...', 'info');
       
-      // Still reload to show whatever was successfully synced
       setTimeout(() => {
         window.location.href = '/dashboard/subscribers';
       }, 1000);
@@ -249,7 +252,7 @@ export default function SettingsPage() {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-[80vh]">
-        <div className="w-12 h-12 md:w-16 md:h-16 relative">
+        <div className="w-16 h-16 relative">
           <div className="absolute inset-0 rounded-full border-4 border-primary-500/20" />
           <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-primary-500 animate-spin" />
           <div className="absolute inset-0 rounded-full bg-gradient-to-br from-primary-500/20 to-secondary-500/20 blur-xl" />
@@ -259,38 +262,91 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="p-3 sm:p-4 md:p-6 min-h-screen">
-      <Container size="lg" className="space-y-4 sm:space-y-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold font-display gradient-text">
-            Integration Settings
-          </h1>
+    <Container size="lg" className="py-8 min-h-screen">
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="space-y-8"
+      >
+        {/* Header */}
+        <motion.div variants={itemVariants} className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-3xl sm:text-4xl font-bold font-display gradient-text mb-2">
+              Settings
+            </h1>
+            <p className="text-neutral-400">Configure your email and integration settings</p>
+          </div>
           <Button
             onClick={handleSave}
             disabled={saving}
             variant="gradient"
-            leftIcon={<Save className="w-4 h-4" />}
+            leftIcon={saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             className="w-full sm:w-auto"
           >
             {saving ? 'Saving...' : 'Save Changes'}
           </Button>
-        </div>
+        </motion.div>
 
-        {message.text && (
-          <Badge
-            variant={message.type === 'success' ? 'success' : 'error'}
-            size="lg"
-            className="w-full sm:w-auto shadow-glow-lg"
-          >
-            {message.text}
-          </Badge>
-        )}
+        {/* Notification */}
+        <AnimatePresence>
+          {message.text && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+            >
+              <Badge
+                variant={message.type === 'success' ? 'success' : message.type === 'info' ? 'primary' : 'error'}
+                size="lg"
+                className="w-full sm:w-auto shadow-glow-lg flex items-center gap-2"
+              >
+                {message.type === 'success' && <CheckCircleIcon className="w-4 h-4" />}
+                {message.text}
+              </Badge>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-        <div className="space-y-4 sm:space-y-6">
-          <Card variant="glass" padding="lg">
-            <h2 className="text-lg sm:text-xl font-semibold font-display mb-4 sm:mb-6 text-white">Email Configuration</h2>
-            <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
-              <div className="space-y-1.5 sm:space-y-2">
+        {/* Quick Stats */}
+        <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[
+            { icon: Mail, label: 'Email Provider', value: 'SendGrid', color: 'primary' },
+            { icon: LinkIcon, label: 'Mailchimp', value: connectionStatus.mailchimp.connected ? 'Connected' : 'Not Connected', color: connectionStatus.mailchimp.connected ? 'success' : 'warning' },
+            { icon: Shield, label: 'Security', value: 'Enabled', color: 'success' },
+            { icon: Zap, label: 'Auto-Sync', value: settings.mailchimp.autoSync ? 'On' : 'Off', color: settings.mailchimp.autoSync ? 'success' : 'neutral' },
+          ].map((stat, index) => (
+            <GlassCard key={index} variant="default" padding="md" className="group">
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-xl bg-${stat.color}-500/20 flex items-center justify-center
+                  border border-${stat.color}-500/30 group-hover:scale-105 transition-transform`}>
+                  <stat.icon className={`w-5 h-5 text-${stat.color}-400`} />
+                </div>
+                <div>
+                  <p className="text-xs text-neutral-400">{stat.label}</p>
+                  <p className="font-semibold text-white text-sm">{stat.value}</p>
+                </div>
+              </div>
+            </GlassCard>
+          ))}
+        </motion.div>
+
+        {/* Email Configuration */}
+        <motion.div variants={itemVariants}>
+          <GlassCard variant="strong" padding="lg">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-500/20 to-primary-600/20 
+                flex items-center justify-center border border-primary-500/30">
+                <EnvelopeIcon className="w-6 h-6 text-primary-400" />
+              </div>
+              <div>
+                <h2 className="text-xl font-semibold font-display text-white">Email Configuration</h2>
+                <p className="text-sm text-neutral-400">Configure your newsletter sender details</p>
+              </div>
+            </div>
+            
+            <div className="grid gap-6 md:grid-cols-2">
+              <div className="space-y-2">
                 <label className="block text-sm font-medium text-neutral-200">From Name</label>
                 <input
                   type="text"
@@ -299,13 +355,13 @@ export default function SettingsPage() {
                     ...settings,
                     email: { ...settings.email, fromName: e.target.value }
                   })}
-                  className="w-full px-3.5 py-2.5 bg-neutral-900/50 rounded-lg border border-neutral-700
-                    focus:border-primary-500 focus:ring-2 focus:ring-primary-500/50 text-sm sm:text-base
+                  className="w-full px-4 py-3 bg-neutral-900/50 rounded-xl border border-white/10
+                    focus:border-primary-500/50 focus:ring-2 focus:ring-primary-500/50
                     transition-all duration-200 text-white placeholder:text-neutral-500"
-                  placeholder="Newsletter Name"
+                  placeholder="Your Newsletter Name"
                 />
               </div>
-              <div className="space-y-1.5 sm:space-y-2">
+              <div className="space-y-2">
                 <label className="block text-sm font-medium text-neutral-200">Reply-To Email</label>
                 <input
                   type="email"
@@ -314,13 +370,13 @@ export default function SettingsPage() {
                     ...settings,
                     email: { ...settings.email, replyTo: e.target.value }
                   })}
-                  className="w-full px-3.5 py-2.5 bg-neutral-900/50 rounded-lg border border-neutral-700
-                    focus:border-primary-500 focus:ring-2 focus:ring-primary-500/50 text-sm sm:text-base
+                  className="w-full px-4 py-3 bg-neutral-900/50 rounded-xl border border-white/10
+                    focus:border-primary-500/50 focus:ring-2 focus:ring-primary-500/50
                     transition-all duration-200 text-white placeholder:text-neutral-500"
-                  placeholder="your@email.com"
+                  placeholder="reply@example.com"
                 />
               </div>
-              <div className="space-y-1.5 sm:space-y-2 md:col-span-2">
+              <div className="space-y-2 md:col-span-2">
                 <label className="block text-sm font-medium text-neutral-200">Sender Email</label>
                 <input
                   type="email"
@@ -329,27 +385,39 @@ export default function SettingsPage() {
                     ...settings,
                     email: { ...settings.email, senderEmail: e.target.value }
                   })}
-                  className="w-full px-3.5 py-2.5 bg-neutral-900/50 rounded-lg border border-neutral-700
-                    focus:border-primary-500 focus:ring-2 focus:ring-primary-500/50 text-sm sm:text-base
+                  className="w-full px-4 py-3 bg-neutral-900/50 rounded-xl border border-white/10
+                    focus:border-primary-500/50 focus:ring-2 focus:ring-primary-500/50
                     transition-all duration-200 text-white placeholder:text-neutral-500"
                   placeholder="sender@yourdomain.com"
                 />
-                <p className="text-xs text-neutral-400 mt-1.5">
+                <p className="text-xs text-neutral-400 mt-1">
                   This email will be used as the sender address for your newsletters
                 </p>
               </div>
             </div>
-          </Card>
+          </GlassCard>
+        </motion.div>
 
-          <Card variant="glass" padding="lg">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
-              <div>
-                <h2 className="text-lg sm:text-xl font-semibold font-display text-white">Mailchimp</h2>
-                {connectionStatus.mailchimp.connected && (
-                  <Badge variant="success" size="sm" className="mt-1">Connected</Badge>
-                )}
+        {/* Mailchimp Integration */}
+        <motion.div variants={itemVariants}>
+          <GlassCard variant="strong" padding="lg">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-warning-500/20 to-warning-600/20 
+                  flex items-center justify-center border border-warning-500/30">
+                  <Cog6ToothIcon className="w-6 h-6 text-warning-400" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-xl font-semibold font-display text-white">Mailchimp Integration</h2>
+                    {connectionStatus.mailchimp.connected && (
+                      <Badge variant="success" size="sm">Connected</Badge>
+                    )}
+                  </div>
+                  <p className="text-sm text-neutral-400">Sync your subscribers with Mailchimp</p>
+                </div>
               </div>
-              <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+              <div className="flex flex-wrap gap-2 w-full sm:w-auto">
                 <Button
                   onClick={() => testIntegration('mailchimp')}
                   disabled={testing || !settings.mailchimp.apiKey || !settings.mailchimp.serverPrefix}
@@ -375,17 +443,23 @@ export default function SettingsPage() {
             </div>
 
             {connectionStatus.mailchimp.message && (
-              <Badge
-                variant={connectionStatus.mailchimp.connected ? 'success' : 'primary'}
-                size="md"
-                className="mb-4 w-full sm:w-auto"
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="mb-6"
               >
-                {connectionStatus.mailchimp.message}
-              </Badge>
+                <Badge
+                  variant={connectionStatus.mailchimp.connected ? 'success' : 'primary'}
+                  size="md"
+                  className="w-full sm:w-auto"
+                >
+                  {connectionStatus.mailchimp.message}
+                </Badge>
+              </motion.div>
             )}
 
-            <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
-              <div className="space-y-1.5 sm:space-y-2">
+            <div className="grid gap-6 md:grid-cols-2">
+              <div className="space-y-2">
                 <label className="block text-sm font-medium text-neutral-200">API Key</label>
                 <input
                   type="password"
@@ -394,16 +468,16 @@ export default function SettingsPage() {
                     ...settings,
                     mailchimp: { ...settings.mailchimp, apiKey: e.target.value }
                   })}
-                  className="w-full px-3.5 py-2.5 bg-neutral-900/50 rounded-lg border border-neutral-700
-                    focus:border-primary-500 focus:ring-2 focus:ring-primary-500/50 text-sm sm:text-base
+                  className="w-full px-4 py-3 bg-neutral-900/50 rounded-xl border border-white/10
+                    focus:border-primary-500/50 focus:ring-2 focus:ring-primary-500/50
                     transition-all duration-200 text-white placeholder:text-neutral-500"
                   placeholder="Enter your Mailchimp API key"
                 />
-                <p className="text-xs text-neutral-400 mt-1.5">
-                  Find your API key in your Mailchimp account under Account → Extras → API Keys
+                <p className="text-xs text-neutral-400">
+                  Account → Extras → API Keys
                 </p>
               </div>
-              <div className="space-y-1.5 sm:space-y-2">
+              <div className="space-y-2">
                 <label className="block text-sm font-medium text-neutral-200">Server Prefix</label>
                 <input
                   type="text"
@@ -412,71 +486,81 @@ export default function SettingsPage() {
                     ...settings,
                     mailchimp: { ...settings.mailchimp, serverPrefix: e.target.value }
                   })}
-                  className="w-full px-3.5 py-2.5 bg-neutral-900/50 rounded-lg border border-neutral-700
-                    focus:border-primary-500 focus:ring-2 focus:ring-primary-500/50 text-sm sm:text-base
+                  className="w-full px-4 py-3 bg-neutral-900/50 rounded-xl border border-white/10
+                    focus:border-primary-500/50 focus:ring-2 focus:ring-primary-500/50
                     transition-all duration-200 text-white placeholder:text-neutral-500"
                   placeholder="e.g., us1, us2"
                 />
-                <p className="text-xs text-neutral-400 mt-1.5">
-                  This is part of your Mailchimp URL: https://<strong>us1</strong>.admin.mailchimp.com
+                <p className="text-xs text-neutral-400">
+                  From your Mailchimp URL: https://<strong>us1</strong>.admin.mailchimp.com
                 </p>
               </div>
             </div>
 
             {connectionStatus.mailchimp.connected && (
-              <div className="mt-6 space-y-4 border-t border-white/10 pt-6">
-                <div className="flex items-center justify-between gap-4">
+              <motion.div 
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                className="mt-6 space-y-4 border-t border-white/10 pt-6"
+              >
+                <div className="flex items-center justify-between gap-4 p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-colors">
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-medium text-sm sm:text-base text-white">Enable Mailchimp Integration</h3>
-                    <p className="text-xs sm:text-sm text-neutral-400 truncate">Connect your newsletter with Mailchimp</p>
+                    <h3 className="font-medium text-white flex items-center gap-2">
+                      <Zap className="w-4 h-4 text-primary-400" />
+                      Enable Integration
+                    </h3>
+                    <p className="text-sm text-neutral-400">Connect your newsletter with Mailchimp</p>
                   </div>
-                  <div className="flex-shrink-0">
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={settings.mailchimp.enabled}
-                        onChange={(e) => toggleIntegration('mailchimp', e.target.checked)}
-                        className="sr-only peer"
-                      />
-                      <div className="w-11 h-6 bg-neutral-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary-500/50 
-                        rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-['']
-                        after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full
-                        after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-primary-500 
-                        peer-checked:to-primary-600"></div>
-                    </label>
-                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={settings.mailchimp.enabled}
+                      onChange={(e) => toggleIntegration('mailchimp', e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-neutral-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary-500/50 
+                      rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-['']
+                      after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full
+                      after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-primary-500 
+                      peer-checked:to-primary-600"></div>
+                  </label>
                 </div>
 
-                <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center justify-between gap-4 p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-colors">
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-medium text-sm sm:text-base text-white">Auto-Sync on Login</h3>
-                    <p className="text-xs sm:text-sm text-neutral-400 truncate">Automatically sync with Mailchimp when loading subscribers</p>
+                    <h3 className="font-medium text-white flex items-center gap-2">
+                      <Settings className="w-4 h-4 text-secondary-400" />
+                      Auto-Sync on Login
+                    </h3>
+                    <p className="text-sm text-neutral-400">Automatically sync when loading subscribers</p>
                   </div>
-                  <div className="flex-shrink-0">
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={settings.mailchimp.autoSync}
-                        onChange={(e) => toggleAutoSync(e.target.checked)}
-                        disabled={!settings.mailchimp.enabled}
-                        className="sr-only peer"
-                      />
-                      <div className="w-11 h-6 bg-neutral-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary-500/50 
-                        rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-['']
-                        after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full
-                        after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-primary-500 
-                        peer-checked:to-primary-600 peer-disabled:opacity-50 peer-disabled:cursor-not-allowed"></div>
-                    </label>
-                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={settings.mailchimp.autoSync}
+                      onChange={(e) => toggleAutoSync(e.target.checked)}
+                      disabled={!settings.mailchimp.enabled}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-neutral-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary-500/50 
+                      rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-['']
+                      after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full
+                      after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-primary-500 
+                      peer-checked:to-primary-600 peer-disabled:opacity-50 peer-disabled:cursor-not-allowed"></div>
+                  </label>
                 </div>
-              </div>
+              </motion.div>
             )}
-          </Card>
-        </div>
-        <Card variant="glass" padding="lg" className="mt-4 sm:mt-6">
-          <SubscriptionManagement />
-        </Card>
-      </Container>
-    </div>
+          </GlassCard>
+        </motion.div>
+
+        {/* Subscription Management */}
+        <motion.div variants={itemVariants}>
+          <GlassCard variant="strong" padding="lg">
+            <SubscriptionManagement />
+          </GlassCard>
+        </motion.div>
+      </motion.div>
+    </Container>
   );
 }

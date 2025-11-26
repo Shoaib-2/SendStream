@@ -1,13 +1,35 @@
 "use client";
 import React, { useState, Suspense } from 'react';
-import { Save, Calendar, Send, BookOpen, Lightbulb, FileCheck, Link } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Save, Calendar, Send, BookOpen, Lightbulb, FileCheck, Link, ArrowLeft, X, CheckCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { APIError, newsletterAPI } from '../../../../services/api';
 import { Newsletter } from '../../../../types/index';
 import { useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
+import Container from '@/components/UI/Container';
+import GlassCard from '@/components/UI/GlassCard';
+import Button from '@/components/UI/Button';
+import Badge from '@/components/UI/Badge';
 
 type CreateNewsletterInput = Omit<Newsletter, 'id' | 'sentTo' | 'createdBy'>;
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1, delayChildren: 0.1 }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: { duration: 0.5, ease: "easeOut" as const }
+  }
+};
 
 const CreateNewsletterContent: React.FC = () => {
   const router = useRouter();
@@ -99,6 +121,7 @@ const CreateNewsletterContent: React.FC = () => {
       setLoading(false);
     }
   };
+  
   const scheduleNewsletter = async (date: string) => {
     try {
       if (!draftId) {
@@ -109,13 +132,11 @@ const CreateNewsletterContent: React.FC = () => {
       const scheduledTime = new Date(date);
       const now = new Date();
 
-      // Direct comparison of timestamps
       if (scheduledTime.getTime() <= now.getTime()) {
         showNotificationMessage('Schedule time must be in the future', 'error');
         return;
       }
 
-      // Send the date directly without timezone adjustment since the input is already in local time
       await newsletterAPI.schedule(draftId, scheduledTime.toISOString());
       showNotificationMessage('Newsletter scheduled!', 'success');
       router.push('/dashboard/newsletters');
@@ -192,127 +213,175 @@ const CreateNewsletterContent: React.FC = () => {
     }
   };
 
+  const removeSource = (index: number) => {
+    if (newsletter.contentQuality) {
+      setNewsletter({
+        ...newsletter,
+        contentQuality: {
+          ...newsletter.contentQuality,
+          sources: newsletter.contentQuality.sources.filter((_, i) => i !== index)
+        }
+      });
+    }
+  };
+
+  const removeTakeaway = (index: number) => {
+    if (newsletter.contentQuality) {
+      setNewsletter({
+        ...newsletter,
+        contentQuality: {
+          ...newsletter.contentQuality,
+          keyTakeaways: newsletter.contentQuality.keyTakeaways.filter((_, i) => i !== index)
+        }
+      });
+    }
+  };
+
   return (
-    <div className="p-4 sm:p-6 min-h-screen">
-      <div className="max-w-4xl mx-auto">
-        {showNotification && (
-          <div className="fixed top-4 right-4 z-50 animate-fade-in">
-            <div className={`px-4 py-3 rounded-lg backdrop-blur-sm shadow-glow-lg ${
-              notificationType === 'success' 
-                ? 'bg-success-500/10 border border-success-500/50 text-success-400' 
-                : 'bg-error-500/10 border border-error-500/50 text-error-400'
-            }`}>
-              {notificationMessage}
+    <Container size="lg" className="py-8 min-h-screen">
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="space-y-6"
+      >
+        {/* Notification */}
+        <AnimatePresence>
+          {showNotification && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="fixed top-4 right-4 z-50"
+            >
+              <Badge 
+                variant={notificationType === 'success' ? 'success' : 'error'}
+                size="lg"
+                className="shadow-glow-lg flex items-center gap-2"
+              >
+                {notificationType === 'success' && <CheckCircle className="w-4 h-4" />}
+                {notificationMessage}
+              </Badge>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Header */}
+        <motion.div variants={itemVariants} className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => router.push('/dashboard/newsletters')}
+              className="p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 
+                hover:border-primary-500/30 transition-all duration-300"
+            >
+              <ArrowLeft className="w-5 h-5 text-neutral-400" />
+            </button>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold font-display gradient-text">
+                {draftId ? 'Edit Newsletter' : 'Create Newsletter'}
+              </h1>
+              <p className="text-neutral-400 text-sm mt-1">Craft your message and reach your audience</p>
             </div>
           </div>
-        )}
-
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6 mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold font-display gradient-text">
-            Create Newsletter
-          </h1>
-          <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-3 sm:gap-4">
-            <button
+          
+          <div className="flex flex-wrap gap-3 w-full lg:w-auto">
+            <Button
               onClick={saveDraft}
               disabled={loading}
-              className="w-full sm:w-auto glass hover:bg-white/10 px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg 
-                flex items-center justify-center gap-2 border border-white/10 
-                hover:border-primary-500/50 transition-all duration-300
-                disabled:opacity-50 text-white font-medium"
+              variant="secondary"
+              leftIcon={<Save className="w-4 h-4" />}
+              className="flex-1 lg:flex-none"
             >
-              <Save className="w-4 h-4" />
               {loading ? 'Saving...' : 'Save Draft'}
-            </button>
+            </Button>
 
             {!showScheduler ? (
-              <button
+              <Button
                 onClick={() => setShowScheduler(true)}
-                className="w-full sm:w-auto bg-primary-500/20 hover:bg-primary-500/30 px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg
-                  flex items-center justify-center gap-2 backdrop-blur-sm border border-primary-500/50
-                  text-primary-400 hover:text-primary-300 transition-all duration-300 font-medium"
+                variant="primary"
+                leftIcon={<Calendar className="w-4 h-4" />}
+                className="flex-1 lg:flex-none"
               >
-                <Calendar className="w-4 h-4" />
                 Schedule
-              </button>
-            ) : (              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto 
-                glass p-2 rounded-lg border border-white/10">                <input
-                  type="datetime-local"
-                  className="w-full sm:w-auto px-3 py-2 bg-neutral-900/50 rounded-lg border border-neutral-700 
-                    focus:border-primary-500 focus:ring-2 focus:ring-primary-500/50
-                    text-white text-sm"
-                  defaultValue={(() => {
-                    const now = new Date();
-                    // Add 2 minutes to current time and format as local datetime string
-                    now.setMinutes(now.getMinutes() + 2);
-                    const year = now.getFullYear();
-                    const month = String(now.getMonth() + 1).padStart(2, '0');
-                    const day = String(now.getDate()).padStart(2, '0');
-                    const hours = String(now.getHours()).padStart(2, '0');
-                    const minutes = String(now.getMinutes()).padStart(2, '0');
-                    return `${year}-${month}-${day}T${hours}:${minutes}`;
-                  })()}
-                  min={(() => {
-                    const now = new Date();
-                    const year = now.getFullYear();
-                    const month = String(now.getMonth() + 1).padStart(2, '0');
-                    const day = String(now.getDate()).padStart(2, '0');
-                    const hours = String(now.getHours()).padStart(2, '0');
-                    const minutes = String(now.getMinutes()).padStart(2, '0');
-                    return `${year}-${month}-${day}T${hours}:${minutes}`;
-                  })()}
-                  onChange={(e) => {
-                    const selectedDate = new Date(e.target.value);
-                    const now = new Date();
-                    if (selectedDate.getTime() < now.getTime()) {
-                      // If selected time is in the past, set it to current time + 2 minutes
+              </Button>
+            ) : (
+              <GlassCard variant="default" padding="sm" className="flex-1 lg:flex-none">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="datetime-local"
+                    className="px-3 py-2 bg-neutral-900/50 rounded-lg border border-white/10 
+                      focus:border-primary-500/50 focus:ring-2 focus:ring-primary-500/50
+                      text-white text-sm"
+                    defaultValue={(() => {
+                      const now = new Date();
                       now.setMinutes(now.getMinutes() + 2);
                       const year = now.getFullYear();
                       const month = String(now.getMonth() + 1).padStart(2, '0');
                       const day = String(now.getDate()).padStart(2, '0');
                       const hours = String(now.getHours()).padStart(2, '0');
                       const minutes = String(now.getMinutes()).padStart(2, '0');
-                      e.target.value = `${year}-${month}-${day}T${hours}:${minutes}`;
-                    }
-                    scheduleNewsletter(e.target.value);
-                  }}
-                />
-                <button
-                  onClick={() => setShowScheduler(false)}
-                  className="w-full sm:w-auto text-neutral-400 hover:text-white p-2 rounded-lg hover:bg-white/10
-                    transition-colors text-center font-medium"
-                >
-                  Cancel
-                </button>
-              </div>
+                      return `${year}-${month}-${day}T${hours}:${minutes}`;
+                    })()}
+                    min={(() => {
+                      const now = new Date();
+                      const year = now.getFullYear();
+                      const month = String(now.getMonth() + 1).padStart(2, '0');
+                      const day = String(now.getDate()).padStart(2, '0');
+                      const hours = String(now.getHours()).padStart(2, '0');
+                      const minutes = String(now.getMinutes()).padStart(2, '0');
+                      return `${year}-${month}-${day}T${hours}:${minutes}`;
+                    })()}
+                    onChange={(e) => {
+                      const selectedDate = new Date(e.target.value);
+                      const now = new Date();
+                      if (selectedDate.getTime() < now.getTime()) {
+                        now.setMinutes(now.getMinutes() + 2);
+                        const year = now.getFullYear();
+                        const month = String(now.getMonth() + 1).padStart(2, '0');
+                        const day = String(now.getDate()).padStart(2, '0');
+                        const hours = String(now.getHours()).padStart(2, '0');
+                        const minutes = String(now.getMinutes()).padStart(2, '0');
+                        e.target.value = `${year}-${month}-${day}T${hours}:${minutes}`;
+                      }
+                      scheduleNewsletter(e.target.value);
+                    }}
+                  />
+                  <button
+                    onClick={() => setShowScheduler(false)}
+                    className="p-2 text-neutral-400 hover:text-white rounded-lg hover:bg-white/10 transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </GlassCard>
             )}
 
-            <button
+            <Button
               onClick={sendNow}
               disabled={loading}
-              className="w-full sm:w-auto bg-green-500 hover:bg-green-600 px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg
-                flex items-center justify-center gap-2 transition-all duration-300
-                hover:scale-105 disabled:opacity-50 disabled:hover:scale-100"
+              variant="gradient"
+              leftIcon={<Send className="w-4 h-4" />}
+              className="flex-1 lg:flex-none bg-gradient-to-r from-success-500 to-success-600 hover:from-success-600 hover:to-success-700"
             >
-              <Send className="w-4 h-4" />
               {loading ? 'Sending...' : 'Send Now'}
-            </button>
+            </Button>
           </div>
-        </div>
+        </motion.div>
 
-        <div className="space-y-4 sm:space-y-6">
-          <div className="glass p-4 sm:p-8 rounded-2xl
-            border border-white/10 hover:border-primary-500/50 transition-all duration-300">
-            <div className="space-y-4 sm:space-y-6">
+        {/* Main Content */}
+        <motion.div variants={itemVariants}>
+          <GlassCard variant="strong" padding="lg">
+            <div className="space-y-6">
               <div>
                 <label className="block text-sm font-medium mb-2 text-neutral-200">Newsletter Title</label>
                 <input
                   type="text"
                   value={newsletter.title}
                   onChange={(e) => setNewsletter({ ...newsletter, title: e.target.value })}
-                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-neutral-900/50 rounded-lg border border-neutral-700
-                    focus:border-primary-500 focus:ring-2 focus:ring-primary-500/50
-                    placeholder-neutral-500 text-sm sm:text-base text-white"
-                  placeholder="Enter newsletter title"
+                  className="w-full px-4 py-3 bg-neutral-900/50 rounded-xl border border-white/10
+                    focus:border-primary-500/50 focus:ring-2 focus:ring-primary-500/50
+                    placeholder-neutral-500 text-white transition-all duration-200"
+                  placeholder="Enter a compelling title..."
                 />
               </div>
 
@@ -322,10 +391,10 @@ const CreateNewsletterContent: React.FC = () => {
                   type="text"
                   value={newsletter.subject}
                   onChange={(e) => setNewsletter({ ...newsletter, subject: e.target.value })}
-                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-neutral-900/50 rounded-lg border border-neutral-700
-                    focus:border-primary-500 focus:ring-2 focus:ring-primary-500/50
-                    placeholder-neutral-500 text-sm sm:text-base text-white"
-                  placeholder="Enter email subject"
+                  className="w-full px-4 py-3 bg-neutral-900/50 rounded-xl border border-white/10
+                    focus:border-primary-500/50 focus:ring-2 focus:ring-primary-500/50
+                    placeholder-neutral-500 text-white transition-all duration-200"
+                  placeholder="Subject line your subscribers will see..."
                 />
               </div>
 
@@ -334,167 +403,148 @@ const CreateNewsletterContent: React.FC = () => {
                 <textarea
                   value={newsletter.content}
                   onChange={(e) => setNewsletter({ ...newsletter, content: e.target.value })}
-                  className="w-full h-64 sm:h-96 px-3 sm:px-4 py-2.5 sm:py-3 bg-neutral-900/50 rounded-lg border border-neutral-700
-                    focus:border-primary-500 focus:ring-2 focus:ring-primary-500/50
-                    placeholder-neutral-500 resize-none text-sm sm:text-base text-white"
-                  placeholder="Write your newsletter content here..."
+                  className="w-full h-72 sm:h-96 px-4 py-3 bg-neutral-900/50 rounded-xl border border-white/10
+                    focus:border-primary-500/50 focus:ring-2 focus:ring-primary-500/50
+                    placeholder-neutral-500 resize-none text-white transition-all duration-200"
+                  placeholder="Write your newsletter content here... Use HTML for formatting."
                 />
+                <p className="text-xs text-neutral-500 mt-2">
+                  {newsletter.content.length} characters • HTML formatting supported
+                </p>
               </div>
             </div>
-          </div>
+          </GlassCard>
+        </motion.div>
 
-          <div className="glass p-4 sm:p-8 rounded-2xl
-            border border-white/10 hover:border-primary-500/50 transition-all duration-300">
-            <h2 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-6 text-white">Content Quality Metrics</h2>
+        {/* Content Quality Section */}
+        <motion.div variants={itemVariants}>
+          <GlassCard variant="strong" padding="lg">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-secondary-500/20 to-secondary-600/20 
+                flex items-center justify-center border border-secondary-500/30">
+                <FileCheck className="w-5 h-5 text-secondary-400" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold font-display text-white">Content Quality</h2>
+                <p className="text-sm text-neutral-400">Track and improve your content quality</p>
+              </div>
+            </div>
             
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="flex items-center gap-4">
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={newsletter.contentQuality?.isOriginalContent}
-                      onChange={(e) => setNewsletter({
-                        ...newsletter,
-                        contentQuality: {
-                          ...newsletter.contentQuality!,
-                          isOriginalContent: e.target.checked
-                        }
-                      })}
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-neutral-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary-500/50 rounded-full peer 
-                      peer-checked:after:translate-x-full peer-checked:after:border-white after:content-['']
-                      after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full
-                      after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-primary-500 peer-checked:to-primary-600"></div>
-                  </label>
-                  <span className="flex items-center gap-2 text-sm sm:text-base text-white">
-                    <FileCheck className="w-5 h-5 text-primary-400" />
-                    Original Content
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-4">
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={newsletter.contentQuality?.hasResearchBacked}
-                      onChange={(e) => setNewsletter({
-                        ...newsletter,
-                        contentQuality: {
-                          ...newsletter.contentQuality!,
-                          hasResearchBacked: e.target.checked
-                        }
-                      })}
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-neutral-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary-500/50 rounded-full peer 
-                      peer-checked:after:translate-x-full peer-checked:after:border-white after:content-['']
-                      after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full
-                      after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-primary-500 peer-checked:to-primary-600"></div>
-                  </label>
-                  <span className="flex items-center gap-2 text-sm sm:text-base text-white">
-                    <BookOpen className="w-5 h-5 text-secondary-400" />
-                    Research Backed
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-4">
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={newsletter.contentQuality?.hasActionableInsights}
-                      onChange={(e) => setNewsletter({
-                        ...newsletter,
-                        contentQuality: {
-                          ...newsletter.contentQuality!,
-                          hasActionableInsights: e.target.checked
-                        }
-                      })}
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-neutral-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary-500/50 rounded-full peer 
-                      peer-checked:after:translate-x-full peer-checked:after:border-white after:content-['']
-                      after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full
-                      after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-primary-500 peer-checked:to-primary-600"></div>
-                  </label>
-                  <span className="flex items-center gap-2 text-sm sm:text-base text-white">
-                    <Lightbulb className="w-5 h-5 text-accent-400" />
-                    Actionable Insights
-                  </span>
-                </div>
+            <div className="space-y-6">
+              {/* Quality Toggles */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {[
+                  { key: 'isOriginalContent', label: 'Original Content', icon: FileCheck, color: 'primary' },
+                  { key: 'hasResearchBacked', label: 'Research Backed', icon: BookOpen, color: 'secondary' },
+                  { key: 'hasActionableInsights', label: 'Actionable Insights', icon: Lightbulb, color: 'warning' },
+                ].map((item) => (
+                  <div key={item.key} className="flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors">
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={newsletter.contentQuality?.[item.key as keyof typeof newsletter.contentQuality] as boolean}
+                        onChange={(e) => setNewsletter({
+                          ...newsletter,
+                          contentQuality: {
+                            ...newsletter.contentQuality!,
+                            [item.key]: e.target.checked
+                          }
+                        })}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-neutral-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary-500/50 rounded-full peer 
+                        peer-checked:after:translate-x-full peer-checked:after:border-white after:content-['']
+                        after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full
+                        after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-primary-500 peer-checked:to-primary-600"></div>
+                    </label>
+                    <span className="flex items-center gap-2 text-sm text-white">
+                      <item.icon className={`w-4 h-4 text-${item.color}-400`} />
+                      {item.label}
+                    </span>
+                  </div>
+                ))}
               </div>
 
-              <div className="space-y-2">
+              {/* Sources */}
+              <div className="space-y-3">
                 <label className="block text-sm font-medium text-neutral-200">Sources</label>
-                <div className="flex flex-col sm:flex-row gap-2">
+                <div className="flex gap-2">
                   <input
                     type="text"
                     value={currentSource}
                     onChange={(e) => setCurrentSource(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && addSource()}
-                    className="flex-1 px-3 sm:px-4 py-2 bg-neutral-900/50 rounded-lg border border-neutral-700
-                      focus:border-primary-500 focus:ring-2 focus:ring-primary-500/50 text-sm sm:text-base text-white placeholder:text-neutral-500"
-                    placeholder="Add a source..."
+                    className="flex-1 px-4 py-2.5 bg-neutral-900/50 rounded-xl border border-white/10
+                      focus:border-primary-500/50 focus:ring-2 focus:ring-primary-500/50 text-white placeholder:text-neutral-500"
+                    placeholder="Add a source URL or reference..."
                   />
-                  <button
-                    onClick={addSource}
-                    className="w-full sm:w-auto px-4 py-2 bg-primary-500/20 text-primary-400 rounded-lg
-                      hover:bg-primary-500/30 transition-colors flex items-center justify-center gap-2 font-medium border border-primary-500/30"
-                  >
-                    <Link className="w-4 h-4" />
-                    <span className="sm:hidden">Add Source</span>
-                  </button>
+                  <Button onClick={addSource} variant="secondary" leftIcon={<Link className="w-4 h-4" />}>
+                    Add
+                  </Button>
                 </div>
-                <div className="flex flex-wrap gap-2 mt-2">
+                <div className="flex flex-wrap gap-2">
                   {newsletter.contentQuality?.sources.map((source, index) => (
-                    <span
+                    <motion.span
                       key={index}
-                      className="px-3 py-1 bg-primary-500/20 text-primary-400 rounded-full text-sm break-all border border-primary-500/30"
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="group px-3 py-1.5 bg-primary-500/20 text-primary-400 rounded-lg text-sm 
+                        border border-primary-500/30 flex items-center gap-2"
                     >
-                      {source}
-                    </span>
+                      <span className="max-w-[200px] truncate">{source}</span>
+                      <button 
+                        onClick={() => removeSource(index)}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </motion.span>
                   ))}
                 </div>
               </div>
 
-              <div className="space-y-2">
+              {/* Key Takeaways */}
+              <div className="space-y-3">
                 <label className="block text-sm font-medium text-neutral-200">Key Takeaways</label>
-                <div className="flex flex-col sm:flex-row gap-2">
+                <div className="flex gap-2">
                   <input
                     type="text"
                     value={currentTakeaway}
                     onChange={(e) => setCurrentTakeaway(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && addTakeaway()}
-                    className="flex-1 px-3 sm:px-4 py-2 bg-neutral-900/50 rounded-lg border border-neutral-700
-                      focus:border-primary-500 focus:ring-2 focus:ring-primary-500/50 text-sm sm:text-base text-white placeholder:text-neutral-500"
-                    placeholder="Add a key takeaway..."
+                    className="flex-1 px-4 py-2.5 bg-neutral-900/50 rounded-xl border border-white/10
+                      focus:border-primary-500/50 focus:ring-2 focus:ring-primary-500/50 text-white placeholder:text-neutral-500"
+                    placeholder="What's the key takeaway for readers?"
                   />
-                  <button
-                    onClick={addTakeaway}
-                    className="w-full sm:w-auto px-4 py-2 bg-success-500/20 text-success-400 rounded-lg
-                      hover:bg-success-500/30 transition-colors flex items-center justify-center gap-2 font-medium border border-success-500/30"
-                  >
-                    <Lightbulb className="w-4 h-4" />
-                    <span className="sm:hidden">Add Takeaway</span>
-                  </button>
+                  <Button onClick={addTakeaway} variant="secondary" leftIcon={<Lightbulb className="w-4 h-4" />}>
+                    Add
+                  </Button>
                 </div>
-                <div className="flex flex-wrap gap-2 mt-2">
+                <div className="flex flex-wrap gap-2">
                   {newsletter.contentQuality?.keyTakeaways.map((takeaway, index) => (
-                    <span
+                    <motion.span
                       key={index}
-                      className="px-3 py-1 bg-success-500/20 text-success-400 rounded-full text-sm break-all border border-success-500/30"
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="group px-3 py-1.5 bg-success-500/20 text-success-400 rounded-lg text-sm 
+                        border border-success-500/30 flex items-center gap-2"
                     >
-                      {takeaway}
-                    </span>
+                      <span className="max-w-[250px] truncate">{takeaway}</span>
+                      <button 
+                        onClick={() => removeTakeaway(index)}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </motion.span>
                   ))}
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      </div>
-    </div>
+          </GlassCard>
+        </motion.div>
+      </motion.div>
+    </Container>
   );
 };
 
@@ -502,7 +552,11 @@ export default function CreateNewsletter() {
   return (
     <Suspense fallback={
       <div className="min-h-screen flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-primary-500/20 border-t-primary-500 rounded-full animate-spin"></div>
+        <div className="w-16 h-16 relative">
+          <div className="absolute inset-0 rounded-full border-4 border-primary-500/20" />
+          <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-primary-500 animate-spin" />
+          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-primary-500/20 to-secondary-500/20 blur-xl" />
+        </div>
       </div>
     }>
       <CreateNewsletterContent />
