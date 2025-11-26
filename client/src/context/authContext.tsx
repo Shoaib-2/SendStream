@@ -238,9 +238,9 @@ const loginWithProvider = async (provider: 'google'): Promise<void> => {
   }
 };
 
-  if (isLoading) {
-    return null;
-  }
+  // Don't block rendering while checking auth - let the app load
+  // Protected routes are handled by middleware.ts
+  console.log('[AuthContext] Rendering - isLoading:', isLoading, 'user:', !!user);
 
   return (
     <AuthContext.Provider value={{ 
