@@ -23,7 +23,7 @@
   "license": "ISC",
   "dependencies": {
     "@jest/globals": "^29.7.0",
-    "@sendgrid/mail": "^8.1.4",
+    "@sendgrid/mail": "^8.1.6",
     "@stripe/stripe-js": "^5.9.2",
     "@types/node-cron": "^3.0.11",
     "@types/ws": "^8.5.14",

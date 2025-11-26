@@ -1,4 +1,4 @@
-import nodemailer from 'nodemailer';
+import sgMail from '@sendgrid/mail';
 import { logger } from '../utils/logger';
 import { APIError } from '../utils/errors';
 import dotenv from 'dotenv';
@@ -15,45 +15,46 @@ interface MailOptions {
 }
 
 export class EmailService {
-  private transporter: nodemailer.Transporter;
-  private DEFAULT_DAILY_LIMIT = 100; // Default sending limit per day
+  private DEFAULT_DAILY_LIMIT = 100; // Default sending limit per day (SendGrid free tier)
+  private isInitialized = false;
 
   constructor() {
-    // Configure SMTP transporter with flexible settings
-    const isSecure = process.env.EMAIL_SECURE === 'true';
-    const port = parseInt(process.env.EMAIL_PORT || '587', 10);
-    
-    this.transporter = nodemailer.createTransport({
-      host: process.env.EMAIL_HOST,
-      port: port,
-      secure: isSecure, // true for 465, false for other ports
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASSWORD
-      },
-      // Increase timeouts for cloud hosting environments
-      connectionTimeout: 60000, // 60 seconds
-      greetingTimeout: 30000, // 30 seconds
-      socketTimeout: 60000, // 60 seconds
-      // Additional options for better reliability
-      pool: true, // Use pooled connections
-      maxConnections: 5,
-      maxMessages: 100,
-      rateDelta: 1000,
-      rateLimit: 5
-    });
-    
-    logger.info(`SMTP transporter created - Host: ${process.env.EMAIL_HOST}, Port: ${port}, Secure: ${isSecure}, User: ${process.env.EMAIL_USER}`);
+    try {
+      const apiKey = process.env.SENDGRID_API_KEY;
+      
+      if (!apiKey) {
+        throw new Error('SENDGRID_API_KEY environment variable is not set');
+      }
+      
+      // Initialize SendGrid
+      sgMail.setApiKey(apiKey);
+      this.isInitialized = true;
+      
+      logger.info('SendGrid initialized successfully with API key');
+    } catch (error) {
+      logger.error('Failed to initialize SendGrid:', error);
+      this.isInitialized = false;
+      throw new APIError(500, 'Email service initialization failed');
+    }
   }
 
   async initializeProviders() {
     try {
-      logger.info('Verifying SMTP connection...');
-      await this.transporter.verify();
-      logger.info('SMTP connection verified successfully');
+      if (!this.isInitialized) {
+        throw new Error('SendGrid is not initialized');
+      }
+      
+      logger.info('SendGrid email service ready');
+      
+      // Verify the API key is valid by checking if it's set
+      if (!process.env.SENDGRID_API_KEY || process.env.SENDGRID_API_KEY.length < 20) {
+        throw new Error('Invalid SendGrid API key');
+      }
+      
+      logger.info('SendGrid configuration verified successfully');
     } catch (error) {
-      logger.error('SMTP verification failed:', error);
-      throw error;
+      logger.error('SendGrid verification failed:', error);
+      throw new APIError(500, 'Email service verification failed');
     }
   }
 
@@ -125,17 +126,40 @@ export class EmailService {
   // Add a method to send custom emails
   async sendEmail(mailOptions: MailOptions): Promise<void> {
     try {
-      logger.info(`Sending email to ${mailOptions.to}`);
-      await this.transporter.sendMail(mailOptions);
-      logger.info(`Email sent successfully to ${mailOptions.to}`);
-    } catch (error) {
-      logger.error('Failed to send email:', error);
-      throw new APIError(500, `Failed to send email: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      if (!this.isInitialized) {
+        throw new Error('SendGrid is not initialized');
+      }
+      
+      logger.info(`Sending email via SendGrid to ${mailOptions.to}`);
+      
+      const msg = {
+        to: mailOptions.to,
+        from: mailOptions.from,
+        subject: mailOptions.subject,
+        html: mailOptions.html,
+        ...(mailOptions.replyTo && { replyTo: mailOptions.replyTo })
+      };
+      
+      await sgMail.send(msg);
+      logger.info(`Email sent successfully via SendGrid to ${mailOptions.to}`);
+    } catch (error: any) {
+      logger.error('SendGrid email send failed:', {
+        message: error.message,
+        code: error.code,
+        response: error.response?.body
+      });
+      
+      const errorMessage = error.response?.body?.errors?.[0]?.message || error.message || 'Unknown error';
+      throw new APIError(500, `Failed to send email: ${errorMessage}`);
     }
   }
 
   async sendNewsletter(newsletter: any, subscribers: any[], userSettings: any) {
     try {
+      if (!this.isInitialized) {
+        throw new APIError(500, 'Email service is not initialized');
+      }
+      
       // Ensure unique subscribers by email
       const uniqueSubscribers = Array.from(
         new Map(subscribers.map(s => [s.email, s])).values()
@@ -151,69 +175,113 @@ export class EmailService {
         throw new APIError(429, `Daily email sending limit reached (${this.DEFAULT_DAILY_LIMIT}). Please try again tomorrow.`);
       }
     
-      // Process in batches
+      // Process in batches (SendGrid allows up to 1000 recipients per API call, but we'll use smaller batches)
       const batchSize = 5;
       let sentCount = 0;
+      const failedEmails: string[] = [];
       
       for (let i = 0; i < uniqueSubscribers.length; i += batchSize) {
         const batch = uniqueSubscribers.slice(i, i + batchSize);
         logger.info(`Processing batch ${Math.floor(i/batchSize) + 1} of ${Math.ceil(uniqueSubscribers.length/batchSize)}`);
         
-        const emailPromises = batch.map(subscriber => {
-          // Get sender information from settings
-          const fromName = userSettings?.email?.fromName || 'Newsletter';
-          
-          // Format the from field with proper name and email
-          const fromField = `"${fromName}" <${process.env.EMAIL_USER}>`;
-          
-          // Ensure replyTo is properly set
-          const replyTo = userSettings?.email?.replyTo || process.env.EMAIL_USER;
-          
-          logger.info(`Sending with from: ${fromField}, replyTo: ${replyTo}`);
-          
-          return this.transporter.sendMail({
-            from: fromField,
-            replyTo: replyTo,
-            to: subscriber.email,
-            subject: newsletter.subject,
-            html: this.generateNewsletterHTML(newsletter, subscriber)
-          });
+        const emailPromises = batch.map(async (subscriber) => {
+          try {
+            // Get sender information from settings
+            const fromName = userSettings?.email?.fromName || 'Newsletter';
+            const fromEmail = process.env.EMAIL_USER;
+            
+            if (!fromEmail) {
+              throw new Error('EMAIL_USER environment variable is not set');
+            }
+            
+            // Format the from field with proper name and email
+            const fromField = `${fromName} <${fromEmail}>`;
+            
+            // Ensure replyTo is properly set
+            const replyTo = userSettings?.email?.replyTo || fromEmail;
+            
+            logger.info(`Sending via SendGrid - From: ${fromField}, ReplyTo: ${replyTo}, To: ${subscriber.email}`);
+            
+            const msg = {
+              to: subscriber.email,
+              from: fromEmail, // SendGrid requires verified sender
+              subject: newsletter.subject,
+              html: this.generateNewsletterHTML(newsletter, subscriber),
+              replyTo: replyTo
+            };
+            
+            await sgMail.send(msg);
+            return { success: true, email: subscriber.email };
+          } catch (error: any) {
+            logger.error(`Failed to send to ${subscriber.email}:`, {
+              message: error.message,
+              code: error.code,
+              response: error.response?.body
+            });
+            return { success: false, email: subscriber.email, error: error.message };
+          }
         });
         
         try {
           const results = await Promise.allSettled(emailPromises);
-          const successful = results.filter(r => r.status === 'fulfilled').length;
-          sentCount += successful;
           
-          // Log detailed errors for failed emails
-          const failed = results.filter(r => r.status === 'rejected');
-          if (failed.length > 0) {
-            failed.forEach((result, index) => {
-              if (result.status === 'rejected') {
-                logger.error(`Email ${index + 1} failed:`, result.reason);
-              }
-            });
-          }
+          results.forEach((result, index) => {
+            if (result.status === 'fulfilled' && result.value.success) {
+              sentCount++;
+              logger.info(`✓ Email sent successfully to ${result.value.email}`);
+            } else if (result.status === 'fulfilled' && !result.value.success) {
+              failedEmails.push(result.value.email);
+              logger.error(`✗ Email failed for ${result.value.email}: ${result.value.error}`);
+            } else if (result.status === 'rejected') {
+              logger.error(`✗ Promise rejected for email ${index + 1}:`, result.reason);
+            }
+          });
           
-          logger.info(`Batch results: ${successful}/${batch.length} emails sent`);
-        } catch (batchError) {
-          logger.error('Batch error:', batchError);
+          logger.info(`Batch results: ${sentCount}/${batch.length} emails sent successfully`);
+        } catch (batchError: any) {
+          logger.error('Batch processing error:', {
+            message: batchError.message,
+            stack: batchError.stack
+          });
+        }
+        
+        // Small delay between batches to avoid rate limiting
+        if (i + batchSize < uniqueSubscribers.length) {
+          await new Promise(resolve => setTimeout(resolve, 100));
         }
       }
       
       if (sentCount === 0) {
-        throw new Error('Failed to send newsletter to any recipients');
+        throw new APIError(500, 'Failed to send newsletter to any recipients. Please check your SendGrid configuration and sender verification.');
       }
       
       // Update usage tracking if emails were sent
       if (sentCount > 0 && userId) {
-        await this.updateEmailUsage(userId, sentCount);
+        try {
+          await this.updateEmailUsage(userId, sentCount);
+        } catch (usageError: any) {
+          logger.error('Failed to update email usage:', usageError.message);
+          // Don't fail the entire operation if usage tracking fails
+        }
       }
       
-      logger.info(`Newsletter sent successfully to ${sentCount}/${uniqueSubscribers.length} subscribers`);
+      logger.info(`Newsletter sent successfully: ${sentCount}/${uniqueSubscribers.length} emails delivered`);
+      
+      if (failedEmails.length > 0) {
+        logger.warn(`Failed to send to ${failedEmails.length} recipients:`, failedEmails);
+      }
+      
       return newsletter._id;
     } catch (error: any) {
-      logger.error('Failed to send newsletter:', error.message);
+      logger.error('Newsletter send operation failed:', {
+        message: error.message,
+        stack: error.stack
+      });
+      
+      if (error instanceof APIError) {
+        throw error;
+      }
+      
       throw new APIError(500, `Failed to send newsletter: ${error.message}`);
     }
   }

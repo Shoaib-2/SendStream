@@ -15,13 +15,16 @@ interface EnvironmentConfig {
   jwtSecret: string;
   jwtExpiresIn: string;
   
-  // Email
+  // Email (SendGrid)
+  sendgridApiKey: string;
   emailUser: string;
-  emailHost: string;
-  emailPort: number;
-  emailPassword: string;
-  emailSecure: boolean;
-  defaultSenderEmail: string;
+  
+  // Legacy SMTP (optional, kept for backwards compatibility)
+  emailHost?: string;
+  emailPort?: number;
+  emailPassword?: string;
+  emailSecure?: boolean;
+  defaultSenderEmail?: string;
   
   // Stripe
   stripeSecretKey: string;
@@ -40,10 +43,8 @@ class ConfigService {
   private requiredEnvVars = [
     'MONGODB_URI',
     'JWT_SECRET',
+    'SENDGRID_API_KEY',
     'EMAIL_USER',
-    'EMAIL_HOST',
-    'EMAIL_PORT',
-    'EMAIL_PASSWORD',
     'STRIPE_SECRET_KEY',
     'STRIPE_WEBHOOK_SECRET',
     'CLIENT_URL'
@@ -81,12 +82,15 @@ class ConfigService {
       jwtSecret: process.env.JWT_SECRET!,
       jwtExpiresIn: process.env.JWT_EXPIRES_IN || '30d',
       
+      sendgridApiKey: process.env.SENDGRID_API_KEY!,
       emailUser: process.env.EMAIL_USER!,
-      emailHost: process.env.EMAIL_HOST!,
-      emailPort: parseInt(process.env.EMAIL_PORT || '587', 10),
-      emailPassword: process.env.EMAIL_PASSWORD!,
+      
+      // Legacy SMTP (optional)
+      emailHost: process.env.EMAIL_HOST,
+      emailPort: process.env.EMAIL_PORT ? parseInt(process.env.EMAIL_PORT, 10) : undefined,
+      emailPassword: process.env.EMAIL_PASSWORD,
       emailSecure: process.env.EMAIL_SECURE === 'true',
-      defaultSenderEmail: process.env.DEFAULT_SENDER_EMAIL || process.env.EMAIL_USER!,
+      defaultSenderEmail: process.env.DEFAULT_SENDER_EMAIL || process.env.EMAIL_USER,
       
       stripeSecretKey: process.env.STRIPE_SECRET_KEY!,
       stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET!,
