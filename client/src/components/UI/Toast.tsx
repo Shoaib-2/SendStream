@@ -25,6 +25,7 @@ const Toast: React.FC<ToastProps> = ({
       const timer = setTimeout(onClose, duration);
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [onClose, duration]);
 
   const config = {
