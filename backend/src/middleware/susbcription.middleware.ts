@@ -111,6 +111,38 @@ export const checkSubscription = async (req: Request, res: Response, next: NextF
             return next();
           }
         }
+        
+        // IMPORTANT: Also check by email - user might have renewed with a new customer ID
+        if (user.email) {
+          console.log(`Checking Stripe for subscriptions by email: ${user.email}`);
+          const customers = await stripe.customers.list({ email: user.email, limit: 10 });
+          
+          for (const customer of customers.data) {
+            const customerSubs = await stripe.subscriptions.list({
+              customer: customer.id,
+              limit: 10
+            });
+            
+            const validSub = customerSubs.data.find(
+              sub => sub.status === 'active' || sub.status === 'trialing'
+            );
+            
+            if (validSub) {
+              console.log(`Found valid subscription ${validSub.id} for user ${user.email} via email lookup (customer: ${customer.id})`);
+              
+              // Update user with correct subscription details including new customer ID
+              await User.findByIdAndUpdate(user._id, {
+                stripeCustomerId: customer.id,
+                stripeSubscriptionId: validSub.id,
+                subscriptionStatus: validSub.status,
+                hasActiveAccess: true,
+                updatedAt: new Date()
+              });
+              
+              return next();
+            }
+          }
+        }
       } catch (listError) {
         console.error('Error checking for newer subscriptions:', listError);
       }
@@ -130,39 +162,73 @@ export const checkSubscription = async (req: Request, res: Response, next: NextF
     } catch (stripeError: any) {
       console.error('Error checking subscription with Stripe:', stripeError);
       
-      // If subscription not found in Stripe, check for newer subscriptions via customer ID
+      // If subscription not found in Stripe, check for newer subscriptions
       if (stripeError.type === 'StripeInvalidRequestError' && 
-          stripeError.code === 'resource_missing' && 
-          user.stripeCustomerId) {
+          stripeError.code === 'resource_missing') {
         console.log(`Subscription ${user.stripeSubscriptionId} not found, checking for newer subscriptions`);
         
-        try {
-          // Check for any valid subscription via customer ID
-          const customerSubscriptions = await stripe.subscriptions.list({
-            customer: user.stripeCustomerId,
-            limit: 10
-          });
-          
-          // Find an active or trialing subscription
-          const validSubscription = customerSubscriptions.data.find(
-            sub => sub.status === 'active' || sub.status === 'trialing'
-          );
-          
-          if (validSubscription) {
-            console.log(`Found valid subscription ${validSubscription.id} for user ${user.email} after Stripe error`);
-            
-            // Update user with correct subscription details
-            await User.findByIdAndUpdate(user._id, {
-              stripeSubscriptionId: validSubscription.id,
-              subscriptionStatus: validSubscription.status,
-              hasActiveAccess: true,
-              updatedAt: new Date()
+        // First try by customer ID
+        if (user.stripeCustomerId) {
+          try {
+            const customerSubscriptions = await stripe.subscriptions.list({
+              customer: user.stripeCustomerId,
+              limit: 10
             });
             
-            return next();
+            const validSubscription = customerSubscriptions.data.find(
+              sub => sub.status === 'active' || sub.status === 'trialing'
+            );
+            
+            if (validSubscription) {
+              console.log(`Found valid subscription ${validSubscription.id} for user ${user.email} via customer ID after Stripe error`);
+              
+              await User.findByIdAndUpdate(user._id, {
+                stripeSubscriptionId: validSubscription.id,
+                subscriptionStatus: validSubscription.status,
+                hasActiveAccess: true,
+                updatedAt: new Date()
+              });
+              
+              return next();
+            }
+          } catch (lookupError) {
+            console.error('Error checking by customer ID:', lookupError);
           }
-        } catch (lookupError) {
-          console.error('Error checking for newer subscriptions after Stripe error:', lookupError);
+        }
+        
+        // Then try by email - this catches cases where customer ID changed
+        if (user.email) {
+          try {
+            console.log(`Checking by email ${user.email} after subscription not found`);
+            const customers = await stripe.customers.list({ email: user.email, limit: 10 });
+            
+            for (const customer of customers.data) {
+              const customerSubs = await stripe.subscriptions.list({
+                customer: customer.id,
+                limit: 10
+              });
+              
+              const validSub = customerSubs.data.find(
+                sub => sub.status === 'active' || sub.status === 'trialing'
+              );
+              
+              if (validSub) {
+                console.log(`Found valid subscription ${validSub.id} for user ${user.email} via email lookup after error`);
+                
+                await User.findByIdAndUpdate(user._id, {
+                  stripeCustomerId: customer.id,
+                  stripeSubscriptionId: validSub.id,
+                  subscriptionStatus: validSub.status,
+                  hasActiveAccess: true,
+                  updatedAt: new Date()
+                });
+                
+                return next();
+              }
+            }
+          } catch (emailLookupError) {
+            console.error('Error checking by email:', emailLookupError);
+          }
         }
       }
       

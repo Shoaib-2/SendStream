@@ -284,9 +284,29 @@ const createCheckout: RequestHandler = async (req: Request, res: Response): Prom
       cancel_url: cancelUrl || `${process.env.CLIENT_URL}/`,
     };
 
+    // IMPORTANT: Reuse existing Stripe customer if one exists to maintain subscription history
+    if (existingUser?.stripeCustomerId) {
+      logger.info(`Reusing existing Stripe customer ${existingUser.stripeCustomerId} for ${email}`);
+      sessionParams.customer = existingUser.stripeCustomerId;
+    } else if (email && email.includes('@')) {
+      // Check if customer exists in Stripe by email
+      try {
+        const customers = await stripe.customers.list({ email, limit: 1 });
+        if (customers.data.length > 0) {
+          logger.info(`Found existing Stripe customer ${customers.data[0].id} by email ${email}`);
+          sessionParams.customer = customers.data[0].id;
+          // Update user with the found customer ID
+          await User.findOneAndUpdate({ email }, { stripeCustomerId: customers.data[0].id });
+        } else {
+          sessionParams.customer_email = email;
+        }
+      } catch (customerLookupError) {
+        logger.error('Error looking up customer by email:', customerLookupError);
+        sessionParams.customer_email = email;
+      }
+    }
+
     if (email && email.includes('@')) {
-      sessionParams.customer_email = email;
-      
       const updateData: Record<string, unknown> = { 
         email,
         subscribed: new Date()
@@ -386,5 +406,107 @@ const checkSubscription: RequestHandler = async (req: Request, res: Response): P
 router.post('/webhook', express.raw({ type: 'application/json' }), handleWebhook);
 router.post('/checkout', express.json(), createCheckout); // Add JSON parsing for checkout
 router.get('/check-subscription', checkSubscription);
+
+/**
+ * POST /api/stripe/sync-subscription
+ * Sync subscription from Stripe to database using email
+ * This is useful when webhooks fail or database gets out of sync
+ */
+const syncSubscription: RequestHandler = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      res.status(400).json({ status: 'error', message: 'Email is required' });
+      return;
+    }
+    
+    // Find all customers with this email in Stripe
+    const customers = await stripe.customers.list({ email, limit: 10 });
+    
+    if (!customers.data.length) {
+      res.status(404).json({ status: 'error', message: 'No Stripe customer found with this email' });
+      return;
+    }
+    
+    // Check all customers for active subscriptions
+    let activeSubscription: Stripe.Subscription | null = null;
+    let activeCustomerId: string | null = null;
+    
+    for (const customer of customers.data) {
+      const subscriptions = await stripe.subscriptions.list({
+        customer: customer.id,
+        limit: 10
+      });
+      
+      const validSub = subscriptions.data.find(
+        sub => sub.status === 'active' || sub.status === 'trialing'
+      );
+      
+      if (validSub) {
+        activeSubscription = validSub;
+        activeCustomerId = customer.id;
+        break;
+      }
+    }
+    
+    if (!activeSubscription || !activeCustomerId) {
+      res.status(404).json({ 
+        status: 'error', 
+        message: 'No active subscription found for this email',
+        customers: customers.data.map(c => c.id)
+      });
+      return;
+    }
+    
+    // Update user in database
+    const updatedUser = await User.findOneAndUpdate(
+      { email },
+      {
+        stripeCustomerId: activeCustomerId,
+        stripeSubscriptionId: activeSubscription.id,
+        subscriptionStatus: activeSubscription.status,
+        hasActiveAccess: true,
+        trialEndsAt: activeSubscription.trial_end 
+          ? new Date(activeSubscription.trial_end * 1000) 
+          : undefined,
+        updatedAt: new Date()
+      },
+      { new: true }
+    );
+    
+    if (!updatedUser) {
+      res.status(404).json({ status: 'error', message: 'User not found in database' });
+      return;
+    }
+    
+    logger.info('Subscription synced successfully:', {
+      email: updatedUser.email,
+      stripeCustomerId: activeCustomerId,
+      stripeSubscriptionId: activeSubscription.id,
+      subscriptionStatus: activeSubscription.status
+    });
+    
+    res.status(200).json({
+      status: 'success',
+      message: 'Subscription synced successfully',
+      data: {
+        stripeCustomerId: activeCustomerId,
+        stripeSubscriptionId: activeSubscription.id,
+        subscriptionStatus: activeSubscription.status,
+        hasActiveAccess: true
+      }
+    });
+  } catch (error) {
+    logger.error('Error syncing subscription:', error);
+    res.status(500).json({ 
+      status: 'error', 
+      message: 'Failed to sync subscription',
+      error: (error as Error).message 
+    });
+  }
+};
+
+router.post('/sync-subscription', express.json(), syncSubscription);
 
 export default router;
