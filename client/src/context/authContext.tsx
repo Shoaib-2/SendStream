@@ -62,10 +62,8 @@ const removeAuthCookie = () => {
 };
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  console.log('[AuthContext] ========== PROVIDER INSTANTIATED ==========');
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
 
    // Check token validity - could be enhanced with refresh token logic
   // Check authentication status on load
@@ -110,8 +108,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Clear localStorage on auth error
         localStorage.removeItem('token');
         localStorage.removeItem('user');
-      } finally {
-        setIsLoading(false);
       }
     };
     verifyAuth();
@@ -273,8 +269,6 @@ const loginWithProvider = async (provider: 'google'): Promise<void> => {
 
   // Don't block rendering while checking auth - let the app load
   // Protected routes are handled by middleware.ts
-  console.log('[AuthContext] Rendering - isLoading:', isLoading, 'user:', !!user);
-
   return (
     <AuthContext.Provider value={{ 
       user, 

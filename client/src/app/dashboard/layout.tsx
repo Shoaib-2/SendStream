@@ -49,7 +49,6 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  console.log('[DashboardLayout] ========== COMPONENT FUNCTION CALLED v2 ==========');
   const router = useRouter();
   const pathname = usePathname();
   const { user, logout } = useAuth();
@@ -58,32 +57,10 @@ export default function DashboardLayout({
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   
   useEffect(() => {
-    console.log('[DashboardLayout] Mounting...');
     setMounted(true);
   }, []);
   
-  // Debug logging
-  useEffect(() => {
-    console.log('[DashboardLayout] Current pathname:', pathname);
-  }, [pathname]);
-  
-  // Test if clicks work at all
-  useEffect(() => {
-    console.log('[DashboardLayout] Setting up click listener');
-    const handleClick = (e: MouseEvent) => {
-      console.log('[DashboardLayout] Global click detected at:', e.clientX, e.clientY);
-    };
-    document.addEventListener('click', handleClick);
-    return () => {
-      console.log('[DashboardLayout] Removing click listener');
-      document.removeEventListener('click', handleClick);
-    };
-  }, []);
-  
-  console.log('[DashboardLayout] Render - mounted:', mounted);
-  
   if (!mounted) {
-    console.log('[DashboardLayout] Not mounted yet, returning null');
     return null;
   }
 
