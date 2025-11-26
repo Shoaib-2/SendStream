@@ -107,7 +107,7 @@ const CreateNewsletterContent: React.FC = () => {
     setNotificationMessage(message);
     setNotificationType(type);
     setShowNotification(true);
-    setTimeout(() => setShowNotification(false), 2000);
+    setTimeout(() => setShowNotification(false), 5000);
   };
 
   const saveDraft = async () => {

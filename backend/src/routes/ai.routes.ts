@@ -1,7 +1,11 @@
 import express, { Request, Response, NextFunction } from 'express';
 import { aiController } from '../controllers/ai.controller';
+import { rateLimiters } from '../middleware/rateLimiter.middleware';
 
 const router = express.Router();
+
+// Apply AI-specific rate limiting (10 requests per hour for free tier)
+router.use(rateLimiters.ai);
 
 // All AI routes are protected (added in server.ts via protectedRouter)
 

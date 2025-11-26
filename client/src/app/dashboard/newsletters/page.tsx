@@ -170,6 +170,40 @@ const NewsletterDashboard = () => {
           </Button>
         </motion.div>
 
+        {/* AI Feature Callout */}
+        <motion.div variants={itemVariants}>
+          <GlassCard variant="default" padding="lg" className="bg-gradient-to-r from-purple-500/10 via-pink-500/10 to-purple-500/10 border-purple-500/30">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500/30 to-pink-500/30 flex items-center justify-center flex-shrink-0 border border-purple-500/40">
+                <Sparkles className="w-6 h-6 text-purple-400" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-white mb-1 flex items-center gap-2">
+                  AI-Powered Content Generation
+                  <Badge variant="success" size="sm">New</Badge>
+                </h3>
+                <p className="text-sm text-neutral-300 mb-3">
+                  Create engaging, research-backed newsletters in seconds with our AI assistant. Generate content, improve writing, get subject line suggestions, and find the optimal send time.
+                </p>
+                <div className="flex flex-wrap gap-2 text-xs text-neutral-400">
+                  <span className="flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-purple-400"></span>
+                    Smart Content Generation
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-purple-400"></span>
+                    Subject Line Suggestions
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-purple-400"></span>
+                    Optimal Send Time
+                  </span>
+                </div>
+              </div>
+            </div>
+          </GlassCard>
+        </motion.div>
+
         {/* Stats Grid */}
         <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
           {metrics.map((metric, index) => (

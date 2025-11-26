@@ -108,7 +108,7 @@ Respond in JSON format:
         ],
         response_format: { type: 'json_object' },
         temperature: 0.7,
-        max_tokens: 1200
+        max_tokens: 600
       });
 
       const result = response.choices[0]?.message?.content;
@@ -161,7 +161,7 @@ Return only the improved HTML content, nothing else.`;
           { role: 'user', content: userPrompt }
         ],
         temperature: 0.7,
-        max_tokens: 1000
+        max_tokens: 500
       });
 
       return response.choices[0]?.message?.content || existingContent;
@@ -195,7 +195,7 @@ Return as JSON array: ["subject1", "subject2", "subject3", "subject4", "subject5
         messages: [{ role: 'user', content: userPrompt }],
         response_format: { type: 'json_object' },
         temperature: 0.8,
-        max_tokens: 300
+        max_tokens: 200
       });
 
       const result = response.choices[0]?.message?.content;
@@ -254,7 +254,7 @@ Consider timezone diversity and maximize engagement potential.`;
         messages: [{ role: 'user', content: userPrompt }],
         response_format: { type: 'json_object' },
         temperature: 0.5,
-        max_tokens: 400
+        max_tokens: 250
       });
 
       const result = response.choices[0]?.message?.content;
@@ -297,7 +297,7 @@ ${content.substring(0, 1000)}
 Return only the title, nothing else.`
         }],
         temperature: 0.8,
-        max_tokens: 80
+        max_tokens: 50
       });
 
       return response.choices[0]?.message?.content?.trim() || 'Untitled Newsletter';
