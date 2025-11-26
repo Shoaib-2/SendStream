@@ -149,16 +149,23 @@ export class SubscriberService {
    * Get all subscribers for user
    */
   async getAllSubscribers(userId: string): Promise<any[]> {
+    logger.info(`[getAllSubscribers] Starting for user ${userId}`);
+    
     try {
       await this.syncMailchimpSubscribers(userId);
+      logger.info(`[getAllSubscribers] Mailchimp sync completed for user ${userId}`);
     } catch (error) {
       logger.error('Error syncing Mailchimp subscribers:', error);
+      logger.info(`[getAllSubscribers] Continuing after Mailchimp sync error for user ${userId}`);
     }
      
+    logger.info(`[getAllSubscribers] Fetching subscribers from database for user ${userId}`);
     const subscribers = await Subscriber.find({ createdBy: userId })
       .select('-__v')
       .populate('createdBy', 'email');
 
+    logger.info(`[getAllSubscribers] Found ${subscribers.length} subscribers for user ${userId}`);
+    
     return subscribers.map(sub => ({
       id: sub._id.toString(),
       email: sub.email,
