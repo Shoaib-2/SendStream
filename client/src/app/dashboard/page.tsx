@@ -50,6 +50,16 @@ export default function DashboardPage() {
     percentUsed: 0
   });
 
+  // Debug logging
+  useEffect(() => {
+    console.log('[DashboardPage] State:', { 
+      status, 
+      isRenewalRequired, 
+      subscriptionLoading, 
+      localLoading: loading 
+    });
+  }, [status, isRenewalRequired, subscriptionLoading, loading]);
+
   // Fetch email usage stats
   useEffect(() => {
     const fetchEmailUsage = async () => {
