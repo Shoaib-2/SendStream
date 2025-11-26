@@ -39,7 +39,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [newsletters, setNewsletters] = useState<Newsletter[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [ws, setWs] = useState<WebSocket | null>(null);
-  const MAX_FETCH_ATTEMPTS = 3;
   const [wsReconnectAttempts, setWsReconnectAttempts] = useState(0);
   const MAX_WS_RECONNECT_ATTEMPTS = 3;
   const { user } = useAuth();
@@ -132,7 +131,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         setWs(null);
       }
     };
-  }, [MAX_FETCH_ATTEMPTS, ws, wsReconnectAttempts]); 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount - token changes handled by storage listener 
 
   // Handle token changes
   useEffect(() => {
