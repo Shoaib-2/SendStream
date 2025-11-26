@@ -4,7 +4,7 @@
 "use client";
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Users, Mail, TrendingUp, TrendingDown, BarChart3, Activity, ArrowUpRight } from 'lucide-react';
+import { Users, Mail, TrendingUp, TrendingDown, BarChart3, Activity, ArrowUpRight, Sparkles } from 'lucide-react';
 import { ResponsiveLine } from '@nivo/line';
 
 import { analyticsAPI } from '../../../services/api';
@@ -203,6 +203,28 @@ export default function AnalyticsDashboard() {
             Analytics
           </h1>
           <p className="text-neutral-400">Track your newsletter performance and subscriber growth</p>
+        </motion.div>
+
+        {/* AI Feature Highlight */}
+        <motion.div variants={itemVariants}>
+          <GlassCard variant="default" padding="md" className="bg-gradient-to-r from-purple-500/10 via-pink-500/10 to-purple-500/10 border-purple-500/30">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500/30 to-pink-500/30 flex items-center justify-center border border-purple-500/40">
+                  <Sparkles className="w-5 h-5 text-purple-400" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                    AI-Powered Smart Scheduling
+                    <Badge variant="success" size="sm">New</Badge>
+                  </h3>
+                  <p className="text-xs text-neutral-400 mt-0.5">
+                    Let AI analyze your audience and recommend the optimal time to send newsletters for maximum engagement
+                  </p>
+                </div>
+              </div>
+            </div>
+          </GlassCard>
         </motion.div>
 
         {/* Stats Grid */}

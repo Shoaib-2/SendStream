@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from 'react';
 import { motion, Variants } from 'framer-motion';
-import { Users, Mail, Star, BookOpen, Send, TrendingUp, TrendingDown, Zap } from 'lucide-react';
+import { Users, Mail, Star, BookOpen, Send, TrendingUp, TrendingDown, Zap, Sparkles } from 'lucide-react';
 import { useData } from '@/context/dataContext';
 import { newsletterAPI } from '@/services/api';
 import type { Newsletter } from '@/types';
@@ -259,6 +259,28 @@ export default function DashboardPage() {
               <Zap className="w-4 h-4 mr-1" />
               Active Subscription
             </Badge>
+          </motion.div>
+          
+          {/* AI Feature Highlight */}
+          <motion.div variants={itemVariants}>
+            <GlassCard variant="default" padding="md" className="bg-gradient-to-r from-purple-500/10 via-pink-500/10 to-purple-500/10 border-purple-500/30">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500/30 to-pink-500/30 flex items-center justify-center border border-purple-500/40">
+                    <Sparkles className="w-5 h-5 text-purple-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                      AI-Powered Newsletter Creation
+                      <Badge variant="success" size="sm">New</Badge>
+                    </h3>
+                    <p className="text-xs text-neutral-400 mt-0.5">
+                      Generate engaging content, optimize send times, and create compelling subject lines with AI
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </GlassCard>
           </motion.div>
           
           {/* Email Usage Card */}
