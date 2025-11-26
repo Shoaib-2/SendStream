@@ -300,31 +300,21 @@ api.interceptors.response.use(
       // Force clear any problematic cache
       localStorage.removeItem("has_active_access");
 
-      // Don't redirect during initial load or if already on auth page
-      if (!silentMode && !isOnAuthPage) {
-        // Store the current page for after renewal
-        localStorage.setItem("returnPath", window.location.pathname);
-
-        // Check if we should redirect
-        if (!isRedirecting) {
-          isRedirecting = true;
-          console.log("Redirecting due to expired subscription");
-
-          // Use timeout to allow the current execution to complete
-          setTimeout(() => {
-            // Redirect to home page with query param instead of pricing
-            window.location.href = "/?renew=true";
-            // Reset the flag after redirect
-            setTimeout(() => {
-              isRedirecting = false;
-            }, 1000);
-          }, 100);
-        }
-      }
-
+      // IMPORTANT: Don't redirect here - let subscriptionContext handle it
+      // This prevents multiple redirect attempts from different sources
+      // Just mark the error and let the context handle the redirect
+      
       // For API calls during page load, resolve with null
       if (silentMode) {
         // console.log("Silencing subscription expired error during initial load");
+        return Promise.resolve({ data: null });
+      }
+      
+      // Check if already on home page (renewal page)
+      const isOnHomePage = typeof window !== "undefined" && 
+        (window.location.pathname === "/" || window.location.search.includes("renew=true"));
+      
+      if (isOnHomePage) {
         return Promise.resolve({ data: null });
       }
     }

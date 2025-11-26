@@ -198,10 +198,65 @@ const getSubscriptionStatus: RequestHandler = async (req: Request, res: Response
         // Clear invalid subscription ID from database
         await User.findByIdAndUpdate(authReq.user.id, {
           stripeSubscriptionId: undefined,
-          subscriptionStatus: null
+          subscriptionStatus: null,
+          hasActiveAccess: false
         });
         
-        // Return no subscription found
+        // IMPORTANT: Check if user has a NEWER subscription via customer ID
+        // This handles the case where user renewed but webhook hasn't updated yet
+        if (user.stripeCustomerId) {
+          try {
+            const Stripe = (await import('stripe')).default;
+            const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+              apiVersion: '2025-02-24.acacia',
+            });
+            
+            const customerSubscriptions = await stripe.subscriptions.list({
+              customer: user.stripeCustomerId,
+              limit: 10
+            });
+            
+            // Find an active or trialing subscription
+            const validSubscription = customerSubscriptions.data.find(
+              sub => sub.status === 'active' || sub.status === 'trialing'
+            );
+            
+            if (validSubscription) {
+              logger.info(`Found valid subscription ${validSubscription.id} after clearing invalid one for user via customer lookup`);
+              
+              // Update user with the found subscription
+              await User.findByIdAndUpdate(authReq.user.id, {
+                stripeSubscriptionId: validSubscription.id,
+                subscriptionStatus: validSubscription.status,
+                hasActiveAccess: true,
+                trialEndsAt: validSubscription.trial_end 
+                  ? new Date(validSubscription.trial_end * 1000) 
+                  : undefined,
+                updatedAt: new Date()
+              });
+              
+              // Return the found subscription
+              res.status(200).json({
+                status: 'success',
+                data: {
+                  hasSubscription: true,
+                  subscription: {
+                    id: validSubscription.id,
+                    status: validSubscription.status,
+                    currentPeriodEnd: new Date(validSubscription.current_period_end * 1000),
+                    cancelAtPeriodEnd: validSubscription.cancel_at_period_end,
+                    trialEnd: validSubscription.trial_end ? new Date(validSubscription.trial_end * 1000) : null
+                  }
+                }
+              });
+              return;
+            }
+          } catch (lookupError) {
+            logger.error('Error looking up customer subscriptions after clearing invalid:', lookupError);
+          }
+        }
+        
+        // No valid subscription found - return no subscription
         res.status(200).json({
           status: 'success',
           data: { 

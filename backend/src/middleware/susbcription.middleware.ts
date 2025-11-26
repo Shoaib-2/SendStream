@@ -127,8 +127,44 @@ export const checkSubscription = async (req: Request, res: Response, next: NextF
         message: 'Subscription expired',
         code: 'SUBSCRIPTION_EXPIRED'
       });
-    } catch (stripeError) {
+    } catch (stripeError: any) {
       console.error('Error checking subscription with Stripe:', stripeError);
+      
+      // If subscription not found in Stripe, check for newer subscriptions via customer ID
+      if (stripeError.type === 'StripeInvalidRequestError' && 
+          stripeError.code === 'resource_missing' && 
+          user.stripeCustomerId) {
+        console.log(`Subscription ${user.stripeSubscriptionId} not found, checking for newer subscriptions`);
+        
+        try {
+          // Check for any valid subscription via customer ID
+          const customerSubscriptions = await stripe.subscriptions.list({
+            customer: user.stripeCustomerId,
+            limit: 10
+          });
+          
+          // Find an active or trialing subscription
+          const validSubscription = customerSubscriptions.data.find(
+            sub => sub.status === 'active' || sub.status === 'trialing'
+          );
+          
+          if (validSubscription) {
+            console.log(`Found valid subscription ${validSubscription.id} for user ${user.email} after Stripe error`);
+            
+            // Update user with correct subscription details
+            await User.findByIdAndUpdate(user._id, {
+              stripeSubscriptionId: validSubscription.id,
+              subscriptionStatus: validSubscription.status,
+              hasActiveAccess: true,
+              updatedAt: new Date()
+            });
+            
+            return next();
+          }
+        } catch (lookupError) {
+          console.error('Error checking for newer subscriptions after Stripe error:', lookupError);
+        }
+      }
       
       // If Stripe error, fall back to database status
       if (user.subscriptionStatus === 'active' || user.subscriptionStatus === 'trialing') {
