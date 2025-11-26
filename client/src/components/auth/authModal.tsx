@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { X, Loader, AlertCircle } from 'lucide-react';
 import { validateEmail, validatePassword } from '../../utils/validation';
 import { useAuth } from '../../context/authContext';
-import { useRouter } from 'next/navigation';
 import { useSearchParams } from 'next/navigation';
 import { startFreeTrial, pricingPlans } from '../../services/api';
 
@@ -20,7 +19,6 @@ interface AuthModalProps {
 }
 
 const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'login' }) => {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const { login, signup, forgotPassword } = useAuth();
   const [mode, setMode] = useState<'login' | 'signup' | 'forgotPassword'>(initialMode);
@@ -96,12 +94,11 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
       if (mode === 'login') {
         await login(email, newPassword);
         
-        if (typeof window !== 'undefined') {
-          window.localStorage.setItem('isAuthenticated', 'true');
-          document.cookie = 'auth_token=true; path=/';
-        }
+        // Close modal first
         onClose();
-        router.push('/dashboard');
+        
+        // Use window.location for reliable navigation after login
+        window.location.href = '/dashboard';
       } else if (mode === 'signup') {
         // Check if we have a stripe session ID for signup
         if (mode === 'signup' && !stripeSessionId) {
@@ -119,12 +116,11 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
           // Clear session ID from localStorage after successful signup
           localStorage.removeItem('stripe_session_id');
           
-          if (typeof window !== 'undefined') {
-            window.localStorage.setItem('isAuthenticated', 'true');
-            document.cookie = 'auth_token=true; path=/';
-          }
+          // Close modal first
           onClose();
-          router.push('/dashboard');
+          
+          // Use window.location for reliable navigation after signup
+          window.location.href = '/dashboard';
         } catch (signupError: unknown) {
           // Check if it's a trial required error from the backend
           if (
@@ -271,6 +267,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              autoComplete="email"
               className={`w-full px-4 py-3 bg-neutral-900/50 rounded-xl text-white
                 ${errors.email 
                   ? 'border-2 border-error-500/50 focus:border-error-500' 
@@ -296,6 +293,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
                   type="password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
+                  autoComplete="new-password"
                   className={`w-full px-4 py-3 bg-neutral-900/50 rounded-xl text-white
                     ${errors.newPassword 
                       ? 'border-2 border-error-500/50 focus:border-error-500' 
@@ -319,6 +317,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
                   type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
+                  autoComplete="new-password"
                   className={`w-full px-4 py-3 bg-neutral-900/50 rounded-xl text-white
                     ${errors.confirmPassword 
                       ? 'border-2 border-error-500/50 focus:border-error-500' 
@@ -355,6 +354,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
+                autoComplete="current-password"
                 className={`w-full px-4 py-3 bg-neutral-900/50 rounded-xl text-white
                   ${errors.newPassword 
                     ? 'border-2 border-error-500/50 focus:border-error-500' 
