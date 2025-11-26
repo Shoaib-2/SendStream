@@ -193,6 +193,7 @@ export const SubscriptionProvider = ({ children }: { children: React.ReactNode }
     const isOnAuthPage = window.location.pathname.includes('/login') || 
                          window.location.pathname.includes('/signup');
     const isOnHomePage = window.location.pathname === '/';
+    const isOnDashboard = window.location.pathname.startsWith('/dashboard');
     
     // Don't redirect if:
     // - User just renewed (check both storage types)
@@ -206,9 +207,16 @@ export const SubscriptionProvider = ({ children }: { children: React.ReactNode }
       return;
     }
     
+    // IMPORTANT: Don't redirect if on dashboard and subscription check returned UNKNOWN
+    // This prevents blocking the app when subscription service has issues
+    if (isOnDashboard && status === SubscriptionStatus.UNKNOWN) {
+      logger.info('Skipping redirect - on dashboard with UNKNOWN status (likely service issue)');
+      return;
+    }
+    
     // Only redirect if:
     // 1. User is authenticated
-    // 2. Subscription is expired
+    // 2. Subscription is EXPIRED (not UNKNOWN)
     // 3. Not on auth pages
     // 4. Not still loading
     // 5. Has actually completed a check
