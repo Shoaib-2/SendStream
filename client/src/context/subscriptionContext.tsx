@@ -239,6 +239,8 @@ export const SubscriptionProvider = ({ children }: { children: React.ReactNode }
   // Determine if renewal is required
   const isRenewalRequired = status === SubscriptionStatus.EXPIRED;
 
+  logger.info(`SubscriptionProvider rendering - status: ${status}, loading: ${loading}`);
+
   return (
     <SubscriptionContext.Provider value={{
       status,

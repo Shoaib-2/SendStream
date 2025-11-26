@@ -49,6 +49,7 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
+  console.log('[DashboardLayout] ========== COMPONENT FUNCTION CALLED ==========');
   const router = useRouter();
   const pathname = usePathname();
   const { user, logout } = useAuth();

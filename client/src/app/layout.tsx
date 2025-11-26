@@ -38,6 +38,7 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
+  console.log('[RootLayout] Rendering with children:', !!children);
   return (
     <html lang="en" className={`${inter.variable} ${manrope.variable}`}>
       <body className={inter.className}>
