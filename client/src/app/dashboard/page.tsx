@@ -202,6 +202,20 @@ export default function DashboardPage() {
 
     return (
       <Container size="xl" className="py-8 min-h-screen">
+        {/* DEBUG: Test navigation links */}
+        <div className="mb-4 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+          <p className="text-yellow-400 font-bold mb-2">DEBUG: Test Navigation</p>
+          <div className="flex gap-4">
+            <a href="/dashboard/subscribers" className="text-blue-400 underline">Plain HTML Link to Subscribers</a>
+            <button onClick={() => window.location.href = '/dashboard/subscribers'} className="text-green-400 underline">
+              window.location to Subscribers
+            </button>
+            <button onClick={() => alert('Click works!')} className="text-purple-400 underline">
+              Test Click Handler
+            </button>
+          </div>
+        </div>
+        
         <div className="space-y-8 animate-fade-in-up">
           {/* Header */}
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
