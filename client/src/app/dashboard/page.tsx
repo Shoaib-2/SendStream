@@ -38,6 +38,7 @@ interface EmailUsage {
 }
 
 export default function DashboardPage() {
+  console.log('[DashboardPage] ========== RENDERING ==========');
   const { subscribers } = useData();
   const { status, isRenewalRequired, loading: subscriptionLoading } = useSubscription();
   const [newsletters, setNewsletters] = useState<Newsletter[]>([]);
@@ -50,6 +51,8 @@ export default function DashboardPage() {
     remainingEmails: 100,
     percentUsed: 0
   });
+
+  console.log('[DashboardPage] State:', { subscribersCount: subscribers?.length, status, isRenewalRequired });
 
   // Debug logging
   useEffect(() => {
