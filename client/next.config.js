@@ -24,7 +24,9 @@ const nextConfig = {
   
   // Compiler optimizations
   compiler: {
-    removeConsole: process.env.NODE_ENV === 'production' ? { exclude: ['error', 'warn'] } : false,
+    // Temporarily disable console removal for debugging
+    removeConsole: false,
+    // removeConsole: process.env.NODE_ENV === 'production' ? { exclude: ['error', 'warn'] } : false,
   },
   
   // Explicitly embed environment variables into the client bundle
