@@ -100,6 +100,13 @@ Respond in JSON format:
 }`;
 
     try {
+      // Optimized token limits - just enough to complete responses
+      const tokenLimits = {
+        short: 800,    // ~400-500 words + JSON structure
+        medium: 1200,  // ~600-800 words + JSON structure  
+        long: 1600     // ~800-1000 words + JSON structure
+      };
+
       const response = await client.chat.completions.create({
         model: 'gpt-4o-mini',
         messages: [
@@ -108,7 +115,7 @@ Respond in JSON format:
         ],
         response_format: { type: 'json_object' },
         temperature: 0.7,
-        max_tokens: 600
+        max_tokens: tokenLimits[length]
       });
 
       const result = response.choices[0]?.message?.content;
@@ -160,8 +167,8 @@ Return only the improved HTML content, nothing else.`;
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }
         ],
-        temperature: 0.7,
-        max_tokens: 500
+        temperature: 0.8,
+        max_tokens: 600  // Reduced - just improved content, no JSON overhead
       });
 
       return response.choices[0]?.message?.content || existingContent;
@@ -195,7 +202,7 @@ Return as JSON array: ["subject1", "subject2", "subject3", "subject4", "subject5
         messages: [{ role: 'user', content: userPrompt }],
         response_format: { type: 'json_object' },
         temperature: 0.8,
-        max_tokens: 200
+        max_tokens: 250  // 5 subject lines ~150 tokens + JSON structure
       });
 
       const result = response.choices[0]?.message?.content;
@@ -254,7 +261,7 @@ Consider timezone diversity and maximize engagement potential.`;
         messages: [{ role: 'user', content: userPrompt }],
         response_format: { type: 'json_object' },
         temperature: 0.5,
-        max_tokens: 250
+        max_tokens: 300  // Schedule recommendation + alternatives + JSON
       });
 
       const result = response.choices[0]?.message?.content;
@@ -297,7 +304,7 @@ ${content.substring(0, 1000)}
 Return only the title, nothing else.`
         }],
         temperature: 0.8,
-        max_tokens: 50
+        max_tokens: 30  // Just a title, ~15-25 tokens
       });
 
       return response.choices[0]?.message?.content?.trim() || 'Untitled Newsletter';

@@ -1491,7 +1491,33 @@ export interface SmartScheduleRecommendation {
   alternativeSlots: { day: string; time: string; score: number }[];
 }
 
+interface AIUsageStat {
+  feature: string;
+  featureType: string;
+  limit: number;
+  used: number;
+  remaining: number;
+  resetTime: string;
+}
+
+interface AIUsageStats {
+  stats: AIUsageStat[];
+  totalUsed: number;
+  totalLimit: number;
+}
+
 export const aiAPI = {
+  // Get AI usage statistics
+  getUsage: async (): Promise<AIUsageStats> => {
+    try {
+      const response = await api.get<ResponseData<AIUsageStats>>('/ai/usage');
+      return response.data.data;
+    } catch (error) {
+      handleError(error as AxiosError);
+      throw error;
+    }
+  },
+
   // Generate newsletter content using AI
   generateContent: async (request: {
     topic: string;
