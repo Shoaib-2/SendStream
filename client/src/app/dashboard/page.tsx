@@ -42,7 +42,8 @@ export default function DashboardPage() {
   const { status, isRenewalRequired, loading: subscriptionLoading } = useSubscription();
   const [newsletters, setNewsletters] = useState<Newsletter[]>([]);
   const [qualityMetrics, setQualityMetrics] = useState<QualityMetrics[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Initialize loading to false - we'll set it to true only when actively fetching
+  const [loading, setLoading] = useState(false);
   const [emailUsage, setEmailUsage] = useState<EmailUsage>({
     emailsSent: 0,
     dailyLimit: 100,
