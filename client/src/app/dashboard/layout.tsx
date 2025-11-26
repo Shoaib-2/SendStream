@@ -65,6 +65,15 @@ export default function DashboardLayout({
     console.log('[DashboardLayout] Current pathname:', pathname);
   }, [pathname]);
   
+  // Test if clicks work at all
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      console.log('[DashboardLayout] Global click detected at:', e.clientX, e.clientY);
+    };
+    document.addEventListener('click', handleClick);
+    return () => document.removeEventListener('click', handleClick);
+  }, []);
+  
   if (!mounted) return null;
 
   const navigation = [
@@ -144,12 +153,9 @@ export default function DashboardLayout({
                   <Link
                     key={item.name}
                     href={item.href}
-                    onClick={() => {
-                      console.log('[DashboardLayout] Link clicked:', item.href);
-                      setIsMobileMenuOpen(false);
-                    }}
+                    prefetch={true}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300
-                      group relative overflow-hidden
+                      group relative overflow-hidden cursor-pointer
                       ${isCurrentPath 
                         ? 'bg-primary-500/10 text-primary-400 border border-primary-500/30 shadow-glow' 
                         : 'text-neutral-400 hover:bg-white/5 hover:text-white border border-transparent'}`}
