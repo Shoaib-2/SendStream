@@ -1,27 +1,18 @@
 "use client";
 import React, { useEffect, useState } from 'react';
-import { Users, Mail, Star, BookOpen, Send } from 'lucide-react';
-import dynamic from 'next/dynamic';
+import { motion, Variants } from 'framer-motion';
+import { Users, Mail, Star, BookOpen, Send, TrendingUp, TrendingDown, Zap } from 'lucide-react';
 import { useData } from '@/context/dataContext';
 import { newsletterAPI } from '@/services/api';
 import type { Newsletter } from '@/types';
 import ExpiredSubscription from '@/components/subscription/ExpiredSubscription';
 import { emailAPI } from '@/services/api';
 import { useSubscription } from '@/context/subscriptionContext';
-import Card from '@/components/UI/Card';
+import GlassCard from '@/components/UI/GlassCard';
 import Badge from '@/components/UI/Badge';
 import Container from '@/components/UI/Container';
-
-// Lazy load heavy chart component
-const ResponsivePie = dynamic(
-  () => import('@nivo/pie').then(mod => mod.ResponsivePie),
-  { 
-    ssr: false,
-    loading: () => <div className="h-64 flex items-center justify-center">Loading chart...</div>
-  }
-);
-
-const COLORS = ['#3B82F6', '#10B981', '#EF4444', '#F59E0B'];
+import AnimatedCounter from '@/components/UI/AnimatedCounter';
+import { PageSkeleton } from '@/components/UI/Skeleton';
 
 interface QualityMetrics {
   originalContent: boolean;
@@ -37,12 +28,86 @@ interface EmailUsage {
   percentUsed: number;
 }
 
+// Animation variants with proper typing
+const containerVariants: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.1
+    }
+  }
+};
+
+const itemVariants: Variants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.5 }
+  }
+};
+
+// Animated Progress Ring Component
+const ProgressRing: React.FC<{ 
+  value: number; 
+  max: number; 
+  size?: number;
+  strokeWidth?: number;
+  color?: string;
+}> = ({ value, max, size = 120, strokeWidth = 8, color = 'primary' }) => {
+  const radius = (size - strokeWidth) / 2;
+  const circumference = radius * 2 * Math.PI;
+  const progress = Math.min((value / max) * 100, 100);
+  const strokeDashoffset = circumference - (progress / 100) * circumference;
+
+  const colors: Record<string, string> = {
+    primary: 'stroke-primary-500',
+    secondary: 'stroke-secondary-500',
+    success: 'stroke-success-500',
+    warning: 'stroke-warning-500',
+    error: 'stroke-error-500',
+  };
+
+  return (
+    <div className="relative" style={{ width: size, height: size }}>
+      <svg className="transform -rotate-90" width={size} height={size}>
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          strokeWidth={strokeWidth}
+          className="stroke-white/10 fill-none"
+        />
+        <motion.circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          strokeWidth={strokeWidth}
+          className={`${colors[color]} fill-none`}
+          strokeLinecap="round"
+          initial={{ strokeDashoffset: circumference }}
+          animate={{ strokeDashoffset }}
+          transition={{ duration: 1.5, ease: [0.25, 0.46, 0.45, 0.94] }}
+          style={{ strokeDasharray: circumference }}
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="text-2xl font-bold text-white">
+          <AnimatedCounter value={Math.round(progress)} suffix="%" />
+        </span>
+        <span className="text-xs text-neutral-400">{value}/{max}</span>
+      </div>
+    </div>
+  );
+};
+
 export default function DashboardPage() {
   const { subscribers } = useData();
   const { status, isRenewalRequired, loading: subscriptionLoading } = useSubscription();
   const [newsletters, setNewsletters] = useState<Newsletter[]>([]);
   const [qualityMetrics, setQualityMetrics] = useState<QualityMetrics[]>([]);
-  // Initialize loading to false - we'll set it to true only when actively fetching
   const [loading, setLoading] = useState(false);
   const [emailUsage, setEmailUsage] = useState<EmailUsage>({
     emailsSent: 0,
@@ -51,17 +116,6 @@ export default function DashboardPage() {
     percentUsed: 0
   });
 
-  // Debug logging
-  useEffect(() => {
-    console.log('[DashboardPage] State:', { 
-      status, 
-      isRenewalRequired, 
-      subscriptionLoading, 
-      localLoading: loading 
-    });
-  }, [status, isRenewalRequired, subscriptionLoading, loading]);
-
-  // Fetch email usage stats
   useEffect(() => {
     const fetchEmailUsage = async () => {
       try {
@@ -82,7 +136,6 @@ export default function DashboardPage() {
     return () => clearInterval(intervalId);
   }, [isRenewalRequired, status]);
 
-  // Fetch newsletters
   useEffect(() => {
     const fetchNewsletters = async () => {
       try {
@@ -111,23 +164,19 @@ export default function DashboardPage() {
     fetchNewsletters();
   }, [isRenewalRequired, status]);
 
-  // Content rendering logic
   const renderContent = () => {
     if (loading || subscriptionLoading || status === 'CHECKING') {
       return (
-        <Container size="xl" className="py-20 min-h-screen flex items-center justify-center">
-          <div className="text-center">
-            <div className="w-16 h-16 border-4 border-primary-500/30 border-t-primary-500 rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-neutral-400">Loading your dashboard...</p>
-          </div>
+        <Container size="xl" className="py-8 min-h-screen">
+          <PageSkeleton />
         </Container>
       );
     }
+    
     if (isRenewalRequired) {
       return <ExpiredSubscription />;
     }
     
-    // Prepare data for charts
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
@@ -138,10 +187,8 @@ export default function DashboardPage() {
     const recentSubscribers = subscribers.filter(s =>
       new Date(s.subscribed) > thirtyDaysAgo
     );
-
     const activeSubscribers = subscribers.filter(s => s.status === 'active');
 
-    // Calculate content quality scores
     const getQualityScore = (newsletter: Newsletter) => {
       return newsletter.contentQuality?.qualityScore || 0;
     };
@@ -153,246 +200,263 @@ export default function DashboardPage() {
       {
         label: 'Total Subscribers',
         value: activeSubscribers.length,
-        change: activeSubscribers.length - recentSubscribers.length > 0
-          ? `${(((recentSubscribers.length - (activeSubscribers.length - recentSubscribers.length)) / 
-              (activeSubscribers.length - recentSubscribers.length)) * 100).toFixed(1)}%`
-          : recentSubscribers.length > 0 ? '100%' : '0%',
+        change: recentSubscribers.length,
+        changeLabel: 'this month',
         icon: Users,
-        color: 'text-blue-500'
+        color: 'primary',
+        positive: recentSubscribers.length > 0
       },
       {
         label: 'Newsletters Sent',
         value: sentNewsletters.length,
-        change: sentNewsletters.length - recentNewsletters.length > 0
-          ? `${(((recentNewsletters.length - (sentNewsletters.length - recentNewsletters.length)) / 
-              (sentNewsletters.length - recentNewsletters.length)) * 100).toFixed(1)}%`
-          : recentNewsletters.length > 0 ? '100%' : '0%',
+        change: recentNewsletters.length,
+        changeLabel: 'this month',
         icon: Mail,
-        color: 'text-green-500'
+        color: 'secondary',
+        positive: recentNewsletters.length > 0
       },
       {
-        label: 'Content Quality',
-        value: `${averageQualityScore.toFixed(0)}%`,
-        change: newsletters.length > 1
-          ? `${(((averageQualityScore - (newsletters.slice(0, -1).reduce((acc, curr) => acc + getQualityScore(curr), 0) / (newsletters.length - 1))) / 
-              (newsletters.slice(0, -1).reduce((acc, curr) => acc + getQualityScore(curr), 0) / (newsletters.length - 1))) * 100).toFixed(1)}%`
-          : '0%',
+        label: 'Avg. Quality Score',
+        value: Math.round(averageQualityScore),
+        suffix: '%',
+        change: null,
+        changeLabel: 'overall',
         icon: Star,
-        color: 'text-yellow-500'
+        color: 'warning',
+        positive: averageQualityScore > 70
       },
       {
-        label: 'Research Score',
+        label: 'Research Backed',
         value: qualityMetrics.filter(m => m.researchBased).length,
-        change: qualityMetrics.length > 0
-          ? `${((qualityMetrics.filter(m => m.researchBased).length / qualityMetrics.length) * 100).toFixed(1)}%`
-          : '0%',
+        change: qualityMetrics.length > 0 
+          ? Math.round((qualityMetrics.filter(m => m.researchBased).length / qualityMetrics.length) * 100)
+          : 0,
+        suffix: '%',
+        changeLabel: 'of total',
         icon: BookOpen,
-        color: 'text-purple-500'
+        color: 'accent',
+        positive: true
       }
-    ];
-
-    const newsletterData = [
-      { name: 'Original', value: qualityMetrics.filter(m => m.originalContent).length },
-      { name: 'Research-Based', value: qualityMetrics.filter(m => m.researchBased).length },
-      { name: 'Actionable', value: qualityMetrics.filter(m => m.actionableInsights).length }
     ];
 
     return (
       <Container size="xl" className="py-8 min-h-screen">
-        <div className="space-y-8 animate-fade-in-up">
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          className="space-y-8"
+        >
           {/* Header */}
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <motion.div variants={itemVariants} className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
               <h1 className="text-3xl md:text-4xl font-bold font-display gradient-text mb-2">
-                Content Quality Dashboard
+                Dashboard
               </h1>
               <p className="text-neutral-400">Track your newsletter performance and content metrics</p>
             </div>
-            <Badge variant="primary" size="lg" className="w-fit">
-              <Send className="w-4 h-4 mr-1" />
+            <Badge variant="success" size="lg" className="w-fit">
+              <Zap className="w-4 h-4 mr-1" />
               Active Subscription
             </Badge>
-          </div>
+          </motion.div>
           
-          {/* Email Sending Limits Card */}
-          <Card variant="hover" className="group">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-secondary-500 to-secondary-600 
-                  flex items-center justify-center shadow-glow-cyan group-hover:scale-110 transition-transform">
-                  <Send className="w-7 h-7 text-white" />
+          {/* Email Usage Card */}
+          <motion.div variants={itemVariants}>
+            <GlassCard variant="strong" className="relative overflow-hidden">
+              <div className="absolute -top-20 -right-20 w-40 h-40 bg-secondary-500/20 rounded-full blur-3xl" />
+              
+              <div className="relative flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+                <div className="flex items-center gap-5">
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-gradient-to-br from-secondary-500 to-secondary-600 rounded-2xl blur-lg opacity-50" />
+                    <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-secondary-500 to-secondary-600 
+                      flex items-center justify-center">
+                      <Send className="w-8 h-8 text-white" />
+                    </div>
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-semibold font-display text-white mb-1">Daily Email Quota</h2>
+                    <p className="text-neutral-400">
+                      <span className="text-white font-semibold">{emailUsage.remainingEmails}</span> of {emailUsage.dailyLimit} emails remaining
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h2 className="text-xl font-semibold font-display text-white mb-1">Email Sending Limits</h2>
-                  <p className="text-neutral-400">
-                    {emailUsage.remainingEmails} of {emailUsage.dailyLimit} emails remaining today
-                  </p>
+                
+                <div className="flex items-center gap-6">
+                  <ProgressRing 
+                    value={emailUsage.emailsSent} 
+                    max={emailUsage.dailyLimit}
+                    color={emailUsage.percentUsed > 80 ? 'error' : emailUsage.percentUsed > 50 ? 'warning' : 'success'}
+                  />
+                  <Badge 
+                    variant={emailUsage.percentUsed > 80 ? 'warning' : 'secondary'} 
+                    size="md"
+                  >
+                    Resets at midnight
+                  </Badge>
                 </div>
               </div>
-              
-              <Badge 
-                variant={emailUsage.percentUsed > 80 ? 'warning' : 'secondary'} 
-                size="lg"
-              >
-                Resets at midnight
-              </Badge>
-            </div>
-            
-            <div className="w-full bg-neutral-800/50 rounded-full h-3 overflow-hidden">
-              <div 
-                className={`h-full rounded-full transition-all duration-500 ${
-                  emailUsage.percentUsed > 80 ? 'bg-gradient-to-r from-error-500 to-error-600' : 
-                  emailUsage.percentUsed > 50 ? 'bg-gradient-to-r from-warning-500 to-warning-600' : 
-                  'bg-gradient-to-r from-success-500 to-success-600'
-                }`} 
-                style={{ width: `${emailUsage.percentUsed}%` }}
-              ></div>
-            </div>
-            
-            <div className="flex justify-between mt-3 text-sm">
-              <span className="text-neutral-400">{emailUsage.emailsSent} used</span>
-              <span className="text-neutral-400">{emailUsage.remainingEmails} remaining</span>
-            </div>
-          </Card>
+            </GlassCard>
+          </motion.div>
           
           {/* Metrics Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {metrics.map((metric, index) => (
-              <Card 
+              <GlassCard 
                 key={index}
-                variant="hover"
+                variant="default"
+                padding="lg"
                 className="group relative overflow-hidden"
               >
-                <div className="absolute inset-0 bg-gradient-to-br from-primary-500/0 via-accent-500/0 to-secondary-500/0 
-                  group-hover:from-primary-500/5 group-hover:via-accent-500/5 group-hover:to-secondary-500/5 
-                  transition-all duration-500 rounded-2xl" />
+                <div className={`absolute -top-10 -right-10 w-24 h-24 rounded-full blur-2xl opacity-0 
+                  group-hover:opacity-30 transition-opacity duration-500
+                  ${metric.color === 'primary' ? 'bg-primary-500' : 
+                    metric.color === 'secondary' ? 'bg-secondary-500' : 
+                    metric.color === 'warning' ? 'bg-warning-500' : 'bg-accent-500'}`} 
+                />
                 
                 <div className="relative">
                   <div className="flex items-center justify-between mb-4">
-                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${
-                      index === 0 ? 'from-primary-500 to-primary-600' :
-                      index === 1 ? 'from-secondary-500 to-secondary-600' :
-                      index === 2 ? 'from-accent-500 to-accent-600' :
-                      'from-purple-500 to-purple-600'
-                    } flex items-center justify-center group-hover:scale-110 transition-all duration-300 shadow-glow`}>
-                      <metric.icon className="w-6 h-6 text-white" />
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center 
+                      transition-transform duration-300 group-hover:scale-110
+                      ${metric.color === 'primary' ? 'bg-primary-500/10' : 
+                        metric.color === 'secondary' ? 'bg-secondary-500/10' : 
+                        metric.color === 'warning' ? 'bg-warning-500/10' : 'bg-accent-500/10'}`}>
+                      <metric.icon className={`w-6 h-6
+                        ${metric.color === 'primary' ? 'text-primary-400' : 
+                          metric.color === 'secondary' ? 'text-secondary-400' : 
+                          metric.color === 'warning' ? 'text-warning-400' : 'text-accent-400'}`} 
+                      />
                     </div>
-                    <Badge 
-                      variant={parseFloat(metric.change) >= 0 ? 'success' : 'error'}
-                      size="sm"
-                    >
-                      {metric.change}
-                    </Badge>
+                    {metric.change !== null && (
+                      <div className={`flex items-center gap-1 text-sm
+                        ${metric.positive ? 'text-success-500' : 'text-neutral-400'}`}>
+                        {metric.positive ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
+                        <span>{metric.change}{metric.suffix || ''}</span>
+                      </div>
+                    )}
                   </div>
-                  <p className="text-neutral-400 text-sm font-medium mb-2">{metric.label}</p>
-                  <p className="text-3xl font-bold font-display gradient-text">{metric.value}</p>
+                  <p className="text-neutral-400 text-sm font-medium mb-1">{metric.label}</p>
+                  <p className="text-3xl font-bold font-display text-white">
+                    <AnimatedCounter value={metric.value} suffix={metric.suffix} />
+                  </p>
+                  <p className="text-xs text-neutral-500 mt-1">{metric.changeLabel}</p>
                 </div>
-              </Card>
+              </GlassCard>
             ))}
-          </div>
-            {/* Charts */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card variant="hover" className="group">
-              <h2 className="text-xl font-semibold font-display text-white mb-6 flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-primary-500/10 flex items-center justify-center">
-                  <Star className="w-4 h-4 text-primary-400" />
-                </div>
-                Content Quality Distribution
-              </h2>
-              <div className="relative h-[320px]">
-                <ResponsivePie
-                  data={newsletterData.map(d => ({
-                    id: d.name,
-                    value: d.value,
-                    label: d.name,
-                    color: COLORS[newsletterData.indexOf(d) % COLORS.length]
-                  }))}
-                  theme={{
-                    text: {
-                      fontSize: 11,
-                      fill: '#94a3b8'
-                    },
-                    legends: {
-                      text: {
-                        fontSize: 11,
-                        fill: '#94a3b8'
-                      }
-                    }
-                  }}
-                  margin={{ top: 10, right: 20, bottom: 60, left: 20 }}
-                  innerRadius={0.6}
-                  padAngle={0.5}
-                  cornerRadius={3}
-                  activeOuterRadiusOffset={8}
-                  colors={{ datum: 'data.color' }}
-                  borderWidth={1}
-                  borderColor={{ from: 'color', modifiers: [['darker', 0.2]] }}
-                  enableArcLabels={true}
-                  arcLabelsSkipAngle={10}
-                  arcLabelsTextColor={{ from: 'color', modifiers: [['darker', 2]] }}
-                  legends={[{
-                    anchor: 'bottom',
-                    direction: 'row',
-                    justify: false,
-                    translateY: 50,
-                    itemWidth: 85,
-                    itemHeight: 18,
-                    itemTextColor: '#94a3b8',
-                    symbolSize: 10,
-                    symbolShape: 'circle',
-                    itemsSpacing: 2,
-                  }]}
-                  tooltip={({ datum }) => (
-                    <div className="glass-strong px-3 py-2 rounded-lg border border-white/20 shadow-glow">
-                      <p className="text-sm">
-                        <span className="text-neutral-400">{datum.id}:</span>{' '}
-                        <span className="text-white font-medium">{datum.value}</span>
-                      </p>
-                    </div>
-                  )}
-                />
-              </div>
-            </Card>     
+          </motion.div>
 
-            {/* Newsletter Insights */}
-            <Card variant="hover" className="group">
-              <h2 className="text-xl font-semibold font-display text-white mb-6 flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-secondary-500/10 flex items-center justify-center">
-                  <Mail className="w-4 h-4 text-secondary-400" />
-                </div>
-                Latest Newsletter Insights
-              </h2>
-              <div className="space-y-3">
-                {newsletters.slice(0, 3).map((newsletter, idx) => (
-                  <div key={idx} className="p-4 glass rounded-xl hover:bg-white/10 
-                    transition-all duration-300 border border-neutral-800 hover:border-primary-500/30 group/item">
-                    <h3 className="font-medium text-base text-white mb-2 line-clamp-1 group-hover/item:text-primary-300 transition-colors">
-                      {newsletter.title}
-                    </h3>
-                    <div className="flex justify-between items-center gap-2">
-                      <Badge variant="primary" size="sm">
-                        Quality: {getQualityScore(newsletters[idx])}%
-                      </Badge>
-                      <span className="text-sm text-neutral-400">
-                        {new Date(newsletter.sentDate || '').toLocaleDateString()}
-                      </span>
-                    </div>
+          {/* Bottom Section */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Content Quality Distribution */}
+            <motion.div variants={itemVariants}>
+              <GlassCard variant="default" className="h-full">
+                <h2 className="text-lg font-semibold font-display text-white mb-6 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-primary-500/10 flex items-center justify-center">
+                    <Star className="w-5 h-5 text-primary-400" />
                   </div>
-                ))}
-                {newsletters.length === 0 && (
-                  <div className="p-8 text-center glass rounded-xl border border-neutral-800">
-                    <Mail className="w-12 h-12 text-neutral-600 mx-auto mb-3" />
-                    <p className="text-neutral-400">No newsletters sent yet</p>
-                    <p className="text-sm text-neutral-500 mt-1">Create your first newsletter to see insights</p>
+                  Content Quality Breakdown
+                </h2>
+                
+                <div className="space-y-4">
+                  {[
+                    { label: 'Original Content', value: qualityMetrics.filter(m => m.originalContent).length, total: qualityMetrics.length, color: 'primary' },
+                    { label: 'Research Based', value: qualityMetrics.filter(m => m.researchBased).length, total: qualityMetrics.length, color: 'secondary' },
+                    { label: 'Actionable Insights', value: qualityMetrics.filter(m => m.actionableInsights).length, total: qualityMetrics.length, color: 'accent' },
+                  ].map((item, index) => {
+                    const percent = item.total > 0 ? (item.value / item.total) * 100 : 0;
+                    return (
+                      <div key={index} className="group">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm text-neutral-300">{item.label}</span>
+                          <span className="text-sm font-medium text-white">{item.value}/{item.total}</span>
+                        </div>
+                        <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${percent}%` }}
+                            transition={{ duration: 1, delay: index * 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
+                            className={`h-full rounded-full ${
+                              item.color === 'primary' ? 'bg-gradient-to-r from-primary-500 to-primary-400' :
+                              item.color === 'secondary' ? 'bg-gradient-to-r from-secondary-500 to-secondary-400' :
+                              'bg-gradient-to-r from-accent-500 to-accent-400'
+                            }`}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                
+                {qualityMetrics.length === 0 && (
+                  <div className="text-center py-8">
+                    <Star className="w-12 h-12 text-neutral-700 mx-auto mb-3" />
+                    <p className="text-neutral-400">No content metrics yet</p>
+                    <p className="text-sm text-neutral-500 mt-1">Send newsletters to see quality breakdown</p>
                   </div>
                 )}
-              </div>
-            </Card>  
+              </GlassCard>
+            </motion.div>
+
+            {/* Latest Newsletters */}
+            <motion.div variants={itemVariants}>
+              <GlassCard variant="default" className="h-full">
+                <h2 className="text-lg font-semibold font-display text-white mb-6 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-secondary-500/10 flex items-center justify-center">
+                    <Mail className="w-5 h-5 text-secondary-400" />
+                  </div>
+                  Recent Newsletters
+                </h2>
+                
+                <div className="space-y-3">
+                  {newsletters.slice(0, 4).map((newsletter, idx) => (
+                    <motion.div 
+                      key={idx}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: idx * 0.1 }}
+                      className="p-4 rounded-xl bg-white/[0.02] border border-white/5
+                        hover:bg-white/[0.05] hover:border-white/10 transition-all duration-300 group"
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <h3 className="font-medium text-white truncate group-hover:text-primary-300 transition-colors">
+                            {newsletter.title}
+                          </h3>
+                          <p className="text-xs text-neutral-500 mt-1">
+                            {newsletter.sentDate 
+                              ? new Date(newsletter.sentDate).toLocaleDateString('en-US', { 
+                                  month: 'short', day: 'numeric', year: 'numeric' 
+                                })
+                              : 'Draft'}
+                          </p>
+                        </div>
+                        <Badge 
+                          variant={newsletter.status === 'sent' ? 'success' : newsletter.status === 'scheduled' ? 'warning' : 'secondary'} 
+                          size="sm"
+                        >
+                          {newsletter.status}
+                        </Badge>
+                      </div>
+                    </motion.div>
+                  ))}
+                  
+                  {newsletters.length === 0 && (
+                    <div className="text-center py-8">
+                      <Mail className="w-12 h-12 text-neutral-700 mx-auto mb-3" />
+                      <p className="text-neutral-400">No newsletters yet</p>
+                      <p className="text-sm text-neutral-500 mt-1">Create your first newsletter to get started</p>
+                    </div>
+                  )}
+                </div>
+              </GlassCard>
+            </motion.div>
           </div>
-        </div>
-        </Container>
+        </motion.div>
+      </Container>
     );
   };
-  // Main render
+
   return renderContent();
 }
