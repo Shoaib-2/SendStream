@@ -8,10 +8,12 @@ import mongoose from 'mongoose';
 
 /**
  * Helper to get decrypted Mailchimp API key from settings
+ * Returns null if decryption fails (non-blocking) instead of throwing
  */
-function getDecryptedMailchimpKey(settings: any): string {
+function getDecryptedMailchimpKey(settings: any): string | null {
   if (!settings.mailchimp?.apiKey) {
-    throw new Error('Mailchimp API key not found in settings');
+    logger.warn('Mailchimp API key not found in settings');
+    return null;
   }
   
   try {
@@ -19,12 +21,14 @@ function getDecryptedMailchimpKey(settings: any): string {
     if (!decryptedKey) {
       logger.warn('Mailchimp API key exists but decryption returned undefined');
       logger.warn('This may indicate the encryption key changed between environments');
-      throw new Error('Mailchimp API key decryption failed - please re-enter your API key in settings');
+      logger.warn('Mailchimp sync will be skipped - please re-enter your API key in settings');
+      return null;
     }
     return decryptedKey;
   } catch (error) {
     logger.error('Failed to decrypt Mailchimp API key:', error);
-    throw new Error('Mailchimp API key decryption failed - please re-enter your API key in settings');
+    logger.warn('Mailchimp sync will be skipped - please re-enter your API key in settings');
+    return null;
   }
 }
 
@@ -47,6 +51,13 @@ export class SubscriberService {
     }
 
     const decryptedApiKey = getDecryptedMailchimpKey(settings);
+    
+    // If decryption failed, skip Mailchimp sync gracefully
+    if (!decryptedApiKey) {
+      logger.warn(`Skipping Mailchimp sync for user ${userId} due to API key decryption failure`);
+      return [];
+    }
+    
     const mailchimpService = new MailchimpService(
       decryptedApiKey,
       settings.mailchimp.serverPrefix.trim()
@@ -194,15 +205,17 @@ export class SubscriberService {
       
       if (settings?.mailchimp?.enabled) {
         const decryptedApiKey = getDecryptedMailchimpKey(settings);
-        const mailchimpService = new MailchimpService(
-          decryptedApiKey,
-          settings.mailchimp.serverPrefix.trim()
-        );
-        
-        await mailchimpService.initializeList();
-        const mailchimpStatus = status === 'active' ? 'subscribed' : 'unsubscribed';
-        await mailchimpService.updateSubscriberStatus(subscriber.email, mailchimpStatus);
-        logger.info(`Updated Mailchimp status for ${subscriber.email} to ${mailchimpStatus}`);
+        if (decryptedApiKey) {
+          const mailchimpService = new MailchimpService(
+            decryptedApiKey,
+            settings.mailchimp.serverPrefix.trim()
+          );
+          
+          await mailchimpService.initializeList();
+          const mailchimpStatus = status === 'active' ? 'subscribed' : 'unsubscribed';
+          await mailchimpService.updateSubscriberStatus(subscriber.email, mailchimpStatus);
+          logger.info(`Updated Mailchimp status for ${subscriber.email} to ${mailchimpStatus}`);
+        }
       }
     } catch (mailchimpError) {
       logger.error(`Failed to update Mailchimp for ${subscriber.email}:`, mailchimpError);
@@ -244,18 +257,20 @@ export class SubscriberService {
       
       if (settings?.mailchimp?.enabled) {
         const decryptedApiKey = getDecryptedMailchimpKey(settings);
-        const mailchimpService = new MailchimpService(
-          decryptedApiKey,
-          settings.mailchimp.serverPrefix.trim()
-        );
-        
-        await mailchimpService.initializeList();
-        
-        for (const sub of subscribers) {
-          await mailchimpService.updateSubscriberStatus(sub.email, 'unsubscribed');
+        if (decryptedApiKey) {
+          const mailchimpService = new MailchimpService(
+            decryptedApiKey,
+            settings.mailchimp.serverPrefix.trim()
+          );
+          
+          await mailchimpService.initializeList();
+          
+          for (const sub of subscribers) {
+            await mailchimpService.updateSubscriberStatus(sub.email, 'unsubscribed');
+          }
+          
+          logger.info(`Updated ${subscribers.length} subscribers in Mailchimp to unsubscribed`);
         }
-        
-        logger.info(`Updated ${subscribers.length} subscribers in Mailchimp to unsubscribed`);
       }
     } catch (mailchimpError) {
       logger.error('Failed to update Mailchimp for bulk unsubscribe:', mailchimpError);
@@ -344,14 +359,16 @@ export class SubscriberService {
         
         if (settings?.mailchimp?.enabled) {
           const decryptedApiKey = getDecryptedMailchimpKey(settings);
-          const mailchimpService = new MailchimpService(
-            decryptedApiKey,
-            settings.mailchimp.serverPrefix.trim()
-          );
-          
-          await mailchimpService.initializeList();
-          await mailchimpService.updateSubscriberStatus(subscriber.email, 'unsubscribed');
-          logger.info(`Updated Mailchimp status for ${subscriber.email} to unsubscribed via unsubscribe link`);
+          if (decryptedApiKey) {
+            const mailchimpService = new MailchimpService(
+              decryptedApiKey,
+              settings.mailchimp.serverPrefix.trim()
+            );
+            
+            await mailchimpService.initializeList();
+            await mailchimpService.updateSubscriberStatus(subscriber.email, 'unsubscribed');
+            logger.info(`Updated Mailchimp status for ${subscriber.email} to unsubscribed via unsubscribe link`);
+          }
         }
       } catch (mailchimpError) {
         logger.error(`Failed to update Mailchimp for ${subscriber.email} via unsubscribe link:`, mailchimpError);
