@@ -34,10 +34,19 @@ export default function Home() {
       setShowRenewalSuccess(true);
       setAuthMode('login'); // After renewal, user should log in
       
-      // Store session ID for backend verification
+      // Store session ID for backend verification - use BOTH storage types
       if (typeof window !== 'undefined') {
+        // Use sessionStorage as primary (clears on tab close)
+        sessionStorage.setItem('stripe_session_id', sessionId);
+        sessionStorage.setItem('subscription_renewed', 'true');
+        // Also set in localStorage for backup
         localStorage.setItem('stripe_session_id', sessionId);
         localStorage.setItem('subscription_renewed', 'true');
+        
+        // Clean up URL to prevent re-triggering on refresh
+        const url = new URL(window.location.href);
+        url.searchParams.delete('session_id');
+        window.history.replaceState({}, '', url.toString());
       }
       
       // Auto-open login modal after 2 seconds

@@ -95,7 +95,8 @@ const handleWebhook: RequestHandler = async (req: Request, res: Response): Promi
             trialEnd
           });
           
-          const updatedSubUser = await User.findOneAndUpdate(
+          // First try to find by stripeCustomerId
+          let updatedSubUser = await User.findOneAndUpdate(
             { stripeCustomerId: customerId2 },
             {
               subscriptionStatus: subscriptionStatus,
@@ -108,6 +109,32 @@ const handleWebhook: RequestHandler = async (req: Request, res: Response): Promi
             },
             { new: true }
           );
+
+          // If not found, try to get customer email from Stripe and update by email
+          if (!updatedSubUser) {
+            try {
+              const customer = await stripe.customers.retrieve(customerId2);
+              if (customer && !customer.deleted && 'email' in customer && customer.email) {
+                logger.info(`User not found by customerId, trying email: ${customer.email}`);
+                updatedSubUser = await User.findOneAndUpdate(
+                  { email: customer.email },
+                  {
+                    stripeCustomerId: customerId2,
+                    subscriptionStatus: subscriptionStatus,
+                    hasActiveAccess: hasActiveAccess,
+                    stripeSubscriptionId: subscription.id,
+                    subscribed: new Date().toISOString(),
+                    cancelAtPeriodEndPreference: subscription.cancel_at_period_end,
+                    ...(trialEnd && { trialEndsAt: trialEnd }),
+                    updatedAt: new Date()
+                  },
+                  { new: true }
+                );
+              }
+            } catch (customerError) {
+              logger.error('Error fetching customer for subscription update:', customerError);
+            }
+          }
 
           logger.info('User updated after subscription update:', {
             email: updatedSubUser?.email,
@@ -163,7 +190,8 @@ const handleWebhook: RequestHandler = async (req: Request, res: Response): Promi
               amountPaid: paidInvoice.amount_paid
             });
             
-            const renewedUser = await User.findOneAndUpdate(
+            // First try to find by stripeCustomerId
+            let renewedUser = await User.findOneAndUpdate(
               { stripeCustomerId: paidCustomerId },
               {
                 subscriptionStatus: 'active',
@@ -173,6 +201,29 @@ const handleWebhook: RequestHandler = async (req: Request, res: Response): Promi
               },
               { new: true }
             );
+            
+            // If not found, try to get customer email from Stripe and update by email
+            if (!renewedUser) {
+              try {
+                const customer = await stripe.customers.retrieve(paidCustomerId);
+                if (customer && !customer.deleted && 'email' in customer && customer.email) {
+                  logger.info(`User not found by customerId for payment, trying email: ${customer.email}`);
+                  renewedUser = await User.findOneAndUpdate(
+                    { email: customer.email },
+                    {
+                      stripeCustomerId: paidCustomerId,
+                      subscriptionStatus: 'active',
+                      hasActiveAccess: true,
+                      stripeSubscriptionId: paidSubscriptionId,
+                      updatedAt: new Date()
+                    },
+                    { new: true }
+                  );
+                }
+              } catch (customerError) {
+                logger.error('Error fetching customer for payment success:', customerError);
+              }
+            }
             
             logger.info('User subscription renewed:', {
               email: renewedUser?.email,
