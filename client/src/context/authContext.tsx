@@ -42,6 +42,25 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
+// Helper function to set auth cookie for middleware
+const setAuthCookie = (token: string) => {
+  if (typeof document !== 'undefined') {
+    // Set cookie with 7 days expiry
+    const expiryDays = 7;
+    const date = new Date();
+    date.setTime(date.getTime() + (expiryDays * 24 * 60 * 60 * 1000));
+    const expires = `expires=${date.toUTCString()}`;
+    document.cookie = `auth_token=${token};${expires};path=/;SameSite=Lax`;
+  }
+};
+
+// Helper function to remove auth cookie
+const removeAuthCookie = () => {
+  if (typeof document !== 'undefined') {
+    document.cookie = 'auth_token=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;';
+  }
+};
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   console.log('[AuthContext] ========== PROVIDER INSTANTIATED ==========');
   const [user, setUser] = useState<User | null>(null);
@@ -65,6 +84,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             // Keep localStorage during transition for backward compatibility
             localStorage.setItem('token', response.token);
             localStorage.setItem('user', JSON.stringify(response.user));
+            
+            // Set auth cookie for middleware authentication
+            setAuthCookie(response.token);
           }
         } else {
           // Fallback to localStorage during transition
@@ -117,6 +139,9 @@ const login = async (email: string, password: string): Promise<void> => {
         setToken(response.token);
         localStorage.setItem('token', response.token);
         localStorage.setItem('user', JSON.stringify(response.user));
+        
+        // Set auth cookie for middleware authentication
+        setAuthCookie(response.token);
         
         // PHASE 2: Removed all direct renewal/subscription state management. Now handled by subscriptionContext.tsx
       }
@@ -214,6 +239,9 @@ const logout = async (): Promise<void> => {
     localStorage.clear(); // Clear everything
     sessionStorage.clear(); // Clear all session storage
     
+    // Remove auth cookie
+    removeAuthCookie();
+    
     // Force navigation to home without parameters
     window.location.href = '/';
   }
@@ -228,13 +256,17 @@ const loginWithProvider = async (provider: 'google'): Promise<void> => {
         setToken(response.token);
         localStorage.setItem('token', response.token);
         localStorage.setItem('user', JSON.stringify(response.user));
+        
+        // Set auth cookie for middleware authentication
+        setAuthCookie(response.token);
+        
         // PHASE 2: Removed all direct renewal/subscription state management. Now handled by subscriptionContext.tsx
       }
     } else {
-      throw new Error('Invalid provider login response - user data missing');
+      throw new Error('Invalid signup response - user data missing');
     }
   } catch (error) {
-    console.error('Provider login error:', error);
+    console.error('Signup error:', error);
     throw error;
   }
 };
