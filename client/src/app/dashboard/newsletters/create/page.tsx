@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import { Save, Calendar, Send, BookOpen, Lightbulb, FileCheck, Link } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { APIError, newsletterAPI } from '../../../../services/api';
@@ -9,7 +9,7 @@ import { useSearchParams } from 'next/navigation';
 
 type CreateNewsletterInput = Omit<Newsletter, 'id' | 'sentTo' | 'createdBy'>;
 
-const CreateNewsletter: React.FC = () => {
+const CreateNewsletterContent: React.FC = () => {
   const router = useRouter();
   const [showScheduler, setShowScheduler] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
@@ -498,4 +498,14 @@ const CreateNewsletter: React.FC = () => {
   );
 };
 
-export default CreateNewsletter;
+export default function CreateNewsletter() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-primary-500/20 border-t-primary-500 rounded-full animate-spin"></div>
+      </div>
+    }>
+      <CreateNewsletterContent />
+    </Suspense>
+  );
+}

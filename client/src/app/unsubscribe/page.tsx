@@ -1,9 +1,9 @@
 "use client";
 // src/app/unsubscribe/page.tsx
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-export default function UnsubscribePage() {
+function UnsubscribeContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams?.get('token');
@@ -89,4 +89,16 @@ export default function UnsubscribePage() {
   }
 
   return null;
+}
+
+export default function UnsubscribePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-900 via-gray-900 to-gray-900/50 p-4">
+        <div className="w-12 h-12 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
+      </div>
+    }>
+      <UnsubscribeContent />
+    </Suspense>
+  );
 }
