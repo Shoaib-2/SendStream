@@ -19,16 +19,31 @@ export class EmailService {
   private DEFAULT_DAILY_LIMIT = 100; // Default sending limit per day
 
   constructor() {
-    // Configure Gmail transporter
+    // Configure SMTP transporter with flexible settings
+    const isSecure = process.env.EMAIL_SECURE === 'true';
+    const port = parseInt(process.env.EMAIL_PORT || '587', 10);
+    
     this.transporter = nodemailer.createTransport({
-      service: 'gmail',
+      host: process.env.EMAIL_HOST,
+      port: port,
+      secure: isSecure, // true for 465, false for other ports
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASSWORD
-      }
+      },
+      // Increase timeouts for cloud hosting environments
+      connectionTimeout: 60000, // 60 seconds
+      greetingTimeout: 30000, // 30 seconds
+      socketTimeout: 60000, // 60 seconds
+      // Additional options for better reliability
+      pool: true, // Use pooled connections
+      maxConnections: 5,
+      maxMessages: 100,
+      rateDelta: 1000,
+      rateLimit: 5
     });
     
-    logger.info('Gmail transporter created with user:', process.env.EMAIL_USER);
+    logger.info(`SMTP transporter created - Host: ${process.env.EMAIL_HOST}, Port: ${port}, Secure: ${isSecure}, User: ${process.env.EMAIL_USER}`);
   }
 
   async initializeProviders() {
