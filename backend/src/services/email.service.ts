@@ -26,11 +26,15 @@ export class EmailService {
         throw new Error('SENDGRID_API_KEY environment variable is not set');
       }
       
+      // Log API key info (first 10 chars for debugging, never log full key in production)
+      const maskedKey = apiKey.substring(0, 10) + '...' + apiKey.substring(apiKey.length - 4);
+      logger.info(`SendGrid API Key loaded: ${maskedKey} (length: ${apiKey.length})`);
+      
       // Initialize SendGrid
       sgMail.setApiKey(apiKey);
       this.isInitialized = true;
       
-      logger.info('SendGrid initialized successfully with API key');
+      logger.info('SendGrid initialized successfully');
     } catch (error) {
       logger.error('Failed to initialize SendGrid:', error);
       this.isInitialized = false;
@@ -213,11 +217,16 @@ export class EmailService {
             await sgMail.send(msg);
             return { success: true, email: subscriber.email };
           } catch (error: any) {
-            logger.error(`Failed to send to ${subscriber.email}:`, {
+            // Enhanced error logging for SendGrid
+            const errorDetails = {
               message: error.message,
               code: error.code,
-              response: error.response?.body
-            });
+              statusCode: error.response?.statusCode,
+              body: error.response?.body,
+              headers: error.response?.headers
+            };
+            
+            logger.error(`Failed to send to ${subscriber.email}:`, JSON.stringify(errorDetails, null, 2));
             return { success: false, email: subscriber.email, error: error.message };
           }
         });
