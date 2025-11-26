@@ -290,9 +290,9 @@ const CreateNewsletterContent: React.FC = () => {
 
       showNotificationMessage('Content generated successfully!', 'success');
       setAiTopic(''); // Clear topic after generation
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('AI generation error:', error);
-      const message = error?.response?.data?.message || error?.message || 'Failed to generate content';
+      const message = error instanceof Error ? error.message : 'Failed to generate content';
       showNotificationMessage(message, 'error');
     } finally {
       setGenerateLoading(false);
@@ -317,9 +317,9 @@ const CreateNewsletterContent: React.FC = () => {
 
       setNewsletter({ ...newsletter, content: improved });
       showNotificationMessage('Content improved successfully!', 'success');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('AI improvement error:', error);
-      const message = error?.response?.data?.message || error?.message || 'Failed to improve content';
+      const message = error instanceof Error ? error.message : 'Failed to improve content';
       showNotificationMessage(message, 'error');
     } finally {
       setImproveLoading(false);
@@ -345,9 +345,9 @@ const CreateNewsletterContent: React.FC = () => {
 
       setSubjectSuggestions(suggestions);
       showNotificationMessage('Subject lines generated!', 'success');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Subject generation error:', error);
-      const message = error?.response?.data?.message || error?.message || 'Failed to generate subjects';
+      const message = error instanceof Error ? error.message : 'Failed to generate subjects';
       showNotificationMessage(message, 'error');
     } finally {
       setSubjectLoading(false);
@@ -367,9 +367,9 @@ const CreateNewsletterContent: React.FC = () => {
 
       setSmartSchedule(recommendation);
       showNotificationMessage(`Best time: ${recommendation.recommendedDay} at ${recommendation.recommendedTime}`, 'success');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Smart schedule error:', error);
-      const message = error?.response?.data?.message || error?.message || 'Failed to get schedule recommendation';
+      const message = error instanceof Error ? error.message : 'Failed to get schedule recommendation';
       showNotificationMessage(message, 'error');
     } finally {
       setScheduleLoading(false);
