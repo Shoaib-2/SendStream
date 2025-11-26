@@ -11,6 +11,8 @@ import Badge from '@/components/UI/Badge';
 import Button from '@/components/UI/Button';
 
 export default function SubscribersPage() {
+  console.log('[SubscribersPage] Component rendering');
+  
   const { subscribers, addSubscriber, removeSubscriber, isLoading } = useData();
   const [selectedSubscribers, setSelectedSubscribers] = useState<string[]>([]);
   const [showSubscribeModal, setShowSubscribeModal] = useState(false);
@@ -22,6 +24,10 @@ export default function SubscribersPage() {
   const [notificationMessage, setNotificationMessage] = useState('');
   const [notificationType, setNotificationType] = useState('success');
   const [role] = useState('admin');
+  
+  useEffect(() => {
+    console.log('[SubscribersPage] Mounted, subscribers count:', subscribers.length);
+  }, [subscribers]);
 
   useEffect(() => {
     const filtered = searchQuery

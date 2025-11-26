@@ -59,6 +59,11 @@ export default function DashboardLayout({
     setMounted(true);
   }, []);
   
+  // Debug logging
+  useEffect(() => {
+    console.log('[DashboardLayout] Current pathname:', pathname);
+  }, [pathname]);
+  
   if (!mounted) return null;
 
   const navigation = [
