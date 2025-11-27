@@ -9,7 +9,7 @@ import Footer from '@/components/layout/Footer'
 import { useSearchParams } from 'next/navigation'
 import { useEffect, useState, Suspense } from 'react'
 import AuthModal from '@/components/auth/authModal'
-import { CheckCircle, ArrowRight } from 'lucide-react'
+import { CheckCircle, ArrowRight, Sparkles } from 'lucide-react'
 
 function HomeContent() {
   const searchParams = useSearchParams();
@@ -104,6 +104,59 @@ function HomeContent() {
       
       <main>
         <Hero isRenewal={isRenewal}/>
+        
+        {/* AI Feature Highlight Banner */}
+        <section className="relative py-12 bg-gradient-to-r from-purple-900/20 via-pink-900/20 to-purple-900/20 border-y border-purple-500/20">
+          <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-purple-500/30 to-pink-500/30 flex items-center justify-center flex-shrink-0 border border-purple-500/40 animate-pulse-slow">
+                  <Sparkles className="w-6 h-6 sm:w-8 sm:h-8 text-purple-400" />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <h3 className="text-xl sm:text-2xl font-bold text-white">
+                      AI-Powered Content Generation
+                    </h3>
+                    <span className="px-2 py-1 rounded-full bg-green-500/20 text-green-400 text-xs font-semibold border border-green-500/30">
+                      NEW
+                    </span>
+                  </div>
+                  <p className="text-neutral-300 text-sm sm:text-base">
+                    Create engaging newsletters in seconds with our AI assistant. Generate content, get subject line suggestions, improve your writing, and find the perfect send time.
+                  </p>
+                  <div className="flex flex-wrap gap-3 mt-4 text-xs sm:text-sm text-neutral-400">
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-purple-400"></span>
+                      Smart Content Generation
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-purple-400"></span>
+                      Subject Line Optimization
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-purple-400"></span>
+                      Intelligent Scheduling
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setAuthMode('signup');
+                  setIsAuthModalOpen(true);
+                }}
+                className="flex-shrink-0 px-6 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold
+                  hover:shadow-glow-lg transition-all duration-300 flex items-center gap-2 group"
+              >
+                Try AI Features
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </button>
+            </div>
+          </div>
+        </section>
+        
         <Features />
         <Pricing isRenewal={isRenewal}/>
          {/* Auth Modal */}

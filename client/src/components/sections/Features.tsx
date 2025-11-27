@@ -1,19 +1,28 @@
 'use client';
 
 import React from 'react';
-import { Send, Users, Globe, Sparkles, Zap, BarChart3, Shield } from 'lucide-react';
+import { Send, Users, Sparkles, Zap, BarChart3, Shield } from 'lucide-react';
 import Card from '../UI/Card';
 import Container from '../UI/Container';
 import Badge from '../UI/Badge';
 
 const features = [
   {
+    icon: Sparkles,
+    iconColor: 'text-purple-400',
+    iconBg: 'bg-purple-500/10',
+    title: "AI Content Generation",
+    description: "Generate engaging, research-backed newsletter content in seconds. Get AI-powered subject lines, content improvements, and smart scheduling suggestions.",
+    badge: "AI-Powered",
+    highlight: true
+  },
+  {
     icon: Send,
     iconColor: 'text-primary-400',
     iconBg: 'bg-primary-500/10',
     title: "Smart Scheduling",
     description: "AI-powered timing optimization to reach your audience when they're most engaged. Automate your newsletter workflow.",
-    badge: "AI-Powered"
+    badge: "Automated"
   },
   {
     icon: BarChart3,
@@ -30,14 +39,6 @@ const features = [
     title: "Audience Management",
     description: "Segment subscribers, track behavior patterns, and personalize content for maximum engagement and retention.",
     badge: "Smart"
-  },
-  {
-    icon: Globe,
-    iconColor: 'text-purple-400',
-    iconBg: 'bg-purple-500/10',
-    title: "Global Reach",
-    description: "Automatic timezone detection, localized sending, and multi-language support for worldwide audience engagement.",
-    badge: "Worldwide"
   },
   {
     icon: Zap,
@@ -91,13 +92,26 @@ const Features = () => {
               <Card 
                 key={index} 
                 variant="hover"
-                className="group relative overflow-hidden animate-fade-in-up"
+                className={`group relative overflow-hidden animate-fade-in-up ${
+                  feature.highlight ? 'ring-2 ring-purple-500/30' : ''
+                }`}
                 style={{ animationDelay: `${index * 0.1}s` }}
               >
                 {/* Gradient overlay on hover */}
-                <div className="absolute inset-0 bg-gradient-to-br from-primary-500/0 via-accent-500/0 to-secondary-500/0 
-                  group-hover:from-primary-500/5 group-hover:via-accent-500/5 group-hover:to-secondary-500/5 
-                  transition-all duration-500 rounded-2xl" />
+                <div className={`absolute inset-0 bg-gradient-to-br transition-all duration-500 rounded-2xl ${
+                  feature.highlight 
+                    ? 'from-purple-500/10 via-pink-500/10 to-purple-500/10 group-hover:from-purple-500/15 group-hover:via-pink-500/15 group-hover:to-purple-500/15'
+                    : 'from-primary-500/0 via-accent-500/0 to-secondary-500/0 group-hover:from-primary-500/5 group-hover:via-accent-500/5 group-hover:to-secondary-500/5'
+                }`} />
+                
+                {/* New Badge for AI Feature */}
+                {feature.highlight && (
+                  <div className="absolute top-3 right-3">
+                    <Badge variant="success" size="sm" className="animate-pulse">
+                      New
+                    </Badge>
+                  </div>
+                )}
 
                 <div className="relative space-y-4">
                   {/* Icon and Badge */}
