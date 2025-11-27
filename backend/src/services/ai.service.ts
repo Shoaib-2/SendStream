@@ -37,10 +37,18 @@ class AIService {
   private getClient(): OpenAI {
     if (!this.openai) {
       const apiKey = config.get('openaiApiKey') as string | undefined;
+      console.log('[AI Service] Initializing OpenAI client:', { 
+        hasApiKey: !!apiKey,
+        keyLength: apiKey?.length,
+        keyPrefix: apiKey?.substring(0, 7)
+      });
+      
       if (!apiKey) {
+        console.error('[AI Service] OpenAI API key not configured');
         throw new Error('OpenAI API key not configured. Please set OPENAI_API_KEY environment variable.');
       }
       this.openai = new OpenAI({ apiKey });
+      console.log('[AI Service] OpenAI client initialized successfully');
     }
     return this.openai;
   }
@@ -50,6 +58,13 @@ class AIService {
    * Creates engaging, research-backed content with actionable insights
    */
   async generateContent(request: ContentGenerationRequest): Promise<GeneratedContent> {
+    console.log('[AI Service] Generating content:', {
+      topic: request.topic,
+      tone: request.tone,
+      length: request.length,
+      targetAudience: request.targetAudience
+    });
+    
     const client = this.getClient();
     
     const toneGuide = {
@@ -107,6 +122,8 @@ Respond in JSON format:
         long: 1600     // ~800-1000 words + JSON structure
       };
 
+      console.log('[AI Service] Making OpenAI API call...');
+
       const response = await client.chat.completions.create({
         model: 'gpt-4o-mini',
         messages: [
@@ -119,11 +136,22 @@ Respond in JSON format:
       });
 
       const result = response.choices[0]?.message?.content;
+      console.log('[AI Service] OpenAI response received:', {
+        hasResult: !!result,
+        resultLength: result?.length
+      });
+      
       if (!result) {
+        console.error('[AI Service] No content generated from OpenAI');
         throw new Error('No content generated');
       }
 
       const parsed = JSON.parse(result) as GeneratedContent;
+      console.log('[AI Service] Content parsed successfully:', {
+        hasTitle: !!parsed.title,
+        hasContent: !!parsed.content,
+        contentLength: parsed.content?.length
+      });
       
       // Format the content as HTML if it isn't already
       if (!parsed.content.includes('<')) {

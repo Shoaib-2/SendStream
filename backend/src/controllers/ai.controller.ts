@@ -9,6 +9,12 @@ class AIController {
    */
   async generateContent(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
+      console.log('[AI Controller] Generate content request:', {
+        userId: req.user?._id?.toString(),
+        hasUser: !!req.user,
+        body: req.body
+      });
+      
       const { topic, tone, length, targetAudience, includeCallToAction } = req.body;
 
       if (!topic || typeof topic !== 'string' || topic.trim().length === 0) {
@@ -26,6 +32,8 @@ class AIController {
         targetAudience: targetAudience || undefined,
         includeCallToAction: includeCallToAction ?? true
       });
+
+      console.log('[AI Controller] Content generated successfully');
 
       res.status(200).json({
         status: 'success',

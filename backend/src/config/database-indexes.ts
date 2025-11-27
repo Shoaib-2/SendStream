@@ -8,6 +8,7 @@ import Newsletter from '../models/Newsletter';
 import Subscriber from '../models/Subscriber';
 import Settings from '../models/Settings';
 import Analytics from '../models/analytics';
+import { AIUsage } from '../models/AIUsage';
 import { logger } from '../utils/logger';
 
 /**
@@ -78,6 +79,13 @@ export async function createDatabaseIndexes() {
     await safeCreateIndex(Analytics.collection, { 'clicks.details.timestamp': 1 });
     logger.info('✓ Analytics indexes created');
 
+    // AIUsage indexes
+    // Note: Compound index (userId + featureType) already exists in schema with unique constraint
+    await safeCreateIndex(AIUsage.collection, { userId: 1 });
+    await safeCreateIndex(AIUsage.collection, { lastReset: 1 });
+    await safeCreateIndex(AIUsage.collection, { featureType: 1 });
+    logger.info('✓ AIUsage indexes created');
+
     logger.info('All database indexes created successfully');
   } catch (error) {
     logger.error('Error creating database indexes:', error);
@@ -108,12 +116,16 @@ export async function listDatabaseIndexes() {
     const analyticsIndexes = await Analytics.collection.getIndexes();
     logger.info('Analytics indexes:', analyticsIndexes);
 
+    const aiUsageIndexes = await AIUsage.collection.getIndexes();
+    logger.info('AIUsage indexes:', aiUsageIndexes);
+
     return {
       user: userIndexes,
       newsletter: newsletterIndexes,
       subscriber: subscriberIndexes,
       settings: settingsIndexes,
-      analytics: analyticsIndexes
+      analytics: analyticsIndexes,
+      aiUsage: aiUsageIndexes
     };
   } catch (error) {
     logger.error('Error listing database indexes:', error);
@@ -134,6 +146,7 @@ export async function dropDatabaseIndexes() {
     await Subscriber.collection.dropIndexes();
     await Settings.collection.dropIndexes();
     await Analytics.collection.dropIndexes();
+    await AIUsage.collection.dropIndexes();
 
     logger.info('All indexes dropped successfully');
   } catch (error) {

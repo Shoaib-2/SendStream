@@ -15,9 +15,18 @@ type FeatureType = keyof typeof FEATURE_LIMITS;
 export const checkAIUsageLimit = (featureType: FeatureType) => {
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const userId = req.user?.userId;
+      // The protect middleware sets req.user to the full User document
+      const userId = req.user?._id;
+      
+      console.log('[AI Usage] Checking limit for:', {
+        featureType,
+        userId: userId?.toString(),
+        hasUser: !!req.user,
+        userKeys: req.user ? Object.keys(req.user) : []
+      });
       
       if (!userId) {
+        console.error('[AI Usage] No user ID found in request');
         res.status(401).json({
           status: 'error',
           message: 'Unauthorized'
@@ -69,6 +78,13 @@ export const checkAIUsageLimit = (featureType: FeatureType) => {
       usage.count += 1;
       await usage.save();
 
+      console.log('[AI Usage] Usage incremented:', {
+        featureType,
+        count: usage.count,
+        limit,
+        remaining: remaining - 1
+      });
+
       // Add usage info to response headers
       res.setHeader('X-AI-Limit', limit.toString());
       res.setHeader('X-AI-Remaining', (remaining - 1).toString());
@@ -85,9 +101,13 @@ export const checkAIUsageLimit = (featureType: FeatureType) => {
 // Get all usage stats for a user
 export const getAIUsageStats = async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = req.user?.userId;
+    // The protect middleware sets req.user to the full User document
+    const userId = req.user?._id;
+    
+    console.log('[AI Usage Stats] Fetching stats for user:', userId?.toString());
     
     if (!userId) {
+      console.error('[AI Usage Stats] No user ID found in request');
       res.status(401).json({
         status: 'error',
         message: 'Unauthorized'
