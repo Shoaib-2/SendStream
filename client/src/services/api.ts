@@ -642,6 +642,15 @@ export const newsletterAPI = {
       await api.delete(`/newsletters/${id}`);
     } catch (error) {
       handleError(error as AxiosError);
+      throw error;
+    }
+  },
+  deleteNewsletter: async (id: string) => {
+    try {
+      await api.delete(`/newsletters/${id}`);
+    } catch (error) {
+      handleError(error as AxiosError);
+      throw error;
     }
   },
   schedule: async (id: string, scheduledDate: string) => {

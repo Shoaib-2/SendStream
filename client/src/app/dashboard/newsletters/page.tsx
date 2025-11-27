@@ -1,7 +1,7 @@
 "use client";
 import React from 'react';
-import { motion } from 'framer-motion';
-import { Mail, Send, Plus, Pencil, Clock, FileText, Sparkles } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Mail, Send, Plus, Pencil, Clock, FileText, Sparkles, Trash2, Eye, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { newsletterAPI } from '../../../services/api';
 import Container from '@/components/UI/Container';
@@ -14,9 +14,11 @@ interface Newsletter {
   id?: string;
   _id?: string;
   title: string;
+  subject: string;
   status: 'draft' | 'scheduled' | 'sent';
   sentDate?: string;
   scheduledDate?: string;
+  createdAt?: string;
   contentQuality?: {
     isOriginalContent: boolean;
     hasResearchBacked: boolean;
@@ -27,6 +29,8 @@ interface Newsletter {
     qualityScore: number;
   };
 }
+
+type TabType = 'all' | 'sent' | 'draft' | 'scheduled';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -49,13 +53,27 @@ const NewsletterDashboard = () => {
   const router = useRouter();
   const [newsletters, setNewsletters] = React.useState<Newsletter[]>([]);
   const [loading, setLoading] = React.useState(true);
+  const [activeTab, setActiveTab] = React.useState<TabType>('all');
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const [deleteLoading, setDeleteLoading] = React.useState<string | null>(null);
+  const itemsPerPage = 10;
 
   const fetchNewsletterStats = React.useCallback(async () => {
     try {
       const response = await newsletterAPI.getNewsletterStats();
       
       if (response && response.newsletters) {
-        setNewsletters(response.newsletters);
+        // Sort: most recent first (sent > scheduled > draft, then by date)
+        const sorted = [...response.newsletters].sort((a, b) => {
+          const getDate = (n: Newsletter) => {
+            if (n.sentDate) return new Date(n.sentDate).getTime();
+            if (n.scheduledDate) return new Date(n.scheduledDate).getTime();
+            if (n.createdAt) return new Date(n.createdAt).getTime();
+            return 0;
+          };
+          return getDate(b) - getDate(a);
+        });
+        setNewsletters(sorted);
       } else {
         console.error('Invalid response format:', response);
         setNewsletters([]);
@@ -128,6 +146,56 @@ const NewsletterDashboard = () => {
   const handleCreateClick = () => {
     router.push('/dashboard/newsletters/create');
   };
+
+  const handleDelete = async (newsletterId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!confirm('Are you sure you want to delete this newsletter? This action cannot be undone.')) {
+      return;
+    }
+    
+    setDeleteLoading(newsletterId);
+    try {
+      await newsletterAPI.deleteNewsletter(newsletterId);
+      setNewsletters(prev => prev.filter(n => (n.id || n._id) !== newsletterId));
+    } catch (error) {
+      console.error('Error deleting newsletter:', error);
+      alert('Failed to delete newsletter. Please try again.');
+    } finally {
+      setDeleteLoading(null);
+    }
+  };
+
+  const handleView = (newsletter: Newsletter, e: React.MouseEvent) => {
+    e.stopPropagation();
+    // For sent newsletters, show a preview modal or navigate to view page
+    // For now, we'll just navigate to the create page in view mode
+    router.push(`/dashboard/newsletters/create?id=${newsletter.id || newsletter._id}&view=true`);
+  };
+
+  // Filter newsletters based on active tab
+  const filteredNewsletters = React.useMemo(() => {
+    if (activeTab === 'all') return newsletters;
+    return newsletters.filter(n => n.status === activeTab);
+  }, [newsletters, activeTab]);
+
+  // Pagination
+  const totalPages = Math.ceil(filteredNewsletters.length / itemsPerPage);
+  const paginatedNewsletters = React.useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredNewsletters.slice(start, start + itemsPerPage);
+  }, [filteredNewsletters, currentPage]);
+
+  // Reset to page 1 when tab changes
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab]);
+
+  const tabs: { id: TabType; label: string; icon: React.ElementType }[] = [
+    { id: 'all', label: 'All', icon: Mail },
+    { id: 'sent', label: 'Sent', icon: Send },
+    { id: 'draft', label: 'Drafts', icon: FileText },
+    { id: 'scheduled', label: 'Scheduled', icon: Clock },
+  ];
 
   if (loading) {
     return (
@@ -235,101 +303,214 @@ const NewsletterDashboard = () => {
           ))}
         </motion.div>
 
-        {/* Newsletter List */}
+        {/* Newsletter Table */}
         <motion.div variants={itemVariants}>
           <GlassCard variant="strong" padding="none" className="overflow-hidden">
-            <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-white/10 flex items-center justify-between">
-              <h2 className="text-lg sm:text-xl font-semibold font-display text-white">Recent Newsletters</h2>
-              <Badge variant="default" size="sm">{newsletters.length} total</Badge>
+            {/* Tabs */}
+            <div className="px-4 sm:px-6 py-3 border-b border-white/10">
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <div className="flex gap-2 flex-wrap">
+                  {tabs.map((tab) => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2
+                        ${activeTab === tab.id
+                          ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-glow'
+                          : 'text-neutral-400 hover:text-white hover:bg-white/5'
+                        }`}
+                    >
+                      <tab.icon className="w-4 h-4" />
+                      {tab.label}
+                      {tab.id !== 'all' && (
+                        <span className={`px-2 py-0.5 rounded-full text-xs ${activeTab === tab.id ? 'bg-white/20' : 'bg-white/10'}`}>
+                          {newsletters.filter(n => n.status === tab.id).length}
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+                <Badge variant="default" size="sm">{filteredNewsletters.length} {activeTab === 'all' ? 'total' : activeTab}</Badge>
+              </div>
             </div>
             
-            {newsletters.length === 0 ? (
+            {filteredNewsletters.length === 0 ? (
               <div className="p-8 sm:p-12 text-center">
                 <div className="w-14 h-14 sm:w-16 sm:h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-primary-500/20 to-secondary-500/20 
                   flex items-center justify-center border border-white/10">
                   <Mail className="w-7 h-7 sm:w-8 sm:h-8 text-primary-400" />
                 </div>
-                <h3 className="text-lg font-semibold text-white mb-2">No newsletters yet</h3>
-                <p className="text-neutral-400 mb-6">Create your first newsletter to get started</p>
+                <h3 className="text-lg font-semibold text-white mb-2">
+                  {activeTab === 'all' ? 'No newsletters yet' : `No ${activeTab} newsletters`}
+                </h3>
+                <p className="text-neutral-400 mb-6">
+                  {activeTab === 'all' ? 'Create your first newsletter to get started' : `You don't have any ${activeTab} newsletters yet`}
+                </p>
                 <Button variant="gradient" leftIcon={<Plus className="w-4 h-4" />} onClick={handleCreateClick}>
                   Create Newsletter
                 </Button>
               </div>
             ) : (
-              <div className="divide-y divide-white/10">
-                {newsletters.map((newsletter, index) => (
-                  <motion.div
-                    key={newsletter.id || newsletter._id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                    className="p-4 sm:p-6 hover:bg-gradient-to-r hover:from-primary-500/5 hover:to-transparent 
-                      transition-all duration-300 cursor-pointer group"
-                    onClick={() => newsletter.status === 'draft' && 
-                      router.push(`/dashboard/newsletters/create?id=${newsletter.id || newsletter._id}`)}
-                  >
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                      <div className="flex items-start gap-4">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0
-                          ${newsletter.status === 'sent' 
-                            ? 'bg-success-500/20 text-success-400' 
-                            : newsletter.status === 'scheduled'
-                              ? 'bg-primary-500/20 text-primary-400'
-                              : 'bg-warning-500/20 text-warning-400'
-                          }`}>
-                          {newsletter.status === 'sent' ? <Send className="w-5 h-5" /> :
-                           newsletter.status === 'scheduled' ? <Clock className="w-5 h-5" /> :
-                           <FileText className="w-5 h-5" />}
-                        </div>
-                        <div className="min-w-0">
-                          <h3 className="font-medium text-white group-hover:text-primary-300 transition-colors line-clamp-1">
-                            {newsletter.title}
-                          </h3>
-                          <div className="flex flex-wrap items-center gap-3 mt-1 text-sm text-neutral-400">
-                            {newsletter.scheduledDate && (
-                              <span className="flex items-center gap-1.5">
-                                <Clock className="w-3.5 h-3.5 text-primary-400" />
-                                Scheduled: {new Date(newsletter.scheduledDate).toLocaleString()}
-                              </span>
-                            )}
-                            {newsletter.sentDate && (
-                              <span className="flex items-center gap-1.5">
-                                <Send className="w-3.5 h-3.5 text-success-400" />
-                                Sent: {new Date(newsletter.sentDate).toLocaleString()}
-                              </span>
-                            )}
+              <>
+                {/* Table Header - Hidden on mobile */}
+                <div className="hidden md:grid md:grid-cols-12 gap-4 px-6 py-3 border-b border-white/10 text-sm font-medium text-neutral-400">
+                  <div className="col-span-5">Title</div>
+                  <div className="col-span-2">Subject</div>
+                  <div className="col-span-2">Status</div>
+                  <div className="col-span-2">Date</div>
+                  <div className="col-span-1 text-right">Actions</div>
+                </div>
+
+                {/* Table Body */}
+                <div className="divide-y divide-white/10">
+                  <AnimatePresence mode="popLayout">
+                    {paginatedNewsletters.map((newsletter, index) => (
+                      <motion.div
+                        key={newsletter.id || newsletter._id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        transition={{ delay: index * 0.03 }}
+                        className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-4 px-4 sm:px-6 py-4 
+                          hover:bg-gradient-to-r hover:from-primary-500/5 hover:to-transparent 
+                          transition-all duration-300 group"
+                      >
+                        {/* Title */}
+                        <div className="md:col-span-5 flex items-center gap-3">
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0
+                            ${newsletter.status === 'sent' 
+                              ? 'bg-success-500/20 text-success-400' 
+                              : newsletter.status === 'scheduled'
+                                ? 'bg-primary-500/20 text-primary-400'
+                                : 'bg-warning-500/20 text-warning-400'
+                            }`}>
+                            {newsletter.status === 'sent' ? <Send className="w-5 h-5" /> :
+                             newsletter.status === 'scheduled' ? <Clock className="w-5 h-5" /> :
+                             <FileText className="w-5 h-5" />}
+                          </div>
+                          <div className="min-w-0">
+                            <h3 className="font-medium text-white group-hover:text-primary-300 transition-colors line-clamp-1">
+                              {newsletter.title}
+                            </h3>
+                            <p className="text-xs text-neutral-500 md:hidden mt-1 line-clamp-1">{newsletter.subject}</p>
                           </div>
                         </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-3 ml-14 sm:ml-0">
-                        {(newsletter.status === 'draft' || newsletter.status === 'scheduled') && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              router.push(`/dashboard/newsletters/create?id=${newsletter.id || newsletter._id}`);
-                            }}
-                            className="p-2 text-neutral-400 hover:text-primary-400 transition-colors rounded-lg
-                              hover:bg-primary-500/10 border border-transparent hover:border-primary-500/30"
+
+                        {/* Subject - Desktop only */}
+                        <div className="hidden md:flex md:col-span-2 items-center">
+                          <p className="text-sm text-neutral-400 line-clamp-1">{newsletter.subject}</p>
+                        </div>
+
+                        {/* Status */}
+                        <div className="md:col-span-2 flex items-center">
+                          <Badge 
+                            variant={
+                              newsletter.status === 'sent' ? 'success' : 
+                              newsletter.status === 'scheduled' ? 'primary' : 
+                              'warning'
+                            }
+                            size="sm"
                           >
-                            <Pencil className="w-4 h-4" />
+                            {newsletter.status.charAt(0).toUpperCase() + newsletter.status.slice(1)}
+                          </Badge>
+                        </div>
+
+                        {/* Date */}
+                        <div className="md:col-span-2 flex items-center">
+                          <span className="text-sm text-neutral-400">
+                            {newsletter.sentDate 
+                              ? new Date(newsletter.sentDate).toLocaleDateString()
+                              : newsletter.scheduledDate
+                                ? new Date(newsletter.scheduledDate).toLocaleDateString()
+                                : 'Draft'}
+                          </span>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="md:col-span-1 flex items-center justify-end gap-2">
+                          {newsletter.status === 'sent' ? (
+                            <button
+                              onClick={(e) => handleView(newsletter, e)}
+                              className="p-2 text-neutral-400 hover:text-blue-400 transition-colors rounded-lg
+                                hover:bg-blue-500/10 border border-transparent hover:border-blue-500/30"
+                              title="View"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                          ) : (
+                            <>
+                              <button
+                                onClick={() => router.push(`/dashboard/newsletters/create?id=${newsletter.id || newsletter._id}`)}
+                                className="p-2 text-neutral-400 hover:text-primary-400 transition-colors rounded-lg
+                                  hover:bg-primary-500/10 border border-transparent hover:border-primary-500/30"
+                                title="Edit"
+                              >
+                                <Pencil className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={(e) => handleDelete(newsletter.id || newsletter._id || '', e)}
+                                disabled={deleteLoading === (newsletter.id || newsletter._id)}
+                                className="p-2 text-neutral-400 hover:text-red-400 transition-colors rounded-lg
+                                  hover:bg-red-500/10 border border-transparent hover:border-red-500/30
+                                  disabled:opacity-50 disabled:cursor-not-allowed"
+                                title="Delete"
+                              >
+                                {deleteLoading === (newsletter.id || newsletter._id) ? (
+                                  <div className="w-4 h-4 border-2 border-red-400 border-t-transparent rounded-full animate-spin" />
+                                ) : (
+                                  <Trash2 className="w-4 h-4" />
+                                )}
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                </div>
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="px-6 py-4 border-t border-white/10 flex items-center justify-between">
+                    <p className="text-sm text-neutral-400">
+                      Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, filteredNewsletters.length)} of {filteredNewsletters.length}
+                    </p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                        disabled={currentPage === 1}
+                        className="p-2 rounded-lg text-neutral-400 hover:text-white hover:bg-white/5 
+                          disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                      </button>
+                      <div className="flex gap-1">
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                          <button
+                            key={page}
+                            onClick={() => setCurrentPage(page)}
+                            className={`px-3 py-1 rounded-lg text-sm transition-all
+                              ${currentPage === page
+                                ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white'
+                                : 'text-neutral-400 hover:text-white hover:bg-white/5'
+                              }`}
+                          >
+                            {page}
                           </button>
-                        )}
-                        <Badge 
-                          variant={
-                            newsletter.status === 'sent' ? 'success' : 
-                            newsletter.status === 'scheduled' ? 'primary' : 
-                            'warning'
-                          }
-                          size="sm"
-                        >
-                          {newsletter.status.charAt(0).toUpperCase() + newsletter.status.slice(1)}
-                        </Badge>
+                        ))}
                       </div>
+                      <button
+                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                        disabled={currentPage === totalPages}
+                        className="p-2 rounded-lg text-neutral-400 hover:text-white hover:bg-white/5 
+                          disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
                     </div>
-                  </motion.div>
-                ))}
-              </div>
+                  </div>
+                )}
+              </>
             )}
           </GlassCard>
         </motion.div>
