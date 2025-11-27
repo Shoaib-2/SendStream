@@ -5,7 +5,14 @@ SendStream is a comprehensive, full-stack SaaS platform that streamlines newslet
 ## 🎯 What Does SendStream Do?
 
 ### Core Features
+- **AI-Powered Content Generation:** Generate engaging newsletter content with OpenAI GPT-3.5-turbo integration (NEW)
+  - Smart content generation based on topics and audience
+  - AI-powered subject line suggestions (5 variations)
+  - Intelligent content improvement and optimization
+  - Smart scheduling recommendations based on audience engagement
+  - Automatic title generation from content
 - **Newsletter Management:** Create, edit, schedule, and send newsletters with a rich content editor
+- **Modern Table Interface:** Tab-based newsletter view (All/Sent/Draft/Scheduled) with pagination (NEW)
 - **Subscriber Management:** Import subscribers via CSV, add manually, or sync with Mailchimp
 - **Email Delivery:** Gmail SMTP integration with daily sending limits (100 emails/day per user)
 - **Scheduling System:** Schedule newsletters for future delivery with cron-based automation
@@ -19,6 +26,9 @@ SendStream is a comprehensive, full-stack SaaS platform that streamlines newslet
 - **Settings Management:** Customizable email sender settings (from name, reply-to, sender email)
 
 ### Advanced Features
+- **AI Usage Tracking:** Daily AI API quota monitoring and enforcement (NEW)
+- **Modern UI/UX:** Glass morphism design with gradient animations and smooth transitions (NEW)
+- **Delete Confirmation Modals:** Modern confirmation dialogs with animations (NEW)
 - **Email Usage Tracking:** Daily email quota monitoring and enforcement
 - **Unsubscribe Management:** One-click unsubscribe with tracking pixel integration
 - **CSV Import/Export:** Bulk subscriber operations with CSV file support
@@ -49,6 +59,7 @@ SendStream is a comprehensive, full-stack SaaS platform that streamlines newslet
 - **Runtime:** Node.js with Express 4.21.2
 - **Language:** TypeScript 5.7.3
 - **Database:** MongoDB 6.13.0 with Mongoose 8.9.5
+- **AI Integration:** OpenAI API (GPT-3.5-turbo) for content generation (NEW)
 - **Authentication:** JWT (jsonwebtoken 9.0.2) with bcryptjs 2.4.3
 - **Email Service:** Nodemailer 6.10.0 with Gmail SMTP
 - **Payment Processing:** Stripe 17.7.0
@@ -158,6 +169,9 @@ STRIPE_SECRET_KEY=your_stripe_secret_key
 STRIPE_PRICE_ID=your_stripe_price_id
 STRIPE_WEBHOOK_SECRET=your_stripe_webhook_secret
 
+# OpenAI (NEW)
+OPENAI_API_KEY=your_openai_api_key
+
 # URLs
 CLIENT_URL=http://localhost:3000
 SERVER_URL=http://localhost:5000
@@ -254,6 +268,14 @@ Available test suites:
 - `DELETE /api/newsletters/:id` - Delete newsletter
 - `POST /api/newsletters/:id/send` - Send newsletter
 - `POST /api/newsletters/:id/schedule` - Schedule newsletter
+
+### AI Endpoints (Protected) - NEW
+- `POST /api/ai/generate-content` - Generate newsletter content with AI
+- `POST /api/ai/improve-content` - Improve existing content with AI
+- `POST /api/ai/generate-subjects` - Generate subject line suggestions
+- `POST /api/ai/smart-schedule` - Get AI-powered scheduling recommendation
+- `POST /api/ai/generate-title` - Generate newsletter title from content
+- `GET /api/ai/usage` - Get AI usage statistics
 
 ### Subscriber Endpoints (Protected)
 - `GET /api/subscribers` - Get all subscribers
@@ -533,7 +555,34 @@ For support, open an issue in the GitHub repository.
 
 ## 🔄 Version History
 
-- **1.1.0** (Current - December 2024)
+- **1.2.0** (Current - November 2025)
+  - **AI Integration:**
+    - OpenAI GPT-3.5-turbo integration for content generation
+    - AI-powered subject line suggestions (5 variations)
+    - Intelligent content improvement and optimization
+    - Smart scheduling recommendations
+    - Automatic title generation from content
+    - AI usage tracking and quota management (50 requests/day per user)
+  - **UI/UX Improvements:**
+    - Modern table view for newsletters with tabs (All/Sent/Draft/Scheduled)
+    - Pagination support (10 items per page)
+    - Glass morphism design system throughout the app
+    - Shimmer loading animations on AI buttons
+    - Delete confirmation modals with animations
+    - AI feature highlights on landing page
+    - Custom SendStream favicon with gradient design
+  - **Performance Optimizations:**
+    - Removed 102+ console.log statements from production build
+    - Optimized AI response times (8-12 seconds average)
+    - Reduced token usage by 30-40% for faster responses
+    - 30-second timeout on AI requests for reliability
+  - **Bug Fixes:**
+    - Fixed timezone display in newsletter scheduler (now shows local time)
+    - Fixed authentication middleware for AI endpoints
+    - Resolved button layout issues in newsletter creation
+    - Fixed linting errors across all client-side code
+
+- **1.1.0** (December 2024)
   - **Security Enhancements:**
     - Added Helmet.js security headers (CSP, HSTS, XSS protection)
     - Implemented AES-256-GCM encryption for API keys at rest
