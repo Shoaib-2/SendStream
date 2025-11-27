@@ -1,13 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
 import { AIUsage } from '../models/AIUsage';
 
-// Free tier limits per feature per day
+// Free tier limits per feature per day (increased for demo purposes)
 const FEATURE_LIMITS = {
-  generate_content: 5,
-  improve_content: 5,
-  subject_lines: 5,
-  smart_schedule: 5,
-  generate_title: 5
+  generate_content: 50,
+  improve_content: 50,
+  subject_lines: 50,
+  smart_schedule: 50,
+  generate_title: 50
 } as const;
 
 type FeatureType = keyof typeof FEATURE_LIMITS;
