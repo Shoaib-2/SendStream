@@ -135,7 +135,7 @@ const Footer: React.FC = () => {
                 rel="noopener noreferrer"
                 className="text-primary-400 hover:text-primary-300 font-medium transition-colors"
               >
-                Mohammed Shoaib
+                Shoaib Mohammed
               </a>
             </p>
 
