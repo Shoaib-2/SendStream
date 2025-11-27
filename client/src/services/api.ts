@@ -1,18 +1,4 @@
-// -----------------------------
-// API Service Subscription Logic
-//
-// This file contains API service functions and also includes logic for checking subscription status and redirecting to the renewal page (/?renew=true).
-//
-// PHASE 1 AUDIT & CLEANUP:
-// - This file is one of several that handle renewal logic. See also: ExpiredSubscription.tsx, SubscriptionErrorHandler.tsx, dataContext.tsx, authContext.tsx.
-// - TODO: In a future phase, centralize all subscription/renewal logic in a single context or hook to avoid duplication and race conditions.
-//
-// Current logic:
-// - Checks for 'renew=true' in the URL and may trigger redirects or UI changes in API error handling.
-// - May duplicate logic found in other files/components.
-//
-// If you are refactoring subscription logic, coordinate with other files that handle renewal.
-// -----------------------------
+// Client side API service module with improved error handling and performance optimizations
 
 import axios, { AxiosError, AxiosRequestConfig } from "axios";
 import { loadStripe } from "@stripe/stripe-js";
@@ -152,10 +138,6 @@ interface ForgotPasswordResponse {
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://backend-9h3q.onrender.com/api';
-if (!process.env.NEXT_PUBLIC_API_URL) {
-  console.warn('NEXT_PUBLIC_API_URL is not defined! Using fallback:', API_URL);
-}
-console.log("API URL:", API_URL); // Debug log
 
 export class APIError extends Error {
   constructor(public status: number, message: string, public data?: unknown) {
@@ -278,8 +260,6 @@ api.interceptors.response.use(
     // First check if user just renewed (has renewal flag in localStorage)
     const justRenewed = localStorage.getItem("subscription_renewed");
     if (justRenewed && error.response?.status === 403) {
-      console.log("User just renewed, refreshing token before retry");
-
       // Clear the renewal flag
       localStorage.removeItem("subscription_renewed");
 
@@ -295,8 +275,6 @@ api.interceptors.response.use(
         error.response?.data?.message?.includes("Subscription expired") ||
         error.response?.data?.message?.includes("Subscription required"))
     ) {
-      // console.log("Handling subscription expired error more aggressively");
-
       // Force clear any problematic cache
       localStorage.removeItem("has_active_access");
 
@@ -306,7 +284,6 @@ api.interceptors.response.use(
       
       // For API calls during page load, resolve with null
       if (silentMode) {
-        // console.log("Silencing subscription expired error during initial load");
         return Promise.resolve({ data: null });
       }
       
@@ -321,14 +298,11 @@ api.interceptors.response.use(
 
     // Handle 403 errors silently during initial load
     if (error.response?.status === 403 && silentMode) {
-      // console.log("Silencing 403 error during subscription check");
       return Promise.resolve({ data: null });
     }
 
     // Only handle auth errors loudly if not on auth pages
     if (error.response?.status === 401 && !isOnAuthPage && !silentMode) {
-      // console.log("Authentication error:", error.config?.url);
-
       // Track which endpoint is failing
       if (lastFailedEndpoint === error.config?.url) {
         failedRequestsCount++;
@@ -339,9 +313,6 @@ api.interceptors.response.use(
 
       // Prevent infinite loops by limiting retries
       if (failedRequestsCount >= MAX_FAILED_REQUESTS) {
-        console.error(
-          `Too many failed requests to ${lastFailedEndpoint}, stopping retries`
-        );
 
         // Reset localStorage and redirect only once
         if (!isRedirecting) {
@@ -354,9 +325,6 @@ api.interceptors.response.use(
             typeof window !== "undefined" &&
             !window.location.pathname.includes("/login")
           ) {
-            // console.log(
-            //   "Redirecting to login page after too many failed requests"
-            // );
             window.location.href = "/login";
           }
         }
@@ -365,15 +333,6 @@ api.interceptors.response.use(
           new Error("Authentication failed after multiple attempts")
         );
       }
-    }
-
-    // Only log errors if not in silent mode
-    if (!silentMode) {
-      console.error(
-        "Response error:",
-        error.response?.status,
-        error.config?.url
-      );
     }
 
     return Promise.reject(error);
@@ -398,8 +357,6 @@ api.interceptors.request.use(
     const token = localStorage.getItem("token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-    } else {
-      // console.log("No auth token available for request:", config.url);
     }
 
     const paginatedEndpoints = [
@@ -425,7 +382,6 @@ api.interceptors.request.use(
     return config;
   },
   (error) => {
-    console.error("Request interceptor error:", error);
     return Promise.reject(error);
   }
 );
@@ -508,22 +464,12 @@ export const settingsAPI = {
 export const newsletterAPI = {
   testIntegration: async (type: "mailchimp") => {
     try {
-      console.log(`Testing ${type} integration...`);
-
       // Get current settings with a proper type definition
       const settings = await settingsAPI.getSettings();
 
       // Use optional chaining and nullish coalescing to handle potential undefined values
       const apiKey = settings?.mailchimp?.apiKey ?? "";
       const serverPrefix = settings?.mailchimp?.serverPrefix ?? "";
-
-      console.log("Testing with credentials:", {
-        apiKeyLength: apiKey.length,
-        apiKeyMasked: apiKey.startsWith("••••"),
-        serverPrefix,
-        hasApiKey: !!apiKey,
-        hasServerPrefix: !!serverPrefix,
-      });
 
       // Don't try to test with masked key
       if (apiKey.startsWith("••••")) {
@@ -556,7 +502,6 @@ export const newsletterAPI = {
 
       return response.data.data;
     } catch (error) {
-      console.error(`${type} integration test detailed error:`, error);
       const axiosError = error as AxiosError<ErrorResponseData>;
       return {
         success: false,
@@ -577,7 +522,6 @@ export const newsletterAPI = {
         );
         return response.data.data;
       } catch (error) {
-        console.error("API Error:", error);
         return {
           newsletters: [],
           qualityStats: {
@@ -656,7 +600,6 @@ export const newsletterAPI = {
   schedule: async (id: string, scheduledDate: string) => {
     try {
       const timestamp = new Date(scheduledDate).getTime();
-      console.log("Scheduling with timestamp:", timestamp);
       const response = await api.post<ResponseData<Newsletter>>(
         `/newsletters/${id}/schedule`,
         { scheduledDate: timestamp }
@@ -669,8 +612,6 @@ export const newsletterAPI = {
   },
   send: async (id: string) => {
     try {
-      console.log(`Attempting to send newsletter ${id}...`);
-
       // ADDED: Pre-flight validation to catch issues early
       if (!id || id.trim() === "") {
         throw new APIError(400, "Newsletter ID is required");
@@ -687,16 +628,16 @@ export const newsletterAPI = {
         }
       );
 
-      console.log(`Newsletter sent successfully:`, response.data);
       return response.data.data;
     } catch (error) {
-      console.error("Newsletter send error details:", {
-        id,
-        status: (error as AxiosError).response?.status,
-        statusText: (error as AxiosError).response?.statusText,
-        data: (error as AxiosError).response?.data,
-        message: (error as AxiosError).message,
-      });
+      // Error details for debugging if needed
+      // const errorDetails = {
+      //   id,
+      //   status: (error as AxiosError).response?.status,
+      //   statusText: (error as AxiosError).response?.statusText,
+      //   data: (error as AxiosError).response?.data,
+      //   message: (error as AxiosError).message,
+      // };
 
       // IMPROVED: More specific error messages based on status codes
       let errorMessage = "Failed to send newsletter";
@@ -735,7 +676,6 @@ export const subscriberAPI = {
     try {
       await api.post("/subscribers/bulk-delete", { ids });
     } catch (error) {
-      console.error("Error bulk deleting subscribers:", error);
       handleError(error as AxiosError);
     }
   },
@@ -766,7 +706,6 @@ export const subscriberAPI = {
 
       return subscribers;
     } catch (error) {
-      console.error("Error fetching subscribers:", error);
       handleError(error as AxiosError);
       throw error;
     }
@@ -792,10 +731,8 @@ export const subscriberAPI = {
       return { success: true };
     } catch (error) {
       if ((error as AxiosError).response?.status === 404) {
-        console.log("Subscriber already deleted:", id);
         return { success: true };
       }
-      console.error("Error removing subscriber:", error);
       handleError(error as AxiosError);
       throw error;
     }
@@ -846,38 +783,23 @@ export const subscriberAPI = {
       const response = await api.post("/settings/sync-subscribers");
       return response.data.data;
     } catch (error) {
-      console.error("Error syncing Mailchimp subscribers:", error);
       throw error;
     }
   },
   // Enhanced with better error handling and retry logic
   updateStatus: async (id: string, status: "active" | "unsubscribed") => {
     try {
-      console.log(`Updating subscriber ${id} status to ${status}`);
       const response = await api.patch(`/subscribers/${id}/status`, { status });
-
-      // Verify the response contains the updated status
-      if (response.data?.data?.status !== status) {
-        console.warn(
-          "Status update response mismatch:",
-          response.data?.data?.status,
-          "expected:",
-          status
-        );
-      }
 
       return response.data.data;
     } catch (error) {
-      console.error("Error updating subscriber status:", error);
       // Retry once on failure
       try {
-        console.log("Retrying status update...");
         const response = await api.patch(`/subscribers/${id}/status`, {
           status,
         });
         return response.data.data;
       } catch (retryError) {
-        console.error("Status update retry failed:", retryError);
         throw retryError;
       }
     }
@@ -888,10 +810,8 @@ export const analyticsAPI = {
   getSummary: async () => {
     try {
       const response = await api.get<ResponseData<unknown>>("/analytics/summary");
-      // console.log("Analytics response:", response.data); // Debug log
       return response.data;
     } catch (error) {
-      console.error("Detailed API Error:", error);
       throw new APIError(500, "Failed to fetch analytics summary");
     }
   },
@@ -918,7 +838,6 @@ export const analyticsAPI = {
       // Returning the data directly - handle the transformation in the component.
       return response.data.data || [];
     } catch (error) {
-      console.error("Error fetching growth data:", error);
       // Return empty array instead of using handleError to prevent unnecessary crashes
       return [];
     }
@@ -943,18 +862,14 @@ export const authAPI = {
       // Check if token exists before making the request
       const token = localStorage.getItem("token");
       if (!token) {
-        // console.log("No token found, skipping auth check");
         return { status: "error", authenticated: false };
       }
 
       const response = await api.get("/auth/me");
-      // console.log("Auth check response:", response.data);
       return { ...response.data, status: "success", authenticated: true };
     } catch (error) {
-      console.error("Auth check failed:", error);
       // Handle 404 errors gracefully - API endpoint might not be available
       if ((error as AxiosError).response?.status === 404) {
-        console.log("Auth endpoint not found, API might be unreachable");
         return {
           status: "error",
           authenticated: false,
@@ -972,10 +887,8 @@ export const authAPI = {
       const response = await api.post("/auth/login", credentials, {
         timeout: 10000, // 10 second timeout
       });
-      // console.log("Login response:", response.data);
       return response.data.data;
     } catch (error) {
-      console.error("Login error:", error);
       // Special handling for 404 errors - don't throw, return a structured error response
       if ((error as AxiosError).response?.status === 404) {
         return {
@@ -1012,7 +925,6 @@ export const authAPI = {
       );
       return response.data.data;
     } catch (error) {
-      console.error(`${provider} login error:`, error);
       if ((error as AxiosError).response?.status === 404) {
         return {
           status: "error",
@@ -1039,19 +951,11 @@ export const authAPI = {
     stripeSessionId?: string;
   }) => {
     try {
-      console.log("Registering with data:", {
-        email: data.email,
-        hasPassword: !!data.password,
-        hasStripeSession: !!data.stripeSessionId,
-      });
-
       const response = await api.post("/auth/register", data, {
         timeout: 10000, // 10 second timeout
       });
-      console.log("Register response:", response.data);
       return response.data.data;
     } catch (error) {
-      console.error("Register error:", error);
       // Special handling for 404 errors
       if ((error as AxiosError).response?.status === 404) {
         return {
@@ -1082,7 +986,6 @@ export const authAPI = {
       await api.post("/auth/logout");
       return { status: "success" };
     } catch (error) {
-      console.error("Logout error:", error);
       // Even if logout API fails, we can still clear local state
       return { status: "success", message: "Logged out locally" };
     }
@@ -1105,8 +1008,6 @@ export const authAPI = {
         message: response.data?.message || "Password reset email sent",
       };
     } catch (error) {
-      console.error("Forgot password error:", error);
-
       // Handle various error cases
       if ((error as AxiosError).response?.status === 404) {
         return {
@@ -1157,13 +1058,11 @@ export const authAPI = {
           timeout: 10000, // 10 second timeout
         }
       );
-      // console.log("Reset password response:", response.data);
       return {
         status: "success",
         ...response.data.data,
       };
     } catch (error) {
-      console.error("Reset password error:", error);
 
       // Type guard for AxiosError
       const isAxiosError = (err: unknown): err is AxiosError => {
@@ -1204,11 +1103,9 @@ const getStripe = async () => {
     const key = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
     
     if (!key || key.trim() === '') {
-      console.error('NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is not set');
       return Promise.resolve(null);
     }
     
-    console.log('Loading Stripe with key:', key.substring(0, 7) + '...');
     stripePromise = loadStripe(key, {
       locale: 'en'
     });
@@ -1241,12 +1138,6 @@ export const createCheckoutSession = async (
     const user = JSON.parse(localStorage.getItem("user") || "{}");
     const email = user.email || options.email || "";
 
-    // console.log("Checkout Session Email Debug:", {
-    //   userFromStorage: user,
-    //   optionsEmail: options.email,
-    //   finalEmail: email,
-    // });
-
     if (!priceId) {
       throw new Error("Price ID is required");
     }
@@ -1259,15 +1150,6 @@ export const createCheckoutSession = async (
 
     const cancelUrl =
       typeof window !== "undefined" ? window.location.origin : "";
-
-    // console.log("Creating checkout session with:", {
-    //   priceId,
-    //   successUrl: finalSuccessUrl,
-    //   cancelUrl,
-    //   skipTrial: options.skipTrial,
-    //   hasEmail: !!email,
-    //   email: email?.substring(0, 3) + "...", // Log just first few chars for privacy
-    // });
 
     const response = await fetch(`${API_URL}/stripe/checkout`, {
       method: "POST",
@@ -1285,7 +1167,6 @@ export const createCheckoutSession = async (
 
     if (!response.ok) {
       const errorData = await response.json();
-      console.error("Checkout API error response:", errorData);
       throw new Error(
         errorData.error ||
           errorData.details ||
@@ -1298,7 +1179,6 @@ export const createCheckoutSession = async (
 
     if (!stripe) {
       const errorMsg = 'Stripe is not properly configured. Please check NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY environment variable.';
-      console.error(errorMsg);
       alert(errorMsg);
       throw new Error(errorMsg);
     }
@@ -1307,18 +1187,15 @@ export const createCheckoutSession = async (
       throw new Error("No session ID returned from checkout API");
     }
 
-    console.log("Redirecting to Stripe checkout with session:", data.sessionId);
     const { error } = await stripe.redirectToCheckout({
       sessionId: data.sessionId,
     });
 
     if (error) {
-      console.error("Stripe checkout error:", error);
       alert(`Stripe checkout failed: ${error.message}`);
       throw error;
     }
   } catch (error) {
-    console.error("Error creating checkout session:", error);
     throw error;
   }
 };
@@ -1327,15 +1204,11 @@ export const createCheckoutSession = async (
 export const startFreeTrial = async (plan: PricingPlan, userEmail?: string) => {
   if (typeof window === "undefined") return;
 
-  // console.log('Starting trial checkout process...');
-
   const isRenewal = window.location.search.includes("renew=true");
   const successUrl = `${window.location.origin}/?session_id={CHECKOUT_SESSION_ID}`;
 
   // Get email (should already be found by components, this is a fallback)
   const email = userEmail || "";
-
-  // console.log('Email for checkout:', { email });
 
   // Check if this email is eligible for trial
   let forceSkipTrial = isRenewal;
@@ -1346,7 +1219,6 @@ export const startFreeTrial = async (plan: PricingPlan, userEmail?: string) => {
       const isEligible = await checkTrialEligibility(email);
 
       if (!isEligible) {
-        console.log('User not eligible for trial, forcing renewal flow');
         forceSkipTrial = true;
         
         // Show user a message that they already used trial
@@ -1355,20 +1227,13 @@ export const startFreeTrial = async (plan: PricingPlan, userEmail?: string) => {
             'This email has already used a free trial. You will be charged for the subscription. Continue?'
           );
           if (!confirmed) {
-            console.log('User cancelled checkout');
             return;
           }
         }
-      } else {
-        console.log('User eligible for free trial');
       }
     } catch (error) {
-      console.error("Error checking trial eligibility:", error);
     }
   }
-
-  // Final logging before checkout
-  console.log(`Proceeding to checkout (skipTrial: ${forceSkipTrial})`);
 
   // Create checkout session with or without trial
   try {
@@ -1377,7 +1242,6 @@ export const startFreeTrial = async (plan: PricingPlan, userEmail?: string) => {
       email: email, // Pass email even if empty
     });
   } catch (error) {
-    console.error("Failed to create checkout session:", error);
     throw error;
   }
 };
@@ -1388,7 +1252,6 @@ export const getSubscriptionStatus = async () => {
     const response = await api.get("/subscription/status");
     return response.data;
   } catch (error) {
-    console.error("Error fetching subscription status:", error);
     throw error;
   }
 };
@@ -1414,7 +1277,6 @@ export const cancelSubscription = async (subscriptionId: string) => {
 
     return await response.json();
   } catch (error) {
-    console.error("Error cancelling subscription:", error);
     throw error;
   }
 };
@@ -1449,7 +1311,6 @@ export const updateSubscriptionRenewal = async (
 
     return await response.json();
   } catch (error) {
-    console.error("Error updating subscription renewal:", error);
     throw error;
   }
 };
@@ -1464,7 +1325,6 @@ export const emailAPI = {
     } catch (error) {
       // IMPROVED: Better error handling with specific status code checks
       if ((error as AxiosError).response?.status === 404) {
-        console.log("Email usage endpoint not implemented yet, using defaults");
         // Return default values silently when endpoint doesn't exist
         return {
           emailsSent: 0,
@@ -1473,8 +1333,7 @@ export const emailAPI = {
         };
       }
 
-      // Log other errors but still return defaults to prevent app crashes
-      console.error("Error fetching email usage:", error);
+      // Return defaults to prevent app crashes
       return {
         emailsSent: 0,
         dailyLimit: 100,
@@ -1536,14 +1395,11 @@ export const aiAPI = {
     includeCallToAction?: boolean;
   }): Promise<AIGeneratedContent> => {
     try {
-      console.log('[Client AI] Generating content with request:', request);
       const response = await api.post<ResponseData<AIGeneratedContent>>('/ai/generate-content', request, {
         timeout: 30000, // 30 seconds - optimized with gpt-3.5-turbo
       });
-      console.log('[Client AI] Content generation successful:', response.data);
       return response.data.data;
     } catch (error) {
-      console.error('[Client AI] Content generation failed:', error);
       handleError(error as AxiosError);
       throw error;
     }
@@ -1552,14 +1408,11 @@ export const aiAPI = {
   // Improve existing content
   improveContent: async (content: string, instructions?: string): Promise<string> => {
     try {
-      console.log('[Client AI] Improving content, length:', content.length);
       const response = await api.post<ResponseData<{ content: string }>>('/ai/improve-content', { content, instructions }, {
         timeout: 25000, // 25 seconds - optimized
       });
-      console.log('[Client AI] Content improvement successful');
       return response.data.data.content;
     } catch (error) {
-      console.error('[Client AI] Content improvement failed:', error);
       handleError(error as AxiosError);
       throw error;
     }
@@ -1568,14 +1421,11 @@ export const aiAPI = {
   // Generate subject line suggestions
   generateSubjects: async (topic: string, content?: string): Promise<string[]> => {
     try {
-      console.log('[Client AI] Generating subject lines for topic:', topic);
       const response = await api.post<ResponseData<{ subjects: string[] }>>('/ai/generate-subjects', { topic, content }, {
         timeout: 30000, // 30 seconds for subject generation
       });
-      console.log('[Client AI] Subject generation successful:', response.data.data.subjects.length, 'subjects');
       return response.data.data.subjects;
     } catch (error) {
-      console.error('[Client AI] Subject generation failed:', error);
       handleError(error as AxiosError);
       throw error;
     }
@@ -1589,14 +1439,11 @@ export const aiAPI = {
     historicalBestTimes?: string[];
   }): Promise<SmartScheduleRecommendation> => {
     try {
-      console.log('[Client AI] Getting smart schedule recommendation');
       const response = await api.post<ResponseData<SmartScheduleRecommendation>>('/ai/smart-schedule', { engagementData }, {
         timeout: 30000, // 30 seconds for schedule recommendation
       });
-      console.log('[Client AI] Smart schedule received:', response.data.data.recommendedDay, response.data.data.recommendedTime);
       return response.data.data;
     } catch (error) {
-      console.error('[Client AI] Smart schedule failed:', error);
       handleError(error as AxiosError);
       throw error;
     }
@@ -1605,14 +1452,11 @@ export const aiAPI = {
   // Generate title from content
   generateTitle: async (content: string): Promise<string> => {
     try {
-      console.log('[Client AI] Generating title from content');
       const response = await api.post<ResponseData<{ title: string }>>('/ai/generate-title', { content }, {
         timeout: 25000, // 25 seconds for title generation
       });
-      console.log('[Client AI] Title generated:', response.data.data.title);
       return response.data.data.title;
     } catch (error) {
-      console.error('[Client AI] Title generation failed:', error);
       handleError(error as AxiosError);
       throw error;
     }

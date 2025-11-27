@@ -79,11 +79,9 @@ const NewsletterDashboard = () => {
         });
         setNewsletters(sorted);
       } else {
-        console.error('Invalid response format:', response);
         setNewsletters([]);
       }
     } catch (error) {
-      console.error('Error fetching newsletters:', error);
       setNewsletters([]);
     } finally {
       setLoading(false);
@@ -167,7 +165,6 @@ const NewsletterDashboard = () => {
       setNewsletters(prev => prev.filter(n => (n.id || n._id) !== newsletterId));
       setDeleteModal({ isOpen: false, newsletter: null });
     } catch (error) {
-      console.error('Error deleting newsletter:', error);
       alert('Failed to delete newsletter. Please try again.');
     } finally {
       setDeleteLoading(null);

@@ -49,7 +49,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
     const connectWebSocket = () => {
       if (!token) {
-        // console.log('No authentication token found for WebSocket connection');
         return;
       }
 
@@ -57,12 +56,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'wss://backend-9h3q.onrender.com';
         // Ensure the WebSocket URL includes the /ws path
         const wsEndpoint = wsUrl.endsWith('/ws') ? wsUrl : `${wsUrl}/ws`;
-        console.log('Attempting WebSocket connection to:', wsEndpoint);
 
         const socket = new WebSocket(`${wsEndpoint}?token=${token}`);
 
         socket.onopen = () => {
-          // console.log('WebSocket connected successfully');
           setWsReconnectAttempts(0); // Reset reconnect attempts on successful connection
         };
 
@@ -75,35 +72,26 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
               ));
             } else if (data.type === 'subscriber_update') {
               // Update subscribers from WebSocket event
-              // console.log('WebSocket subscriber update:', data.data);
               setSubscribers(prev => prev.map(sub =>
                 sub.id === data.data.id ? { ...sub, status: data.data.status } : sub
               ));
             }
           } catch (error) {
-            console.error('Error processing WebSocket message:', error);
           }
         };
 
         socket.onclose = (event: CloseEvent) => {
-          console.log('WebSocket disconnected:', event.code, event.reason);
           // Only attempt to reconnect if it wasn't closed due to auth failure and we have a token
           if (event.code !== 1008 && event.code !== 1006 && localStorage.getItem('token')) {
             // Check if we haven't exceeded max reconnection attempts
             if (wsReconnectAttempts < MAX_WS_RECONNECT_ATTEMPTS) {
-              console.log(`WebSocket reconnection attempt ${wsReconnectAttempts + 1}/${MAX_WS_RECONNECT_ATTEMPTS}`);
               setWsReconnectAttempts(prev => prev + 1);
               setTimeout(connectWebSocket, 5000);
-            } else {
-              console.warn('Max WebSocket reconnection attempts reached. Stopping reconnection.');
             }
-          } else {
-            console.log('WebSocket closed permanently:', event.code === 1006 ? 'Insufficient resources' : 'Auth failure');
           }
         };
 
         socket.onerror = () => {
-          // console.error('WebSocket error:', event); // Commented out to remove build log error
           const currentToken = localStorage.getItem('token');
           if (currentToken !== token) {
             socket.close();
@@ -112,21 +100,17 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
         setWs(socket);
       } catch (error) {
-        console.error('Failed to establish WebSocket connection:', error);
       }
     };
 
     // Connect WebSocket when component mounts or token changes
     if (token) {
       connectWebSocket();
-    } else {
-      // console.log('No token available for WebSocket connection');
     }
 
     // Cleanup WebSocket connection on unmount or token change
     return () => {
       if (ws) {
-        // console.log('Cleaning up WebSocket connection');
         ws.close();
         setWs(null);
       }
@@ -177,13 +161,11 @@ useEffect(() => {
         const response = await subscriberAPI.getAll();
         if (response) subscribersData = response;
       } catch (err) {
-        console.error('Error fetching subscribers:', err);
       }
       try {
         const response = await newsletterAPI.getAll();
         if (response) newslettersData = response;
       } catch (err) {
-        console.error('Error fetching newsletters:', err);
       }
       if (subscribersData && isSubscribed) {
         setSubscribers(subscribersData);
@@ -196,7 +178,6 @@ useEffect(() => {
         setNewsletters([]);
       }
     } catch (error) {
-      console.error('Data fetch error:', error);
     } finally {
       if (isSubscribed) {
         setIsLoading(false);
@@ -235,7 +216,6 @@ useEffect(() => {
         setSubscribers(prev => [...prev, newSubscriber]);
       }
     } catch (error) {
-      console.error('Error adding subscriber:', error);
       throw error;
     }
   };
@@ -250,18 +230,13 @@ useEffect(() => {
       const cleanId = String(id).trim();
 
       // Get the subscriber first to check current status
-      const subscriber = subscribers.find(s => s.id === cleanId);
-      if (!subscriber) {
-        console.warn(`Subscriber with ID ${cleanId} not found in local state`);
-      }
-
-      // console.log(`Removing subscriber ${cleanId}, current status: ${subscriber?.status}`);
+      // Find subscriber for potential future use
+      subscribers.find(s => s.id === cleanId);
 
       // Use updateStatus instead of delete to ensure mailchimp sync
       const updatedSubscriber = await subscriberAPI.updateStatus(cleanId, 'unsubscribed');
 
       if (updatedSubscriber) {
-        // console.log('Subscriber status updated successfully:', updatedSubscriber.status);
 
         // Update the local state with the new status
         setSubscribers(prev => prev.map(sub =>
@@ -270,17 +245,12 @@ useEffect(() => {
 
         // Force sync with mailchimp to ensure consistency
         try {
-          // console.log('Syncing with Mailchimp after status update');
           await subscriberAPI.syncMailchimp();
         } catch (syncError) {
-          console.error('Mailchimp sync error after status update:', syncError);
           // Continue execution even if sync fails
         }
-      } else {
-        console.warn('No response received when updating subscriber status');
       }
     } catch (error) {
-      console.error('Error in DataContext removeSubscriber:', error);
       throw error;
     }
   };
@@ -307,7 +277,6 @@ useEffect(() => {
         setNewsletters(prev => [...prev, formattedNewsletter]);
       }
     } catch (error) {
-      console.error('Error adding newsletter:', error);
       throw error;
     }
   };
@@ -333,7 +302,6 @@ useEffect(() => {
         } : n));
       }
     } catch (error) {
-      console.error('Error updating newsletter:', error);
       throw error;
     }
   };

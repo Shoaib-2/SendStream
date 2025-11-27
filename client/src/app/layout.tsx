@@ -26,6 +26,10 @@ export const metadata: Metadata = {
   description: 'Streamline your newsletter workflow with AI-powered automation, analytics, and subscriber management.',
   keywords: 'newsletter, automation, email marketing, subscriber management, analytics',
   authors: [{ name: 'SendStream Team' }],
+  icons: {
+    icon: '/favicon.ico',
+    apple: '/icon.svg',
+  },
   openGraph: {
     title: 'SendStream - Modern Newsletter Automation',
     description: 'Streamline your newsletter workflow with AI-powered automation',
@@ -38,7 +42,6 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
-  console.log('[RootLayout] Rendering with children:', !!children);
   return (
     <html lang="en" className={`${inter.variable} ${manrope.variable}`}>
       <body className={inter.className}>
