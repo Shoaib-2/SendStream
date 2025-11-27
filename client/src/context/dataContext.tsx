@@ -76,7 +76,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
                 sub.id === data.data.id ? { ...sub, status: data.data.status } : sub
               ));
             }
-          } catch (error) {
+          } catch (_error) {
           }
         };
 
@@ -99,7 +99,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         };
 
         setWs(socket);
-      } catch (error) {
+      } catch (_error) {
       }
     };
 
@@ -160,12 +160,12 @@ useEffect(() => {
       try {
         const response = await subscriberAPI.getAll();
         if (response) subscribersData = response;
-      } catch (err) {
+      } catch (_err) {
       }
       try {
         const response = await newsletterAPI.getAll();
         if (response) newslettersData = response;
-      } catch (err) {
+      } catch (_err) {
       }
       if (subscribersData && isSubscribed) {
         setSubscribers(subscribersData);
@@ -177,7 +177,7 @@ useEffect(() => {
       } else {
         setNewsletters([]);
       }
-    } catch (error) {
+    } catch (_error) {
     } finally {
       if (isSubscribed) {
         setIsLoading(false);
@@ -246,7 +246,7 @@ useEffect(() => {
         // Force sync with mailchimp to ensure consistency
         try {
           await subscriberAPI.syncMailchimp();
-        } catch (syncError) {
+        } catch (_syncError) {
           // Continue execution even if sync fails
         }
       }
