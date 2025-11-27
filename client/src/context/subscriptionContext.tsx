@@ -22,9 +22,12 @@ import React, { createContext, useContext, useEffect, useState, useCallback, use
 import { getSubscriptionStatus } from '@/services/api';
 
 const logger = {
-  info: (..._args: any[]) => {},
-  warn: (..._args: any[]) => {},
-  error: (..._args: any[]) => {}
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  info: (..._args: unknown[]) => {},
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  warn: (..._args: unknown[]) => {},
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  error: (..._args: unknown[]) => {}
 };
 
 // Helper to check if user just renewed (using sessionStorage to survive page reloads but not tabs)
