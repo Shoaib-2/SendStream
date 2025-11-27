@@ -217,12 +217,12 @@ export const rateLimiters = {
     message: 'Analytics request limit exceeded.'
   }),
 
-  // AI endpoints - 10 requests per hour (free tier optimization)
+  // AI endpoints - 100 requests per hour (increased for demo purposes)
   ai: createRateLimiter({
     windowMs: 60 * 60 * 1000, // 1 hour
-    max: 10,
-    message: 'AI request limit reached. You can make 10 AI requests per hour. Please try again later.',
-    blockDuration: 60 * 60 * 1000 // Block for 1 hour after exceeding
+    max: 100,
+    message: 'AI request limit reached. You can make 100 AI requests per hour. Please try again later.',
+    blockDuration: 0 // No blocking for demo, just rate limiting
   })
 };
 
