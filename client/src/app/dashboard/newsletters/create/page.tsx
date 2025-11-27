@@ -855,14 +855,17 @@ const CreateNewsletterContent: React.FC = () => {
                           text-white transition-all duration-200"
                         defaultValue={(() => {
                           const now = new Date();
-                          now.setMinutes(now.getMinutes() + 30);
+                          // Round to nearest 5 minutes for cleaner display
+                          const minutes = Math.ceil(now.getMinutes() / 5) * 5;
+                          now.setMinutes(minutes);
+                          now.setSeconds(0);
                           // Format to local datetime-local format (YYYY-MM-DDTHH:mm)
                           const year = now.getFullYear();
                           const month = String(now.getMonth() + 1).padStart(2, '0');
                           const day = String(now.getDate()).padStart(2, '0');
                           const hours = String(now.getHours()).padStart(2, '0');
-                          const minutes = String(now.getMinutes()).padStart(2, '0');
-                          return `${year}-${month}-${day}T${hours}:${minutes}`;
+                          const mins = String(now.getMinutes()).padStart(2, '0');
+                          return `${year}-${month}-${day}T${hours}:${mins}`;
                         })()}
                         min={(() => {
                           const now = new Date();
