@@ -136,7 +136,7 @@ const Hero: React.FC<HeroProps> = ({ isRenewal = false }) => {
                 <div className="absolute -inset-1 bg-gradient-to-r from-primary-500 via-accent-500 to-secondary-500 rounded-3xl blur-2xl opacity-30 group-hover:opacity-50 transition-opacity duration-500" />
                 
                 {/* Video container */}
-                <div className="relative glass-strong rounded-2xl overflow-hidden shadow-2xl">
+                {/* <div className="relative glass-strong rounded-2xl overflow-hidden shadow-2xl">
                   <div className="absolute inset-0 bg-gradient-to-t from-neutral-900/50 to-transparent z-10 pointer-events-none" />
                   
                   <video
@@ -147,12 +147,12 @@ const Hero: React.FC<HeroProps> = ({ isRenewal = false }) => {
                     loop
                     className="w-full aspect-video object-cover"
                   />
-                </div>
+                </div> */}
 
                 {/* Floating badge */}
-                <div className="absolute -bottom-4 -right-4 glass px-4 py-2 rounded-xl shadow-glow">
+                {/* <div className="absolute -bottom-4 -right-4 glass px-4 py-2 rounded-xl shadow-glow">
                   <span className="text-sm font-medium gradient-text">Watch Demo</span>
-                </div>
+                </div> */}
               </div>
             </div>
           )}
