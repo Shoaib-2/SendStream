@@ -856,11 +856,25 @@ const CreateNewsletterContent: React.FC = () => {
                         defaultValue={(() => {
                           const now = new Date();
                           now.setMinutes(now.getMinutes() + 30);
-                          return now.toISOString().slice(0, 16);
+                          // Format to local datetime-local format (YYYY-MM-DDTHH:mm)
+                          const year = now.getFullYear();
+                          const month = String(now.getMonth() + 1).padStart(2, '0');
+                          const day = String(now.getDate()).padStart(2, '0');
+                          const hours = String(now.getHours()).padStart(2, '0');
+                          const minutes = String(now.getMinutes()).padStart(2, '0');
+                          return `${year}-${month}-${day}T${hours}:${minutes}`;
                         })()}
-                        min={new Date().toISOString().slice(0, 16)}
+                        min={(() => {
+                          const now = new Date();
+                          const year = now.getFullYear();
+                          const month = String(now.getMonth() + 1).padStart(2, '0');
+                          const day = String(now.getDate()).padStart(2, '0');
+                          const hours = String(now.getHours()).padStart(2, '0');
+                          const minutes = String(now.getMinutes()).padStart(2, '0');
+                          return `${year}-${month}-${day}T${hours}:${minutes}`;
+                        })()}
                       />
-                      <p className="text-xs text-neutral-500 mt-2">Newsletter will be sent at the scheduled time</p>
+                      <p className="text-xs text-neutral-500 mt-2">Newsletter will be sent at the scheduled time (your local time)</p>
                     </div>
 
                     <div className="flex gap-3 pt-2">
