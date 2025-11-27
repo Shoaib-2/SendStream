@@ -1,7 +1,7 @@
 "use client";
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mail, Send, Plus, Pencil, Clock, FileText, Sparkles, Trash2, Eye, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Mail, Send, Plus, Pencil, Clock, FileText, Sparkles, Trash2, Eye, ChevronLeft, ChevronRight, AlertTriangle, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { newsletterAPI } from '../../../services/api';
 import Container from '@/components/UI/Container';
@@ -56,6 +56,10 @@ const NewsletterDashboard = () => {
   const [activeTab, setActiveTab] = React.useState<TabType>('all');
   const [currentPage, setCurrentPage] = React.useState(1);
   const [deleteLoading, setDeleteLoading] = React.useState<string | null>(null);
+  const [deleteModal, setDeleteModal] = React.useState<{ isOpen: boolean; newsletter: Newsletter | null }>({ 
+    isOpen: false, 
+    newsletter: null 
+  });
   const itemsPerPage = 10;
 
   const fetchNewsletterStats = React.useCallback(async () => {
@@ -147,16 +151,21 @@ const NewsletterDashboard = () => {
     router.push('/dashboard/newsletters/create');
   };
 
-  const handleDelete = async (newsletterId: string, e: React.MouseEvent) => {
+  const handleDeleteClick = (newsletter: Newsletter, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!confirm('Are you sure you want to delete this newsletter? This action cannot be undone.')) {
-      return;
-    }
+    setDeleteModal({ isOpen: true, newsletter });
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteModal.newsletter) return;
     
+    const newsletterId = deleteModal.newsletter.id || deleteModal.newsletter._id || '';
     setDeleteLoading(newsletterId);
+    
     try {
       await newsletterAPI.deleteNewsletter(newsletterId);
       setNewsletters(prev => prev.filter(n => (n.id || n._id) !== newsletterId));
+      setDeleteModal({ isOpen: false, newsletter: null });
     } catch (error) {
       console.error('Error deleting newsletter:', error);
       alert('Failed to delete newsletter. Please try again.');
@@ -167,8 +176,6 @@ const NewsletterDashboard = () => {
 
   const handleView = (newsletter: Newsletter, e: React.MouseEvent) => {
     e.stopPropagation();
-    // For sent newsletters, show a preview modal or navigate to view page
-    // For now, we'll just navigate to the create page in view mode
     router.push(`/dashboard/newsletters/create?id=${newsletter.id || newsletter._id}&view=true`);
   };
 
@@ -448,7 +455,7 @@ const NewsletterDashboard = () => {
                                 <Pencil className="w-4 h-4" />
                               </button>
                               <button
-                                onClick={(e) => handleDelete(newsletter.id || newsletter._id || '', e)}
+                                onClick={(e) => handleDeleteClick(newsletter, e)}
                                 disabled={deleteLoading === (newsletter.id || newsletter._id)}
                                 className="p-2 text-neutral-400 hover:text-red-400 transition-colors rounded-lg
                                   hover:bg-red-500/10 border border-transparent hover:border-red-500/30
@@ -515,6 +522,78 @@ const NewsletterDashboard = () => {
           </GlassCard>
         </motion.div>
       </motion.div>
+
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {deleteModal.isOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4"
+            onClick={() => setDeleteModal({ isOpen: false, newsletter: null })}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative"
+            >
+              <GlassCard variant="strong" padding="lg" className="w-full max-w-md border-white/20 shadow-2xl">
+                {/* Close Button */}
+                <button
+                  onClick={() => setDeleteModal({ isOpen: false, newsletter: null })}
+                  className="absolute top-4 right-4 p-2 text-neutral-400 hover:text-white transition-colors
+                    rounded-lg hover:bg-white/10"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+
+                {/* Header */}
+                <div className="flex items-center gap-3 mb-4 text-red-400">
+                  <div className="w-12 h-12 rounded-xl bg-red-500/20 flex items-center justify-center border border-red-500/30">
+                    <AlertTriangle className="w-6 h-6" />
+                  </div>
+                  <h3 className="text-xl font-bold font-display text-white">Delete Newsletter</h3>
+                </div>
+
+                {/* Content */}
+                <p className="text-neutral-300 mb-2">
+                  Are you sure you want to delete <span className="font-semibold text-white">&quot;{deleteModal.newsletter?.title}&quot;</span>?
+                </p>
+                <p className="text-sm text-neutral-400 mb-6">
+                  This action cannot be undone. The newsletter and all its data will be permanently removed.
+                </p>
+
+                {/* Actions */}
+                <div className="flex gap-3 justify-end">
+                  <Button
+                    variant="outline"
+                    onClick={() => setDeleteModal({ isOpen: false, newsletter: null })}
+                    disabled={!!deleteLoading}
+                  >
+                    Cancel
+                  </Button>
+
+                  <Button
+                    variant="danger"
+                    onClick={handleDeleteConfirm}
+                    disabled={!!deleteLoading}
+                    leftIcon={deleteLoading ? (
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <Trash2 className="w-4 h-4" />
+                    )}
+                  >
+                    {deleteLoading ? 'Deleting...' : 'Delete Newsletter'}
+                  </Button>
+                </div>
+              </GlassCard>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </Container>
   );
 };
