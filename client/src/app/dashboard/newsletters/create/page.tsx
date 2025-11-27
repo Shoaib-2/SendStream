@@ -38,6 +38,8 @@ const CreateNewsletterContent: React.FC = () => {
   const [notificationMessage, setNotificationMessage] = useState('');
   const [notificationType, setNotificationType] = useState<'success' | 'error'>('success');
   const [loading, setLoading] = useState(false);
+  const [sendLoading, setSendLoading] = useState(false);
+  const [scheduleLoading, setScheduleLoading] = useState(false);
   const [currentSource, setCurrentSource] = useState('');
   const [currentTakeaway, setCurrentTakeaway] = useState('');
 
@@ -46,7 +48,6 @@ const CreateNewsletterContent: React.FC = () => {
   const [generateLoading, setGenerateLoading] = useState(false);
   const [improveLoading, setImproveLoading] = useState(false);
   const [subjectLoading, setSubjectLoading] = useState(false);
-  const [scheduleLoading, setScheduleLoading] = useState(false);
   const [aiTopic, setAiTopic] = useState('');
   const [aiTone, setAiTone] = useState<'professional' | 'casual' | 'friendly' | 'authoritative'>('professional');
   const [aiLength, setAiLength] = useState<'short' | 'medium' | 'long'>('medium');
@@ -110,7 +111,7 @@ const CreateNewsletterContent: React.FC = () => {
     setTimeout(() => setShowNotification(false), 5000);
   };
 
-  const saveDraft = async () => {
+  const saveDraft = async (silent = false): Promise<string | null> => {
     setLoading(true);
     try {
       const newsletterData = {
@@ -119,26 +120,44 @@ const CreateNewsletterContent: React.FC = () => {
         scheduledDate: newsletter.scheduledDate instanceof Date ? newsletter.scheduledDate.toISOString() : newsletter.scheduledDate,
         sentDate: newsletter.sentDate instanceof Date ? newsletter.sentDate.toISOString() : newsletter.sentDate,
       };
+      
+      let savedId = draftId;
+      
       if (draftId) {
         await newsletterAPI.update(draftId, newsletterData);
       } else {
-        await newsletterAPI.create(newsletterData);
+        const response = await newsletterAPI.create(newsletterData);
+        savedId = response.id || response._id || null;
       }
-      showNotificationMessage('Draft saved successfully!', 'success');
-      router.push('/dashboard/newsletters');
+      
+      if (!silent) {
+        showNotificationMessage('Draft saved successfully!', 'success');
+        router.push('/dashboard/newsletters');
+      }
+      
+      return savedId;
     } catch (error) {
       console.error('Error saving draft:', error);
-      showNotificationMessage('Failed to save draft', 'error');
+      if (!silent) {
+        showNotificationMessage('Failed to save draft', 'error');
+      }
+      return null;
     } finally {
       setLoading(false);
     }
   };
   
   const scheduleNewsletter = async (date: string) => {
+    setScheduleLoading(true);
     try {
-      if (!draftId) {
-        showNotificationMessage('Please save the newsletter as a draft first', 'error');
-        return;
+      // Auto-save as draft first if not already saved
+      let newsletterId = draftId;
+      if (!newsletterId) {
+        newsletterId = await saveDraft(true);
+        if (!newsletterId) {
+          showNotificationMessage('Failed to save draft before scheduling', 'error');
+          return;
+        }
       }
 
       const scheduledTime = new Date(date);
@@ -149,9 +168,10 @@ const CreateNewsletterContent: React.FC = () => {
         return;
       }
 
-      await newsletterAPI.schedule(draftId, scheduledTime.toISOString());
+      await newsletterAPI.schedule(newsletterId, scheduledTime.toISOString());
       showNotificationMessage('Newsletter scheduled!', 'success');
-      router.push('/dashboard/newsletters');
+      setShowScheduler(false);
+      setTimeout(() => router.push('/dashboard/newsletters'), 1000);
     } catch (error) {
       console.error('Error scheduling newsletter:', error);
       if (error instanceof APIError) {
@@ -159,11 +179,13 @@ const CreateNewsletterContent: React.FC = () => {
       } else {
         showNotificationMessage('Scheduling failed', 'error');
       }
+    } finally {
+      setScheduleLoading(false);
     }
   };
 
   const sendNow = async () => {
-    setLoading(true);
+    setSendLoading(true);
     try {
       const newsletterData = {
         ...newsletter,
@@ -171,23 +193,21 @@ const CreateNewsletterContent: React.FC = () => {
         scheduledDate: newsletter.scheduledDate instanceof Date ? newsletter.scheduledDate.toISOString() : newsletter.scheduledDate,
         sentDate: newsletter.sentDate instanceof Date ? newsletter.sentDate.toISOString() : newsletter.sentDate,
       };
-      const response = await newsletterAPI.create(newsletterData);
+      
+      let newsletterId = draftId;
+      
+      // Update existing draft or create new
+      if (draftId) {
+        await newsletterAPI.update(draftId, newsletterData);
+      } else {
+        const response = await newsletterAPI.create(newsletterData);
+        newsletterId = response.id || response._id || null;
+      }
 
-      if (response) {
-        if ('id' in response) {
-          await newsletterAPI.send(response.id);
-          showNotificationMessage('Newsletter sent successfully!', 'success');
-          router.push('/dashboard/newsletters');
-        } else {
-          const newsletterId = (response as { _id?: string; id?: string })._id || (response as { _id?: string; id?: string }).id;
-          if (newsletterId) {
-            await newsletterAPI.send(newsletterId);
-            showNotificationMessage('Newsletter sent successfully!', 'success');
-            router.push('/dashboard/newsletters');
-          } else {
-            showNotificationMessage('Failed to send newsletter', 'error');
-          }
-        }
+      if (newsletterId) {
+        await newsletterAPI.send(newsletterId);
+        showNotificationMessage('Newsletter sent successfully!', 'success');
+        setTimeout(() => router.push('/dashboard/newsletters'), 1000);
       } else {
         showNotificationMessage('Failed to send newsletter', 'error');
       }
@@ -195,7 +215,7 @@ const CreateNewsletterContent: React.FC = () => {
       console.error('Error sending newsletter:', error);
       showNotificationMessage('Failed to send newsletter', 'error');
     } finally {
-      setLoading(false);
+      setSendLoading(false);
     }
   };
 
@@ -505,95 +525,45 @@ const CreateNewsletterContent: React.FC = () => {
             </div>
           </div>
           
-          <div className="flex flex-wrap gap-3 w-full lg:w-auto">
+          <div className="flex flex-wrap gap-2 sm:gap-3 w-full lg:w-auto">
             <Button
               onClick={() => setShowAIPanel(!showAIPanel)}
               variant="secondary"
               leftIcon={<Sparkles className="w-4 h-4" />}
-              className="flex-1 lg:flex-none bg-gradient-to-r from-purple-500/20 to-pink-500/20 border-purple-500/30 hover:border-purple-500/50"
+              className="flex-1 sm:flex-initial min-w-[120px] bg-gradient-to-r from-purple-500/20 to-pink-500/20 border-purple-500/30 hover:border-purple-500/50"
             >
-              AI Assistant
+              <span className="hidden sm:inline">AI Assistant</span>
+              <span className="sm:hidden">AI</span>
             </Button>
             
             <Button
-              onClick={saveDraft}
+              onClick={() => saveDraft(false)}
               disabled={loading}
               variant="secondary"
               leftIcon={<Save className="w-4 h-4" />}
-              className="flex-1 lg:flex-none"
+              className="flex-1 sm:flex-initial min-w-[100px]"
             >
-              {loading ? 'Saving...' : 'Save Draft'}
+              {loading ? 'Saving...' : 'Save'}
             </Button>
 
-            {!showScheduler ? (
-              <Button
-                onClick={() => setShowScheduler(true)}
-                variant="primary"
-                leftIcon={<Calendar className="w-4 h-4" />}
-                className="flex-1 lg:flex-none"
-              >
-                Schedule
-              </Button>
-            ) : (
-              <GlassCard variant="default" padding="sm" className="flex-1 lg:flex-none">
-                <div className="flex items-center gap-2">
-                  <input
-                    type="datetime-local"
-                    className="px-3 py-2 bg-neutral-900/50 rounded-lg border border-white/10 
-                      focus:border-primary-500/50 focus:ring-2 focus:ring-primary-500/50
-                      text-white text-sm"
-                    defaultValue={(() => {
-                      const now = new Date();
-                      now.setMinutes(now.getMinutes() + 2);
-                      const year = now.getFullYear();
-                      const month = String(now.getMonth() + 1).padStart(2, '0');
-                      const day = String(now.getDate()).padStart(2, '0');
-                      const hours = String(now.getHours()).padStart(2, '0');
-                      const minutes = String(now.getMinutes()).padStart(2, '0');
-                      return `${year}-${month}-${day}T${hours}:${minutes}`;
-                    })()}
-                    min={(() => {
-                      const now = new Date();
-                      const year = now.getFullYear();
-                      const month = String(now.getMonth() + 1).padStart(2, '0');
-                      const day = String(now.getDate()).padStart(2, '0');
-                      const hours = String(now.getHours()).padStart(2, '0');
-                      const minutes = String(now.getMinutes()).padStart(2, '0');
-                      return `${year}-${month}-${day}T${hours}:${minutes}`;
-                    })()}
-                    onChange={(e) => {
-                      const selectedDate = new Date(e.target.value);
-                      const now = new Date();
-                      if (selectedDate.getTime() < now.getTime()) {
-                        now.setMinutes(now.getMinutes() + 2);
-                        const year = now.getFullYear();
-                        const month = String(now.getMonth() + 1).padStart(2, '0');
-                        const day = String(now.getDate()).padStart(2, '0');
-                        const hours = String(now.getHours()).padStart(2, '0');
-                        const minutes = String(now.getMinutes()).padStart(2, '0');
-                        e.target.value = `${year}-${month}-${day}T${hours}:${minutes}`;
-                      }
-                      scheduleNewsletter(e.target.value);
-                    }}
-                  />
-                  <button
-                    onClick={() => setShowScheduler(false)}
-                    className="p-2 text-neutral-400 hover:text-white rounded-lg hover:bg-white/10 transition-colors"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              </GlassCard>
-            )}
+            <Button
+              onClick={() => setShowScheduler(true)}
+              disabled={scheduleLoading}
+              variant="primary"
+              leftIcon={scheduleLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Calendar className="w-4 h-4" />}
+              className="flex-1 sm:flex-initial min-w-[110px]"
+            >
+              {scheduleLoading ? 'Scheduling...' : 'Schedule'}
+            </Button>
 
             <Button
               onClick={sendNow}
-              disabled={loading}
+              disabled={sendLoading}
               variant="gradient"
-              leftIcon={<Send className="w-4 h-4" />}
-              className="flex-1 lg:flex-none bg-gradient-to-r from-success-500 to-success-600 hover:from-success-600 hover:to-success-700"
+              leftIcon={sendLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              className="flex-1 sm:flex-initial min-w-[100px] bg-gradient-to-r from-success-500 to-success-600 hover:from-success-600 hover:to-success-700"
             >
-              {loading ? 'Sending...' : 'Send Now'}
+              {sendLoading ? 'Sending...' : 'Send'}
             </Button>
           </div>
         </motion.div>
@@ -833,6 +803,92 @@ const CreateNewsletterContent: React.FC = () => {
                   </div>
                 </div>
               </GlassCard>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Schedule Modal */}
+        <AnimatePresence>
+          {showScheduler && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+              onClick={() => setShowScheduler(false)}
+            >
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                onClick={(e) => e.stopPropagation()}
+                className="w-full max-w-md"
+              >
+                <GlassCard variant="strong" padding="lg" className="border-primary-500/30">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500/30 to-secondary-500/30 
+                        flex items-center justify-center border border-primary-500/40">
+                        <Calendar className="w-5 h-5 text-primary-400" />
+                      </div>
+                      <div>
+                        <h2 className="text-lg font-semibold font-display text-white">Schedule Newsletter</h2>
+                        <p className="text-sm text-neutral-400">Choose when to send</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setShowScheduler(false)}
+                      className="p-2 text-neutral-400 hover:text-white rounded-lg hover:bg-white/10 transition-colors"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-200 mb-2">Select Date & Time</label>
+                      <input
+                        type="datetime-local"
+                        id="schedule-datetime"
+                        className="w-full px-4 py-3 bg-neutral-900/50 rounded-xl border border-white/10 
+                          focus:border-primary-500/50 focus:ring-2 focus:ring-primary-500/30
+                          text-white transition-all duration-200"
+                        defaultValue={(() => {
+                          const now = new Date();
+                          now.setMinutes(now.getMinutes() + 30);
+                          return now.toISOString().slice(0, 16);
+                        })()}
+                        min={new Date().toISOString().slice(0, 16)}
+                      />
+                      <p className="text-xs text-neutral-500 mt-2">Newsletter will be sent at the scheduled time</p>
+                    </div>
+
+                    <div className="flex gap-3 pt-2">
+                      <Button
+                        onClick={() => setShowScheduler(false)}
+                        variant="secondary"
+                        className="flex-1"
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          const input = document.getElementById('schedule-datetime') as HTMLInputElement;
+                          if (input?.value) {
+                            scheduleNewsletter(input.value);
+                          }
+                        }}
+                        disabled={scheduleLoading}
+                        variant="primary"
+                        leftIcon={scheduleLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Calendar className="w-4 h-4" />}
+                        className="flex-1"
+                      >
+                        {scheduleLoading ? 'Scheduling...' : 'Schedule'}
+                      </Button>
+                    </div>
+                  </div>
+                </GlassCard>
+              </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
