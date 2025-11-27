@@ -27,7 +27,10 @@ export const metadata: Metadata = {
   keywords: 'newsletter, automation, email marketing, subscriber management, analytics',
   authors: [{ name: 'SendStream Team' }],
   icons: {
-    icon: '/favicon.ico',
+    icon: [
+      { url: '/favicon.ico' },
+      { url: '/icon.svg', type: 'image/svg+xml' },
+    ],
     apple: '/icon.svg',
   },
   openGraph: {
