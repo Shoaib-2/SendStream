@@ -163,4 +163,10 @@
     opacity: 1;
     transform: translateY(0);
   }
+
+  /* Shimmer loading effect */
+  .animate-shimmer {
+    background-size: 200% 100%;
+    animation: shimmer 2s linear infinite;
+  }
 }

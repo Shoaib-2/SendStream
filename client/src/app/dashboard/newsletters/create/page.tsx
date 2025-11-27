@@ -688,9 +688,15 @@ const CreateNewsletterContent: React.FC = () => {
                       disabled={generateLoading || !aiTopic.trim()}
                       variant="primary"
                       leftIcon={generateLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                      className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                      className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 relative overflow-hidden"
                     >
-                      {generateLoading ? 'Generating...' : 'Generate Content'}
+                      {generateLoading && (
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer" 
+                             style={{ animationDuration: '2s' }} />
+                      )}
+                      <span className="relative z-10">
+                        {generateLoading ? 'Generating AI Content...' : 'Generate Content'}
+                      </span>
                     </Button>
                   </div>
 
@@ -706,9 +712,15 @@ const CreateNewsletterContent: React.FC = () => {
                       disabled={improveLoading || !newsletter.content.trim()}
                       variant="secondary"
                       leftIcon={improveLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
-                      className="w-full"
+                      className="w-full relative overflow-hidden"
                     >
-                      {improveLoading ? 'Improving...' : 'Improve Existing Content'}
+                      {improveLoading && (
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer" 
+                             style={{ animationDuration: '2s' }} />
+                      )}
+                      <span className="relative z-10">
+                        {improveLoading ? 'Improving Content...' : 'Improve Existing Content'}
+                      </span>
                     </Button>
 
                     <Button
@@ -716,9 +728,15 @@ const CreateNewsletterContent: React.FC = () => {
                       disabled={subjectLoading || (!newsletter.title.trim() && !aiTopic.trim())}
                       variant="secondary"
                       leftIcon={subjectLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Lightbulb className="w-4 h-4" />}
-                      className="w-full"
+                      className="w-full relative overflow-hidden"
                     >
-                      {subjectLoading ? 'Generating...' : 'Generate Subject Lines'}
+                      {subjectLoading && (
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer" 
+                             style={{ animationDuration: '2s' }} />
+                      )}
+                      <span className="relative z-10">
+                        {subjectLoading ? 'Generating Subjects...' : 'Generate Subject Lines'}
+                      </span>
                     </Button>
 
                     <Button

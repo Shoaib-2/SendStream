@@ -1527,9 +1527,14 @@ export const aiAPI = {
     includeCallToAction?: boolean;
   }): Promise<AIGeneratedContent> => {
     try {
-      const response = await api.post<ResponseData<AIGeneratedContent>>('/ai/generate-content', request);
+      console.log('[Client AI] Generating content with request:', request);
+      const response = await api.post<ResponseData<AIGeneratedContent>>('/ai/generate-content', request, {
+        timeout: 30000, // 30 seconds - optimized with gpt-3.5-turbo
+      });
+      console.log('[Client AI] Content generation successful:', response.data);
       return response.data.data;
     } catch (error) {
+      console.error('[Client AI] Content generation failed:', error);
       handleError(error as AxiosError);
       throw error;
     }
@@ -1538,9 +1543,14 @@ export const aiAPI = {
   // Improve existing content
   improveContent: async (content: string, instructions?: string): Promise<string> => {
     try {
-      const response = await api.post<ResponseData<{ content: string }>>('/ai/improve-content', { content, instructions });
+      console.log('[Client AI] Improving content, length:', content.length);
+      const response = await api.post<ResponseData<{ content: string }>>('/ai/improve-content', { content, instructions }, {
+        timeout: 25000, // 25 seconds - optimized
+      });
+      console.log('[Client AI] Content improvement successful');
       return response.data.data.content;
     } catch (error) {
+      console.error('[Client AI] Content improvement failed:', error);
       handleError(error as AxiosError);
       throw error;
     }
@@ -1549,9 +1559,14 @@ export const aiAPI = {
   // Generate subject line suggestions
   generateSubjects: async (topic: string, content?: string): Promise<string[]> => {
     try {
-      const response = await api.post<ResponseData<{ subjects: string[] }>>('/ai/generate-subjects', { topic, content });
+      console.log('[Client AI] Generating subject lines for topic:', topic);
+      const response = await api.post<ResponseData<{ subjects: string[] }>>('/ai/generate-subjects', { topic, content }, {
+        timeout: 30000, // 30 seconds for subject generation
+      });
+      console.log('[Client AI] Subject generation successful:', response.data.data.subjects.length, 'subjects');
       return response.data.data.subjects;
     } catch (error) {
+      console.error('[Client AI] Subject generation failed:', error);
       handleError(error as AxiosError);
       throw error;
     }
@@ -1565,9 +1580,14 @@ export const aiAPI = {
     historicalBestTimes?: string[];
   }): Promise<SmartScheduleRecommendation> => {
     try {
-      const response = await api.post<ResponseData<SmartScheduleRecommendation>>('/ai/smart-schedule', { engagementData });
+      console.log('[Client AI] Getting smart schedule recommendation');
+      const response = await api.post<ResponseData<SmartScheduleRecommendation>>('/ai/smart-schedule', { engagementData }, {
+        timeout: 30000, // 30 seconds for schedule recommendation
+      });
+      console.log('[Client AI] Smart schedule received:', response.data.data.recommendedDay, response.data.data.recommendedTime);
       return response.data.data;
     } catch (error) {
+      console.error('[Client AI] Smart schedule failed:', error);
       handleError(error as AxiosError);
       throw error;
     }
@@ -1576,9 +1596,14 @@ export const aiAPI = {
   // Generate title from content
   generateTitle: async (content: string): Promise<string> => {
     try {
-      const response = await api.post<ResponseData<{ title: string }>>('/ai/generate-title', { content });
+      console.log('[Client AI] Generating title from content');
+      const response = await api.post<ResponseData<{ title: string }>>('/ai/generate-title', { content }, {
+        timeout: 25000, // 25 seconds for title generation
+      });
+      console.log('[Client AI] Title generated:', response.data.data.title);
       return response.data.data.title;
     } catch (error) {
+      console.error('[Client AI] Title generation failed:', error);
       handleError(error as AxiosError);
       throw error;
     }

@@ -115,17 +115,17 @@ Respond in JSON format:
 }`;
 
     try {
-      // Optimized token limits - just enough to complete responses
+      // Optimized token limits for speed - reduced by 30-40%
       const tokenLimits = {
-        short: 800,    // ~400-500 words + JSON structure
-        medium: 1200,  // ~600-800 words + JSON structure  
-        long: 1600     // ~800-1000 words + JSON structure
+        short: 500,    // ~250-350 words + JSON
+        medium: 800,   // ~400-550 words + JSON  
+        long: 1100     // ~550-750 words + JSON
       };
 
       console.log('[AI Service] Making OpenAI API call...');
 
       const response = await client.chat.completions.create({
-        model: 'gpt-4o-mini',
+        model: 'gpt-3.5-turbo',  // Faster than gpt-4o-mini, ~5-10s response
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }
@@ -190,13 +190,13 @@ Return only the improved HTML content, nothing else.`;
 
     try {
       const response = await client.chat.completions.create({
-        model: 'gpt-4o-mini',
+        model: 'gpt-3.5-turbo',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }
         ],
         temperature: 0.8,
-        max_tokens: 600  // Reduced - just improved content, no JSON overhead
+        max_tokens: 400  // Optimized for speed
       });
 
       return response.choices[0]?.message?.content || existingContent;
@@ -226,11 +226,11 @@ Return as JSON array: ["subject1", "subject2", "subject3", "subject4", "subject5
 
     try {
       const response = await client.chat.completions.create({
-        model: 'gpt-4o-mini',
+        model: 'gpt-3.5-turbo',
         messages: [{ role: 'user', content: userPrompt }],
         response_format: { type: 'json_object' },
         temperature: 0.8,
-        max_tokens: 250  // 5 subject lines ~150 tokens + JSON structure
+        max_tokens: 150  // Optimized - 5 subject lines
       });
 
       const result = response.choices[0]?.message?.content;
@@ -285,11 +285,11 @@ Consider timezone diversity and maximize engagement potential.`;
 
     try {
       const response = await client.chat.completions.create({
-        model: 'gpt-4o-mini',
+        model: 'gpt-3.5-turbo',
         messages: [{ role: 'user', content: userPrompt }],
         response_format: { type: 'json_object' },
         temperature: 0.5,
-        max_tokens: 300  // Schedule recommendation + alternatives + JSON
+        max_tokens: 200  // Optimized schedule recommendation
       });
 
       const result = response.choices[0]?.message?.content;
@@ -322,7 +322,7 @@ Consider timezone diversity and maximize engagement potential.`;
 
     try {
       const response = await client.chat.completions.create({
-        model: 'gpt-4o-mini',
+        model: 'gpt-3.5-turbo',
         messages: [{
           role: 'user',
           content: `Generate a compelling, catchy title for this newsletter content (max 80 characters):
@@ -332,7 +332,7 @@ ${content.substring(0, 1000)}
 Return only the title, nothing else.`
         }],
         temperature: 0.8,
-        max_tokens: 30  // Just a title, ~15-25 tokens
+        max_tokens: 20  // Optimized - just title
       });
 
       return response.choices[0]?.message?.content?.trim() || 'Untitled Newsletter';
