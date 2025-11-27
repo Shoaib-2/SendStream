@@ -521,7 +521,7 @@ export const newsletterAPI = {
           "/newsletters/stats"
         );
         return response.data.data;
-      } catch (error) {
+      } catch {
         return {
           newsletters: [],
           qualityStats: {
@@ -792,7 +792,7 @@ export const subscriberAPI = {
       const response = await api.patch(`/subscribers/${id}/status`, { status });
 
       return response.data.data;
-    } catch (error) {
+    } catch {
       // Retry once on failure
       try {
         const response = await api.patch(`/subscribers/${id}/status`, {
@@ -811,7 +811,7 @@ export const analyticsAPI = {
     try {
       const response = await api.get<ResponseData<unknown>>("/analytics/summary");
       return response.data;
-    } catch (error) {
+    } catch {
       throw new APIError(500, "Failed to fetch analytics summary");
     }
   },
@@ -837,7 +837,7 @@ export const analyticsAPI = {
 
       // Returning the data directly - handle the transformation in the component.
       return response.data.data || [];
-    } catch (error) {
+    } catch {
       // Return empty array instead of using handleError to prevent unnecessary crashes
       return [];
     }
@@ -985,7 +985,7 @@ export const authAPI = {
     try {
       await api.post("/auth/logout");
       return { status: "success" };
-    } catch (error) {
+    } catch {
       // Even if logout API fails, we can still clear local state
       return { status: "success", message: "Logged out locally" };
     }
@@ -1231,7 +1231,7 @@ export const startFreeTrial = async (plan: PricingPlan, userEmail?: string) => {
           }
         }
       }
-    } catch (error) {
+    } catch {
     }
   }
 

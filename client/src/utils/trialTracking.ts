@@ -33,7 +33,7 @@ interface TrialHistory {
       history.emails[email] = now;
       
       localStorage.setItem('trial_history', JSON.stringify(history));
-    } catch (e) {
+    } catch {
     }
   };
   
@@ -46,7 +46,7 @@ interface TrialHistory {
     try {
       const history = getTrialHistory();
       return !!(history.emails && history.emails[email]);
-    } catch (e) {
+    } catch {
       return false;
     }
   };
@@ -60,7 +60,7 @@ interface TrialHistory {
       if (historyString) {
         return JSON.parse(historyString);
       }
-    } catch (e) {
+    } catch {
     }
     
     return { emails: {} };
@@ -116,7 +116,7 @@ interface TrialHistory {
           email = history.lastEmail;
         }
       }
-    } catch (e) {
+    } catch {
     }
     
     return email;
@@ -157,7 +157,7 @@ interface TrialHistory {
         
         return data.status === 'success' && data.eligible;
       }
-    } catch (e) {
+    } catch {
     }
     
     return true;

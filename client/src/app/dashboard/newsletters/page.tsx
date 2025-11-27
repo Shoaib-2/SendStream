@@ -81,7 +81,7 @@ const NewsletterDashboard = () => {
       } else {
         setNewsletters([]);
       }
-    } catch (_error) {
+    } catch {
       setNewsletters([]);
     } finally {
       setLoading(false);
@@ -164,7 +164,7 @@ const NewsletterDashboard = () => {
       await newsletterAPI.deleteNewsletter(newsletterId);
       setNewsletters(prev => prev.filter(n => (n.id || n._id) !== newsletterId));
       setDeleteModal({ isOpen: false, newsletter: null });
-    } catch (_error) {
+    } catch {
       alert('Failed to delete newsletter. Please try again.');
     } finally {
       setDeleteLoading(null);
